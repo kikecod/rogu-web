@@ -22,11 +22,11 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
 
   return (
     <div
-      className="bg-white rounded-xl border border-neutral-200 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group w-full max-w-sm mx-auto sm:max-w-none"
+      className="bg-white rounded-xl border border-neutral-200 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group w-full h-full"
       onClick={() => onClick(field)}
     >
       {/* Image carousel */}
-      <div className="relative h-44 sm:h-48 md:h-52 overflow-hidden">
+      <div className="relative h-48 overflow-hidden">
         <img
           src={field.images[0] || '/api/placeholder/400/300'}
           alt={field.name}

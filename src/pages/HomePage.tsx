@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Calendar, Clock } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Search, MapPin, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import SportFieldCard from '../components/SportFieldCard';
 import Filters from '../components/Filters';
 import Footer from '../components/Footer';
@@ -269,15 +269,37 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid - Airbnb style responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-          {filteredFields.map((field) => (
-            <SportFieldCard
-              key={field.id}
-              field={field}
-              onClick={handleFieldClick}
-            />
-          ))}
+        {/* Carrusel horizontal - Airbnb style */}
+        <div className="relative group">
+          <div 
+            className="overflow-x-auto scrollbar-hide scroll-smooth"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            <div className="flex gap-4 sm:gap-6 pb-4 px-1" style={{ width: 'max-content' }}>
+              {filteredFields.map((field) => (
+                <div key={field.id} className="flex-none w-72 sm:w-80 lg:w-72">
+                  <SportFieldCard
+                    field={field}
+                    onClick={handleFieldClick}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Indicador de scroll para móvil */}
+          <div className="flex justify-center mt-2 sm:hidden">
+            <div className="flex space-x-1">
+              {[...Array(Math.ceil(filteredFields.length / 1))].map((_, i) => (
+                <div key={i} className="w-1.5 h-1.5 bg-neutral-300 rounded-full"></div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Indicador de scroll para desktop */}
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-neutral-400 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
+            Desliza horizontalmente para ver más →
+          </div>
         </div>
 
         {filteredFields.length === 0 && (
