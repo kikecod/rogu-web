@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
 import HomePage from './pages/HomePage';
+import HostSpacePage from './pages/HostSpacePage';
+import AdminSpacesPage from './pages/AdminSpacesPage';
 
 function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -75,7 +77,8 @@ function App() {
 
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/host" element={<div className="p-8 text-center">Página para hosts - Próximamente</div>} />
+          <Route path="/host" element={<HostSpacePage />} />
+          <Route path="/admin-spaces" element={<AdminSpacesPage />} />
           <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
           <Route path="/bookings" element={<div className="p-8 text-center">Mis reservas - Próximamente</div>} />
         </Routes>
