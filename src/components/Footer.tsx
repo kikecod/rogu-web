@@ -1,5 +1,6 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import roguLogo from '../assets/rogu_logo.png';
 
 const Footer: React.FC = () => {
@@ -18,7 +19,7 @@ const Footer: React.FC = () => {
               <span className="ml-2 text-neutral-300 text-sm sm:text-base">ROGÜ</span>
             </div>
             <p className="text-neutral-300 mb-4 max-w-md text-sm sm:text-base">
-              La plataforma líder en México para reservar espacios deportivos. 
+              La plataforma líder en Bolivia para reservar espacios deportivos. 
               Encuentra la cancha perfecta cerca de ti y reserva al instante.
             </p>
             <div className="flex space-x-4">
@@ -49,6 +50,11 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
+                <Link to="/about" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                  Sobre nosotros
+                </Link>
+              </li>
+              <li>
                 <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Cómo funciona
                 </a>
@@ -72,15 +78,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 sm:space-y-3">
               <li className="flex items-center">
                 <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 sm:mr-3 flex-shrink-0" />
-                <span className="text-neutral-300 text-sm sm:text-base">info@rogu.mx</span>
+                <span className="text-neutral-300 text-sm sm:text-base">info@rogu.bo</span>
               </li>
               <li className="flex items-center">
                 <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 sm:mr-3 flex-shrink-0" />
-                <span className="text-neutral-300 text-sm sm:text-base">+52 55 1234 5678</span>
+                <span className="text-neutral-300 text-sm sm:text-base">+591 622728828</span>
               </li>
               <li className="flex items-start">
                 <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
-                <span className="text-neutral-300 text-sm sm:text-base">Ciudad de México, México</span>
+                <span className="text-neutral-300 text-sm sm:text-base">Bolivia</span>
               </li>
             </ul>
           </div>
