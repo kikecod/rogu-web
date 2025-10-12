@@ -1,6 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Search, MapPin, Calendar, Clock, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Search, MapPin, Calendar, Clock } from 'lucide-react';
 import SportFieldCard from '../components/SportFieldCard';
 import Filters from '../components/Filters';
 import Footer from '../components/Footer';
@@ -145,25 +144,8 @@ const mockFields: SportField[] = [
 ];
 
 const HomePage: React.FC = () => {
-  const navigate = useNavigate();
   const [filteredFields, setFilteredFields] = useState<SportField[]>(mockFields);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Verificar si el usuario está loggeado
-  const isLoggedIn = () => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    return token && user;
-  };
-
-  const handleAdminAccess = () => {
-    if (isLoggedIn()) {
-      navigate('/admin-spaces');
-    } else {
-      alert('Debes iniciar sesión para acceder al panel de administración');
-      navigate('/login');
-    }
-  };
 
   const handleFiltersChange = (filters: FilterState) => {
     let filtered = [...mockFields];
@@ -216,17 +198,6 @@ const HomePage: React.FC = () => {
             <p className="text-base sm:text-lg text-neutral-600 px-4 mb-4">
               Reserva la cancha perfecta para tu próximo partido
             </p>
-            
-            {/* Botón para administrar espacios */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleAdminAccess}
-                className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors shadow-md"
-              >
-                <Building2 className="mr-2 h-5 w-5" />
-                ¿Tienes un espacio deportivo? ¡Adminístralo aquí!
-              </button>
-            </div>
           </div>
 
           {/* Responsive Search Bar */}

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Trophy, Users, Zap } from 'lucide-react';
+import { useAuth, type User } from '../contexts/AuthContext';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'login' | 'signup';
   onSwitchMode: () => void;
-  onLoginSuccess?: (userData: { correo: string }) => void;
+  onLoginSuccess?: (userData: User) => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMode, onLoginSuccess }) => {
@@ -27,6 +28,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
   if (!isOpen) return null;
 
@@ -82,27 +84,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
         const personaResult = await personaResponse.json();
         const idPersona = personaResult.id || personaResult.idPersona;
 
-        // Paso 2: Crear usuario
-        const usuarioData = {
+        // Paso 2: Registrar usuario con rol CLIENTE automático usando el endpoint de auth
+        const registerData = {
           idPersona: idPersona,
           usuario: formData.usuario,
           correo: formData.email,
           contrasena: formData.password
         };
 
-        const usuarioResponse = await fetch('http://localhost:3000/api/usuarios', {
+        const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(usuarioData),
+          body: JSON.stringify(registerData),
         });
 
-        if (!usuarioResponse.ok) {
-          throw new Error('Error al crear el usuario');
+        if (!registerResponse.ok) {
+          const errorText = await registerResponse.text();
+          throw new Error(`Error al registrar el usuario: ${errorText}`);
         }
 
-        alert('Registro exitoso! Ahora puedes iniciar sesión');
+        alert('Registro exitoso! Tu cuenta ha sido creada con rol de cliente. Ahora puedes iniciar sesión');
         onSwitchMode(); // Cambiar a modo login
       } else {
         // Validar campos de login
@@ -133,17 +136,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
 
         const loginResult = await loginResponse.json();
         
-        // Guardar token en localStorage
-        localStorage.setItem('token', loginResult.token);
-        localStorage.setItem('user', JSON.stringify(loginResult.usuario));
+        // Usar el hook de auth para manejar el login
+        login(loginResult.usuario, loginResult.token);
         
         alert(`¡Bienvenido ${loginResult.usuario.correo}!`);
         
-        // Actualizar estado en App
+        // Cerrar modal inmediatamente después del login exitoso
+        onClose();
+        
+        // Actualizar estado en App si hay callback
         if (onLoginSuccess) {
           onLoginSuccess(loginResult.usuario);
-        } else {
-          onClose(); // Cerrar modal si no hay callback
         }
       }
     } catch (error) {

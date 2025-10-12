@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Shield, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const HostSpacePage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmationStatus, setConfirmationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
-
-  // Obtener datos del usuario desde localStorage
-  const getUserData = () => {
-    const userData = localStorage.getItem('user');
-    return userData ? JSON.parse(userData) : null;
-  };
-
-  const user = getUserData();
-  const isLoggedIn = !!localStorage.getItem('token') && !!user;
+  const { user, isLoggedIn, isDuenio, updateUser } = useAuth();
 
   const createDuenio = async (idPersona: number) => {
     const duenioData = {
@@ -29,6 +22,7 @@ const HostSpacePage: React.FC = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`, // Agregar autorización
       },
       body: JSON.stringify(duenioData),
     });
@@ -47,19 +41,36 @@ const HostSpacePage: React.FC = () => {
       return;
     }
 
+    // Verificar si ya es dueño
+    if (isDuenio()) {
+      setErrorMessage('Ya eres dueño de espacios deportivos');
+      setTimeout(() => {
+        navigate('/admin-spaces');
+      }, 2000);
+      return;
+    }
+
     setIsConfirming(true);
     setConfirmationStatus('idle');
     setErrorMessage('');
 
     try {
       // Usar el idPersona del usuario loggeado
-      const idPersona = user.idPersona || user.id;
+      const idPersona = user.idPersona;
       
       if (!idPersona) {
         throw new Error('No se encontró el ID de persona del usuario');
       }
 
       await createDuenio(idPersona);
+      
+      // Actualizar el usuario con el nuevo rol de DUENIO
+      const updatedUser = {
+        ...user,
+        roles: [...(user.roles || []), 'DUENIO']
+      };
+      updateUser(updatedUser);
+      
       setConfirmationStatus('success');
       
       // Redirigir después de 2 segundos
@@ -94,6 +105,31 @@ const HostSpacePage: React.FC = () => {
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir al inicio e iniciar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si ya es dueño, mostrar mensaje y redirigir
+  if (isDuenio()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              ¡Ya eres dueño!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Ya tienes permisos de dueño de espacios deportivos. Te llevaremos a tu panel de administración.
+            </p>
+            <button
+              onClick={() => navigate('/admin-spaces')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Ir al Panel de Administración
             </button>
           </div>
         </div>
@@ -150,7 +186,8 @@ const HostSpacePage: React.FC = () => {
             {/* Usuario actual */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="font-medium text-blue-900 mb-2">Cuenta actual:</h3>
-              <p className="text-blue-800">{user?.correo}</p>
+              <p className="text-blue-800">Usuario: {user?.usuario}</p>
+              <p className="text-blue-800">Correo: {user?.correo}</p>
             </div>
 
             {/* Beneficios */}
