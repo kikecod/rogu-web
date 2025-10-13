@@ -7,6 +7,12 @@ import HostSpacePage from './pages/HostSpacePage';
 import AdminSpacesPage from './pages/AdminSpacesPage';
 import TestRolesPage from './pages/TestRolesPage';
 import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
+import AboutUsPage from './pages/AboutUsPage';
+import SportFieldDetailPage from './pages/SportFieldDetailPage';
+import SedeDetailPage from './pages/SedeDetailPage';
+import CheckoutPage from './pages/CheckoutPage';
+import BookingConfirmationPage from './pages/BookingConfirmationPage';
+import MyBookingsPage from './pages/MyBookingsPage';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -62,9 +68,15 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/host" element={<HostSpacePage />} />
           <Route path="/admin-spaces" element={<AdminSpacesPage />} />
+
           <Route path="/test-roles" element={<TestRolesPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/field/:id" element={<SportFieldDetailPage />} />
+          <Route path="/sede/:id" element={<SedeDetailPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
+          <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
-          <Route path="/bookings" element={<div className="p-8 text-center">Mis reservas - Próximamente</div>} />
         </Routes>
       </div>
     </Router>

@@ -1,27 +1,37 @@
-export interface SportField {
+export interface Sede {
   id: string;
+  ownerId: string; // ID del dueño/propietario
   name: string;
   description: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  email: string;
+  policies: string[]; // Políticas de la sede (ej: "No fumar", "Cancelación 24h antes", etc.)
   images: string[];
-  price: number;
-  location: {
-    address: string;
-    city: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
-  sport: SportType;
-  amenities: string[];
-  availability: TimeSlot[];
   rating: number;
   reviews: number;
+  amenities: string[]; // Amenidades generales de la sede
   owner: {
     id: string;
     name: string;
     avatar: string;
   };
+}
+
+export interface SportField {
+  id: string;
+  sedeId: string; // ID de la sede a la que pertenece
+  name: string;
+  description: string;
+  images: string[];
+  price: number;
+  sport: SportType;
+  amenities: string[]; // Amenidades específicas de la cancha
+  availability: TimeSlot[];
+  rating: number;
+  reviews: number;
 }
 
 export interface TimeSlot {

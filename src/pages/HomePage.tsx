@@ -176,8 +176,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleFieldClick = (field: SportField) => {
-    console.log('Selected field:', field);
-    // TODO: Navigate to field details page
+    navigate(`/field/${field.id}`);
   };
 
   const handleSearch = (e: React.FormEvent) => {
