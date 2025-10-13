@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { Search, Menu, User, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '../assets/rogu_logo.png';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   onLoginClick: () => void;
   onSignupClick: () => void;
   onLogout: () => void;
-  isLoggedIn?: boolean;
-  user?: { correo: string; avatar?: string };
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout, isLoggedIn = false, user }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isLoggedIn, isDuenio } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -50,12 +50,14 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout, 
           {/* Right side */}
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
             {/* Host your space link */}
-            <Link
-              to="/host"
-              className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600 transition-colors whitespace-nowrap"
-            >
-              Ofrece tu espacio
-            </Link>
+            {!isDuenio() && (
+              <Link
+                to="/host"
+                className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+              >
+                Ofrece tu espacio
+              </Link>
+            )}
 
             {/* Language selector - hidden on small screens */}
             <button className="hidden sm:block p-2 text-neutral-500 hover:text-neutral-700 transition-colors">
@@ -87,6 +89,18 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout, 
                 <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-white rounded-lg shadow-xl py-2 z-50 border border-neutral-200">
                   {isLoggedIn ? (
                     <>
+                      {/* Información del usuario */}
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {user?.correo}
+                        </p>
+                        {user?.roles && user.roles.length > 0 && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            Roles: {user.roles.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
@@ -101,13 +115,39 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout, 
                       >
                         Mis reservas
                       </Link>
-                      <Link
-                        to="/host"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Ofrece tu espacio
-                      </Link>
+                      
+                      {/* Solo mostrar para dueños y admins */}
+                      {user?.roles && (user.roles.includes('DUENIO') || user.roles.includes('ADMIN')) && (
+                        <Link
+                          to="/admin-spaces"
+                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors font-medium"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Panel de Administración
+                        </Link>
+                      )}
+                      
+                      {/* Solo mostrar para admins */}
+                      {user?.roles && user.roles.includes('ADMIN') && (
+                        <Link
+                          to="/test-roles"
+                          className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Prueba de Roles (Admin)
+                        </Link>
+                      )}
+                      
+                      {/* Solo mostrar "Ofrece tu espacio" si NO es dueño */}
+                      {!isDuenio() && (
+                        <Link
+                          to="/host"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Ofrece tu espacio
+                        </Link>
+                      )}
                       <hr className="my-1" />
                       <button
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"

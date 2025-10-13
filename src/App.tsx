@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
 import HomePage from './pages/HomePage';
 import HostSpacePage from './pages/HostSpacePage';
 import AdminSpacesPage from './pages/AdminSpacesPage';
+import TestRolesPage from './pages/TestRolesPage';
+import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import AboutUsPage from './pages/AboutUsPage';
 import SportFieldDetailPage from './pages/SportFieldDetailPage';
 import SedeDetailPage from './pages/SedeDetailPage';
@@ -12,28 +14,13 @@ import CheckoutPage from './pages/CheckoutPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 
-function App() {
+const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ correo: string; avatar?: string } | undefined>();
-
-  // Verificar si el usuario está logueado al cargar la app
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setUser(undefined);
+    logout();
     // Opcional: recargar página para limpiar estado
     window.location.reload();
   };
@@ -56,9 +43,7 @@ function App() {
     setAuthMode(authMode === 'login' ? 'signup' : 'login');
   };
 
-  const handleLoginSuccess = (userData: { correo: string }) => {
-    setIsLoggedIn(true);
-    setUser(userData);
+  const handleLoginSuccess = (_userData: User) => {
     setIsAuthModalOpen(false);
   };
 
@@ -69,8 +54,6 @@ function App() {
           onLoginClick={handleLoginClick}
           onSignupClick={handleSignupClick}
           onLogout={handleLogout}
-          isLoggedIn={isLoggedIn}
-          user={user}
         />
         
         <AuthModal
@@ -85,6 +68,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/host" element={<HostSpacePage />} />
           <Route path="/admin-spaces" element={<AdminSpacesPage />} />
+
+          <Route path="/test-roles" element={<TestRolesPage />} />
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/field/:id" element={<SportFieldDetailPage />} />
           <Route path="/sede/:id" element={<SedeDetailPage />} />
@@ -95,6 +80,14 @@ function App() {
         </Routes>
       </div>
     </Router>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
