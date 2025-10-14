@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-react';
 import FotoManagement from './FotoManagement';
+import ReservaManagement from './ReservaManagement';
 
 interface Cancha {
   idCancha: number;
@@ -56,6 +57,8 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   const [selectedDisciplinas, setSelectedDisciplinas] = useState<number[]>([]);
   const [showFotoModal, setShowFotoModal] = useState(false);
   const [fotoCancha, setFotoCancha] = useState<Cancha | null>(null);
+  const [showReservas, setShowReservas] = useState(false);
+  const [reservaCancha, setReservaCancha] = useState<Cancha | null>(null);
 
   const [formData, setFormData] = useState<CanchaFormData>({
     nombre: '',
@@ -247,6 +250,11 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     setShowFotoModal(true);
   };
 
+  const openReservaManagement = (cancha: Cancha) => {
+    setReservaCancha(cancha);
+    setShowReservas(true);
+  };
+
   const saveDisciplinas = async () => {
     if (!selectedCancha) return;
 
@@ -300,6 +308,19 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       <div className="flex justify-center items-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
+    );
+  }
+
+  // Si se está mostrando las reservas, renderizar el componente ReservaManagement
+  if (showReservas && reservaCancha) {
+    return (
+      <ReservaManagement
+        cancha={reservaCancha}
+        onBack={() => {
+          setShowReservas(false);
+          setReservaCancha(null);
+        }}
+      />
     );
   }
 
@@ -435,6 +456,13 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
                   >
                     <Camera className="mr-2 h-4 w-4" />
                     Gestionar Fotos
+                  </button>
+                  <button
+                    onClick={() => openReservaManagement(cancha)}
+                    className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Ver Reservas
                   </button>
                 </div>
               </div>
