@@ -20,6 +20,33 @@ export interface Sede {
   };
 }
 
+// Interfaces para los datos de la API
+export interface ApiFoto {
+  idFoto: number;
+  idCancha: number;
+  urlFoto: string;
+}
+
+export interface ApiCancha {
+  idCancha: number;
+  id_Sede: number;
+  nombre: string;
+  superficie: string;
+  cubierta: boolean;
+  aforoMax: number;
+  dimensiones: string;
+  reglasUso: string;
+  iluminacion: string;
+  estado: string;
+  precio: string;
+  creadoEn: string;
+  actualizadoEn: string;
+  eliminadoEn: string | null;
+  parte: any[];
+  fotos: ApiFoto[];
+  reservas: any[];
+}
+
 export interface SportField {
   id: string;
   sedeId: string; // ID de la sede a la que pertenece
@@ -32,6 +59,16 @@ export interface SportField {
   availability: TimeSlot[];
   rating: number;
   reviews: number;
+  location?: {
+    address?: string;
+    city?: string;
+    coordinates?: { lat: number; lng: number };
+  };
+  owner?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
 }
 
 export interface TimeSlot {

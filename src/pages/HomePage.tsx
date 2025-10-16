@@ -1,154 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Clock } from 'lucide-react';
 import SportFieldCard from '../components/SportFieldCard';
 import Filters from '../components/Filters';
 import Footer from '../components/Footer';
-import { getSportFieldImages, generateAvatarUrl } from '../utils/helpers';
+import { fetchCanchas } from '../utils/helpers';
 import type { SportField } from '../types';
 import type { FilterState } from '../components/Filters';
 
-// Mock data for demo
-const mockFields: SportField[] = [
-  {
-    id: '1',
-    name: 'Cancha de Fútbol Premium',
-    description: 'Cancha de césped sintético de alta calidad con iluminación profesional y vestidores completos.',
-    images: getSportFieldImages('football'),
-    price: 150,
-    location: {
-      address: 'Av. Revolución 1234',
-      city: 'Ciudad de México',
-      coordinates: { lat: 19.4326, lng: -99.1332 }
-    },
-    sport: 'football',
-    amenities: ['Estacionamiento', 'Vestidores', 'Duchas', 'Iluminación', 'Arbitro'],
-    availability: [],
-    rating: 4.8,
-    reviews: 127,
-    owner: {
-      id: '1',
-      name: 'Centro Deportivo Elite',
-      avatar: generateAvatarUrl('Centro Deportivo Elite')
-    }
-  },
-  {
-    id: '2',
-    name: 'Cancha de Básquetbol Indoor',
-    description: 'Cancha techada con duela profesional, aire acondicionado y sistema de sonido.',
-    images: getSportFieldImages('basketball'),
-    price: 120,
-    location: {
-      address: 'Calle Deportiva 567',
-      city: 'Guadalajara',
-      coordinates: { lat: 20.6597, lng: -103.3496 }
-    },
-    sport: 'basketball',
-    amenities: ['Estacionamiento', 'Vestidores', 'Duchas', 'Cafetería'],
-    availability: [],
-    rating: 4.6,
-    reviews: 89,
-    owner: {
-      id: '2',
-      name: 'Sports Complex GDL',
-      avatar: generateAvatarUrl('Sports Complex GDL')
-    }
-  },
-  {
-    id: '3',
-    name: 'Cancha de Tenis Clay Court',
-    description: 'Cancha de polvo de ladrillo profesional con gradas para espectadores.',
-    images: getSportFieldImages('tennis'),
-    price: 100,
-    location: {
-      address: 'Club Deportivo 890',
-      city: 'Monterrey',
-      coordinates: { lat: 25.6866, lng: -100.3161 }
-    },
-    sport: 'tennis',
-    amenities: ['Estacionamiento', 'Vestidores', 'Tienda', 'Equipamiento'],
-    availability: [],
-    rating: 4.9,
-    reviews: 156,
-    owner: {
-      id: '3',
-      name: 'Tennis Club MTY',
-      avatar: generateAvatarUrl('Tennis Club MTY')
-    }
-  },
-  {
-    id: '4',
-    name: 'Cancha de Voleibol Playa',
-    description: 'Cancha de arena con vista al mar, perfecta para voleibol de playa.',
-    images: getSportFieldImages('volleyball'),
-    price: 80,
-    location: {
-      address: 'Playa del Carmen',
-      city: 'Quintana Roo',
-      coordinates: { lat: 20.6296, lng: -87.0739 }
-    },
-    sport: 'volleyball',
-    amenities: ['Estacionamiento', 'Duchas', 'Cafetería'],
-    availability: [],
-    rating: 4.7,
-    reviews: 92,
-    owner: {
-      id: '4',
-      name: 'Beach Sports',
-      avatar: generateAvatarUrl('Beach Sports')
-    }
-  },
-  {
-    id: '5',
-    name: 'Cancha de Paddle Moderna',
-    description: 'Cancha de paddle con cristales temperados y césped sintético de última generación.',
-    images: getSportFieldImages('paddle'),
-    price: 90,
-    location: {
-      address: 'Zona Rosa 123',
-      city: 'Ciudad de México',
-      coordinates: { lat: 19.4326, lng: -99.1332 }
-    },
-    sport: 'paddle',
-    amenities: ['Estacionamiento', 'Vestidores', 'Duchas', 'Tienda'],
-    availability: [],
-    rating: 4.5,
-    reviews: 73,
-    owner: {
-      id: '5',
-      name: 'Paddle Club CDMX',
-      avatar: generateAvatarUrl('Paddle Club CDMX')
-    }
-  },
-  {
-    id: '6',
-    name: 'Pista de Hockey sobre Hielo',
-    description: 'Pista profesional de hockey con sistema de refrigeración y gradas.',
-    images: getSportFieldImages('hockey'),
-    price: 200,
-    location: {
-      address: 'Centro Deportivo Norte',
-      city: 'Tijuana',
-      coordinates: { lat: 32.5149, lng: -117.0382 }
-    },
-    sport: 'hockey',
-    amenities: ['Estacionamiento', 'Vestidores', 'Duchas', 'Equipamiento', 'Cafetería'],
-    availability: [],
-    rating: 4.4,
-    reviews: 45,
-    owner: {
-      id: '6',
-      name: 'Ice Hockey TJ',
-      avatar: generateAvatarUrl('Ice Hockey TJ')
-    }
-  },
-];
-
 const HomePage: React.FC = () => {
-  const [filteredFields, setFilteredFields] = useState<SportField[]>(mockFields);
+  const navigate = useNavigate();
+  const [allFields, setAllFields] = useState<SportField[]>([]);
+  const [filteredFields, setFilteredFields] = useState<SportField[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Cargar canchas al montar el componente
+  useEffect(() => {
+    const loadCanchas = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const canchas = await fetchCanchas();
+        setAllFields(canchas);
+        setFilteredFields(canchas);
+      } catch (err) {
+        console.error('Error al cargar canchas:', err);
+        setError('No se pudieron cargar las canchas. Por favor, intenta de nuevo.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCanchas();
+  }, []);
 
   const handleFiltersChange = (filters: FilterState) => {
-    let filtered = [...mockFields];
+    let filtered = [...allFields];
 
     // Filter by sport
     if (filters.sport.length > 0) {
@@ -248,77 +137,102 @@ const HomePage: React.FC = () => {
 
       {/* Listings Section - Like Airbnb main content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Filters and Results Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-          <div className="mb-4 sm:mb-0">
-            <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-1">
-              Espacios deportivos
-            </h2>
-            <p className="text-neutral-600 text-sm sm:text-base">
-              Más de {filteredFields.length} canchas disponibles
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-            <div className="flex-1 sm:flex-none">
-              <Filters onFiltersChange={handleFiltersChange} />
-            </div>
-            <button className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors text-sm sm:text-base min-w-[80px]">
-              <span>Mapa</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Carrusel horizontal - Airbnb style */}
-        <div className="relative group">
-          <div 
-            className="overflow-x-auto scrollbar-hide scroll-smooth"
-            style={{ scrollBehavior: 'smooth' }}
-          >
-            <div className="flex gap-4 sm:gap-6 pb-4 px-1" style={{ width: 'max-content' }}>
-              {filteredFields.map((field) => (
-                <div key={field.id} className="flex-none w-72 sm:w-80 lg:w-72">
-                  <SportFieldCard
-                    field={field}
-                    onClick={handleFieldClick}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Indicador de scroll para móvil */}
-          <div className="flex justify-center mt-2 sm:hidden">
-            <div className="flex space-x-1">
-              {[...Array(Math.ceil(filteredFields.length / 1))].map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 bg-neutral-300 rounded-full"></div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Indicador de scroll para desktop */}
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-neutral-400 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
-            Desliza horizontalmente para ver más →
-          </div>
-        </div>
-
-        {filteredFields.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🏟️</div>
-            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-              No se encontraron canchas
-            </h3>
-            <p className="text-neutral-600">
-              Prueba ajustando tus filtros o busca en otra ubicación
-            </p>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+            <p className="font-medium">Error al cargar canchas</p>
+            <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {/* Load more button */}
-        <div className="text-center mt-12">
-          <button className="bg-neutral-900 text-white px-8 py-3 rounded-lg hover:bg-neutral-800 transition-colors">
-            Mostrar más canchas
-          </button>
-        </div>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-neutral-600">Cargando canchas...</p>
+          </div>
+        ) : (
+          <>
+            {/* Filters and Results Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div className="mb-4 sm:mb-0">
+                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-1">
+                  Espacios deportivos
+                </h2>
+                <p className="text-neutral-600 text-sm sm:text-base">
+                  {filteredFields.length > 0 ? `${filteredFields.length} canchas disponibles` : 'No hay canchas disponibles'}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="flex-1 sm:flex-none">
+                  <Filters onFiltersChange={handleFiltersChange} />
+                </div>
+                <button className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors text-sm sm:text-base min-w-[80px]">
+                  <span>Mapa</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Carrusel horizontal - Airbnb style */}
+            {filteredFields.length > 0 && (
+              <div className="relative group">
+                <div 
+                  className="overflow-x-auto scrollbar-hide scroll-smooth"
+                  style={{ scrollBehavior: 'smooth' }}
+                >
+                  <div className="flex gap-4 sm:gap-6 pb-4 px-1" style={{ width: 'max-content' }}>
+                    {filteredFields.map((field) => (
+                      <div key={field.id} className="flex-none w-72 sm:w-80 lg:w-72">
+                        <SportFieldCard
+                          field={field}
+                          onClick={handleFieldClick}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Indicador de scroll para móvil */}
+                <div className="flex justify-center mt-2 sm:hidden">
+                  <div className="flex space-x-1">
+                    {[...Array(Math.ceil(filteredFields.length / 1))].map((_, i) => (
+                      <div key={i} className="w-1.5 h-1.5 bg-neutral-300 rounded-full"></div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Indicador de scroll para desktop */}
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-neutral-400 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
+                  Desliza horizontalmente para ver más →
+                </div>
+              </div>
+            )}
+
+            {filteredFields.length === 0 && !error && (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">🏟️</div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                  No se encontraron canchas
+                </h3>
+                <p className="text-neutral-600">
+                  {allFields.length === 0 
+                    ? 'No hay canchas disponibles en este momento'
+                    : 'Prueba ajustando tus filtros o busca en otra ubicación'
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Load more button - Solo mostrar si hay canchas */}
+            {filteredFields.length > 0 && (
+              <div className="text-center mt-12">
+                <button className="bg-neutral-900 text-white px-8 py-3 rounded-lg hover:bg-neutral-800 transition-colors">
+                  Mostrar más canchas
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Footer */}
