@@ -5,6 +5,9 @@ import {
   Calendar, Users, Clock, Shield, AlertCircle
 } from 'lucide-react';
 import Footer from '../components/Footer';
+import { createReserva } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
+import type { CreateReservaRequest } from '../types';
 
 interface BookingDetails {
   fieldName: string;
@@ -22,7 +25,14 @@ interface BookingDetails {
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  
   const bookingDetails = location.state?.bookingDetails as BookingDetails;
+  const fieldId = location.state?.fieldId;
+  const selectedDate = location.state?.selectedDate as Date;
+  const selectedTimeSlots = location.state?.selectedTimeSlots as string[];
+  const participants = location.state?.participants;
+  const totalPrice = location.state?.totalPrice;
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'qr' | null>(null);
   const [cardNumber, setCardNumber] = useState('');
@@ -30,6 +40,7 @@ const CheckoutPage: React.FC = () => {
   const [cvv, setCvv] = useState('');
   const [cardName, setCardName] = useState('');
   const [showErrors, setShowErrors] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!bookingDetails) {
     return (
@@ -56,7 +67,7 @@ const CheckoutPage: React.FC = () => {
            cardName.trim().length > 0;
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (paymentMethod === 'card' && !validateCardForm()) {
       setShowErrors(true);
       return;
@@ -67,13 +78,75 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Navegar a la página de confirmación con QR
-    navigate('/booking-confirmation', {
-      state: {
-        bookingDetails,
-        paymentMethod
-      }
-    });
+    // Validar que tengamos todos los datos necesarios
+    if (!user || !fieldId || !selectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
+      alert('Faltan datos para completar la reserva');
+      return;
+    }
+
+    // Validar que el usuario tenga el rol de CLIENTE
+    if (!user.roles?.includes('CLIENTE')) {
+      alert('Debes tener el rol de cliente para hacer reservas');
+      return;
+    }
+
+    // Usar idPersona como idCliente (el backend lo asocia así)
+    const idCliente = user.idPersona;
+
+    if (!idCliente) {
+      alert('No se encontró la información de persona del usuario');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Construir datos de la reserva para cada slot seleccionado
+      // Por ahora tomamos solo el primer slot (puedes mejorar esto para múltiples slots)
+      const firstSlot = selectedTimeSlots[0]; // "09:00 - 10:00"
+      const [startTime, endTime] = firstSlot.split(' - ');
+      
+      // Crear timestamps ISO
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      
+      const iniciaEn = `${year}-${month}-${day}T${startTime}:00`;
+      const terminaEn = `${year}-${month}-${day}T${endTime}:00`;
+
+      const reservaData: CreateReservaRequest = {
+        idCliente: idCliente,
+        idCancha: parseInt(fieldId),
+        iniciaEn: iniciaEn,
+        terminaEn: terminaEn,
+        cantidadPersonas: participants || 1,
+        requiereAprobacion: false,
+        montoBase: totalPrice || 0,
+        montoExtra: 0,
+        montoTotal: totalPrice || 0
+      };
+
+      console.log('📝 Enviando reserva:', reservaData);
+
+      // Crear la reserva en el backend
+      const response = await createReserva(reservaData);
+      
+      console.log('✅ Reserva creada exitosamente:', response);
+
+      // Navegar a la página de confirmación con QR
+      navigate('/booking-confirmation', {
+        state: {
+          bookingDetails,
+          paymentMethod,
+          reservaId: response.reserva.idReserva,
+          reserva: response.reserva
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error al crear reserva:', error);
+      alert(error instanceof Error ? error.message : 'Error al crear la reserva. Por favor intenta de nuevo.');
+      setIsProcessing(false);
+    }
   };
 
   const formatCardNumber = (value: string) => {
@@ -318,9 +391,17 @@ const CheckoutPage: React.FC = () => {
             {/* Submit Button */}
             <button
               onClick={handlePayment}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              disabled={isProcessing}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Confirmar y pagar
+              {isProcessing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Procesando reserva...
+                </span>
+              ) : (
+                'Confirmar y pagar'
+              )}
             </button>
           </div>
 
