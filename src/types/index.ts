@@ -1,3 +1,9 @@
+// Re-exportar todos los tipos desde archivos específicos
+export * from './cancha.types';
+export * from './sede.types';
+export * from './reserva.types';
+
+// Tipos legacy (mantener compatibilidad)
 export interface Sede {
   id: string;
   ownerId: string; // ID del dueño/propietario
@@ -20,7 +26,7 @@ export interface Sede {
   };
 }
 
-// Interfaces para los datos de la API
+// Interfaces para los datos de la API (legacy)
 export interface ApiFoto {
   idFoto: number;
   idCancha: number;

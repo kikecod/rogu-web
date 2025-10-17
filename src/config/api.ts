@@ -3,11 +3,27 @@ export const API_CONFIG = {
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   serverURL: import.meta.env.VITE_SERVER_URL || 'http://localhost:3000', // URL del servidor sin /api
   endpoints: {
+    // Endpoints principales
     canchas: '/cancha',
     sedes: '/sede',
     reservas: '/reserva',
+    
+    // Endpoints relacionados
+    disciplinas: '/disciplina',
+    partes: '/parte',
+    fotos: '/fotos',
+    clientes: '/clientes',
+    usuarios: '/usuarios',
+    auth: '/auth',
+    
+    // Endpoints de gestión
+    denuncia: '/denuncia',
+    calificacion: '/califica_cancha',
+    cancelacion: '/cancelacion',
   },
   timeout: 10000, // 10 segundos
+  retryAttempts: 3, // Número de intentos de reintento
+  retryDelay: 1000, // Delay entre intentos (ms)
 };
 
 // Helper para construir URLs completas de endpoints API

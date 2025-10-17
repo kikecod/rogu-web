@@ -65,6 +65,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
         const reservasConUsuario = await Promise.all(
           reservasData.map(async (reserva: Reserva) => {
             try {
+              console.log('Cargando usuario:', reserva.idCliente);
               const usuarioResponse = await fetch(`http://localhost:3000/api/usuarios/persona/${reserva.idCliente}`, {
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('token')}`

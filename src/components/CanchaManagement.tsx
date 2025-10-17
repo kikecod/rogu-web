@@ -3,39 +3,13 @@ import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-re
 import FotoManagement from './FotoManagement';
 import ReservaManagement from './ReservaManagement';
 
-interface Cancha {
-  idCancha: number;
-  nombre: string;
-  superficie: string;
-  cubierta: boolean;
-  aforoMax: number;
-  dimensiones: string;
-  reglasUso: string;
-  iluminacion: string;
-  estado: string;
-  precio: number;
-  fotos?: any[];
-  parte?: any[];
-}
-
-interface CanchaFormData {
-  nombre: string;
-  superficie: string;
-  cubierta: boolean;
-  aforoMax: number;
-  dimensiones: string;
-  reglasUso: string;
-  iluminacion: string;
-  estado: string;
-  precio: number;
-}
-
-interface Disciplina {
-  idDisciplina: number;
-  nombre: string;
-  categoria: string;
-  descripcion: string;
-}
+// Importar servicios y tipos
+import { canchaService, useErrorHandler } from '../services';
+import type { 
+  Cancha, 
+  CanchaFormData, 
+  Disciplina 
+} from '../types/cancha.types';
 
 interface CanchaManagementProps {
   sede: {
@@ -60,6 +34,9 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   const [showReservas, setShowReservas] = useState(false);
   const [reservaCancha, setReservaCancha] = useState<Cancha | null>(null);
 
+  // Hook para manejo de errores
+  const { handleError } = useErrorHandler();
+
   const [formData, setFormData] = useState<CanchaFormData>({
     nombre: '',
     superficie: '',
@@ -75,60 +52,32 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   // Cargar canchas de la sede
   const loadCanchas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/cancha`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const sedeCanchas = await canchaService.getBySede(sede.idSede);
+      
+      // Para cada cancha, cargar sus partes (disciplinas)
+      for (const cancha of sedeCanchas) {
+        try {
+          const partes = await canchaService.loadPartes(cancha.idCancha);
+          cancha.parte = partes;
+        } catch (error) {
+          console.error(`Error loading partes for cancha ${cancha.idCancha}:`, error);
+          cancha.parte = [];
         }
-      });
-
-      if (response.ok) {
-        const allCanchas = await response.json();
-        const sedeCanchas = allCanchas.filter((cancha: any) => {
-          return cancha.id_Sede === sede.idSede;
-        });
-        
-        // Para cada cancha, cargar sus partes (disciplinas)
-        for (const cancha of sedeCanchas) {
-          try {
-            const parteResponse = await fetch(`http://localhost:3000/api/parte`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-            
-            if (parteResponse.ok) {
-              const allPartes = await parteResponse.json();
-              cancha.parte = allPartes.filter((parte: any) => parte.idCancha === cancha.idCancha);
-            } else {
-              cancha.parte = [];
-            }
-          } catch (error) {
-            cancha.parte = [];
-          }
-        }
-        
-        setCanchas(sedeCanchas);
       }
+      
+      setCanchas(sedeCanchas);
     } catch (error) {
-      console.error('Error loading canchas:', error);
+      handleError(error, 'Error al cargar las canchas');
     }
   };
 
   // Cargar disciplinas disponibles
   const loadDisciplinas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/disciplina`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const allDisciplinas = await response.json();
-        setDisciplinas(allDisciplinas);
-      }
+      const allDisciplinas = await canchaService.getDisciplinas();
+      setDisciplinas(allDisciplinas);
     } catch (error) {
-      console.error('Error loading disciplinas:', error);
+      handleError(error, 'Error al cargar las disciplinas');
     }
   };
 
@@ -157,35 +106,16 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     setSubmitting(true);
 
     try {
-      const url = editingCancha 
-        ? `http://localhost:3000/api/cancha/${editingCancha.idCancha}`
-        : 'http://localhost:3000/api/cancha';
-      
-      const method = editingCancha ? 'PATCH' : 'POST';
-      
-      const payload = editingCancha 
-        ? formData 
-        : { ...formData, idSede: sede.idSede };
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        await loadCanchas();
-        resetForm();
+      if (editingCancha) {
+        await canchaService.update(editingCancha.idCancha, formData);
       } else {
-        const error = await response.json();
-        alert('Error: ' + (error.message || 'Error al guardar la cancha'));
+        await canchaService.create({ ...formData, idSede: sede.idSede });
       }
+      
+      await loadCanchas();
+      resetForm();
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al guardar la cancha');
+      handleError(error, 'Error al guardar la cancha');
     } finally {
       setSubmitting(false);
     }
@@ -211,21 +141,10 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     if (!confirm('¿Estás seguro de que quieres eliminar esta cancha?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/cancha/${idCancha}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        await loadCanchas();
-      } else {
-        alert('Error al eliminar la cancha');
-      }
+      await canchaService.delete(idCancha);
+      await loadCanchas();
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al eliminar la cancha');
+      handleError(error, 'Error al eliminar la cancha');
     }
   };
 
@@ -259,47 +178,12 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     if (!selectedCancha) return;
 
     try {
-      // Eliminar todas las partes existentes de la cancha
-      if (selectedCancha.parte && selectedCancha.parte.length > 0) {
-        for (const parte of selectedCancha.parte) {
-          try {
-            await fetch(`http://localhost:3000/api/parte/${selectedCancha.idCancha}/${parte.idDisciplina}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-          } catch (deleteError) {
-            // Continuar si hay error eliminando
-          }
-        }
-      }
-
-      // Agregar las nuevas disciplinas seleccionadas
-      for (const idDisciplina of selectedDisciplinas) {
-        try {
-          await fetch('http://localhost:3000/api/parte', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-              idCancha: selectedCancha.idCancha,
-              idDisciplina: idDisciplina
-            })
-          });
-        } catch (error) {
-          // Continuar si hay error creando
-        }
-      }
-
+      await canchaService.updateDisciplinas(selectedCancha.idCancha, selectedDisciplinas);
       await loadCanchas();
       setShowDisciplinaModal(false);
       setSelectedCancha(null);
     } catch (error) {
-      console.error('Error saving disciplinas:', error);
-      alert('Error al guardar las disciplinas');
+      handleError(error, 'Error al guardar las disciplinas');
     }
   };
 
