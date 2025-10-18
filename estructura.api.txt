@@ -1,0 +1,242 @@
+DOCUMENTACION API - ESPACIOS DEPORTIVOS
+=======================================
+
+1. Vision general
+-----------------
+- Backend NestJS 11 + TypeORM + PostgreSQL.
+- Prefijo comun `/api`; respuesta envuelta por defecto en `{ "data": ... }` salvo rutas de auth.
+- Formato JSON, codificacion UTF-8. Valores de fecha en ISO 8601 (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+- Archivo `estructa.json` contiene el esquema resumido de tablas, llaves, endpoints y notas.
+
+2. Convenciones y reglas transversales
+-------------------------------------
+- Autenticacion mediante JWT Bearer (`Authorization: Bearer <token>`). Token expira segun `JWT_ACCESS_TTL` (por defecto 15m).
+- `ValidationPipe` global (`whitelist`, `forbidNonWhitelisted`, `transform`):
+  * Solo se aceptan propiedades definidas en DTOs.
+  * Datos primitivos se transforman (string->number/date) cuando el DTO lo especifica.
+- Paginacion: endpoints que devuelven colecciones aceptan `page`, `limit`, `search` (ver `ListQueryDto`).
+- Soft-delete: tablas con campo `eliminadoEn` preservan historico. Existen endpoints `restore` cuando aplica.
+- Numeros monetarios (`precio`, `monto`) se devuelven como string o number segun driver de Postgres; normalizar en frontend.
+
+3. Autenticacion y flujo de sesion
+----------------------------------
+### 3.1 Registro
+`POST /api/auth/register`
+
+```json
+{
+  "correo": "juan@example.com",
+  "contrasena": "Secreta123",
+  "correoVerificado": false,
+  "usuario": "juan",
+  "persona": {
+    "nombres": "Juan",
+    "paterno": "Perez",
+    "materno": "Lopez",
+    "telefono": "700000000",
+    "fechaNacimiento": "1995-01-01",
+    "genero": "MASCULINO"
+  }
+}
+```
+
+Respuesta (200):
+
+```json
+{ "access_token": "<JWT>" }
+```
+
+* Registro crea Persona, Usuario, Cliente y asigna rol CLIENTE.
+
+### 3.2 Login
+`POST /api/auth/login`
+
+```json
+{ "correo": "juan@example.com", "contrasena": "Secreta123" }
+```
+
+Respuesta identica al registro. Tras login se debe guardar token y decodificar `roles` para habilitar UI.
+
+### 3.3 Perfil
+`GET /api/auth/profile` devuelve `{ data: { usuario: {...} } }` con `idUsuario`, `idPersona`, `correo`.
+
+### 3.4 Roles en el token
+- Al decodificar el JWT se obtiene `{ sub, correo, roles }`.
+- Roles posibles: `ADMIN`, `DUENIO`, `CONTROLADOR`, `CLIENTE`.
+- Si un usuario asciende a dueno/controlador, el backend agrega el rol en BD y **se requiere generar un nuevo token** (logout/login o trigger de refresh) para ver el cambio en el JWT.
+
+4. Gestion de roles dinamicos
+-----------------------------
+- `POST /api/duenios/me`: promueve al usuario autenticado a dueno. Internamente crea registro `duenio` y vincula/rehabilita rol `DUENIO` en `usuarios_roles`.
+- `POST /api/controlador/me`: mismo proceso para rol `CONTROLADOR`.
+- `POST /api/duenios` y `POST /api/controlador` (ADMIN) permiten crear registros para otras personas.
+- Tras promoción, reenviar al usuario a login para obtener token con roles `["CLIENTE","DUENIO"]` o `["CLIENTE","CONTROLADOR"]`.
+
+5. Resumen de entidades principales
+-----------------------------------
+Ver detalles en `estructa.json`. Tabla de referencia rapida:
+
+| Entidad (tabla)        | Clave primaria                          | Relaciones clave                                      |
+|------------------------|-----------------------------------------|-------------------------------------------------------|
+| persona (1_persona)    | `idPersona`                             | Base para usuarios/clientes/duenos/controladores      |
+| usuarios (3_usuarios)  | `idUsuario`                             | FK `idPersona` -> persona                             |
+| cliente (4_cliente)    | `idCliente` (FK persona)                | 1:1 persona                                           |
+| duenio (5_duenio)      | `idPersonaD` (FK persona)               | 1:N sedes                                             |
+| controlador (6_controlador) | `idPersonaOpe` (FK persona)        | 1:N trabaja / controla                                 |
+| sede (7_sede)          | `idSede`                                | FK `idPersonaD` -> duenio                             |
+| cancha (8_cancha)      | `idCancha`                              | FK `idSede` -> sede; N:M disciplina (`parte`)         |
+| reserva (13_reserva)   | `idReserva`                             | FK cliente/cancha; relacion con participa/cancelacion |
+| pases_acceso (16)      | `idPaseAcceso`                          | FK `idReserva`                                        |
+| usuarios_roles (12)    | `idUsuario`,`idRol`                     | vinculo M:N                                           |
+
+
+6. Endpoints por dominio
+------------------------
+### 6.1 Personas
+- `GET /api/personas` listar (paginacion opcional).
+- `GET /api/personas/:id` obtener detalle.
+- `POST /api/personas` crear (administrativo).
+- `PATCH /api/personas/:id` actualizar datos.
+- `DELETE /api/personas/:id` soft delete.
+
+### 6.2 Usuarios y Auth
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/profile`.
+- `GET /api/usuarios` (ADMIN) lista con roles aplanados.
+- `GET /api/usuarios/:id`, `POST /api/usuarios`, `PATCH /api/usuarios/:id`, `DELETE /api/usuarios/:id`.
+- Cambios de contraseña: enviar `nuevaContrasena` en body de `PATCH`.
+
+### 6.3 Roles y asignaciones
+- `GET /api/roles`, `POST /api/roles`, `PATCH /api/roles/:id`, `DELETE /api/roles/:id`, `PATCH /api/roles/restore/:id`.
+- `POST /api/usuario-rol` vincula rol a usuario.
+- `DELETE /api/usuario-rol/:idUsuario/:idRol` soft delete (marca `revocadoEn`).
+- `PATCH /api/usuario-rol/restore/:idUsuario/:idRol` reactiva rol.
+
+### 6.4 Clientes
+- Informacion se obtiene via `GET /api/clientes/:idPersona`. Se crea automaticamente en registro.
+
+### 6.5 Duenos
+- `POST /api/duenios/me` (usuario autenticado), `GET /api/duenios/me`, `PATCH /api/duenios/me`.
+- `POST /api/duenios` (ADMIN) permite crear para otra persona (`idPersona` o `persona`).
+- Soft delete/restore no implementado; usar DELETE para remover definitivamente.
+
+### 6.6 Controladores
+- `POST /api/controlador/me`, `GET /api/controlador/me`, `PATCH /api/controlador/me`.
+- Endpoints admin equivalentes a los de duenos.
+- Para asociar controlador a sede se usa `/api/trabaja` (ver 6.11).
+
+### 6.7 Sedes
+- `GET /api/sede` soporta `search`, `page`, `limit`.
+- `POST /api/sede` requiere rol DUENIO o ADMIN y verifica que `idPersonaD` pertenezca al usuario.
+- `PATCH /api/sede/:id`, `DELETE /api/sede/:id`, `PATCH /api/sede/restore/:id`.
+
+### 6.8 Canchas
+- `GET /api/cancha` lista global o filtrada por sede (`?idSede=` en servicio).
+- `POST /api/cancha` requiere rol DUENIO/Admin (guard `DuenioOwnerGuard`).
+- `PATCH /api/cancha/:id`, `DELETE /api/cancha/:id`.
+- Fotos asociadas: ver 6.9; disciplinas: ver 6.10.
+
+### 6.9 Fotos
+- `POST /api/fotos` (multipart) -> guarda archivo en `/uploads` y registro en BD.
+- `GET /api/fotos?cancha=:id` lista URLs.
+- `DELETE /api/fotos/:id` elimina registro y archivo.
+
+### 6.10 Disciplinas / Parte
+- `GET /api/disciplina` CRUD completo.
+- `POST /api/parte` asigna disciplina a cancha `{ idDisciplina, idCancha }`.
+- `DELETE /api/parte/:idDisciplina/:idCancha` quita relacion.
+
+### 6.11 Trabaja (controladores en sedes)
+- `GET /api/trabaja` lista asignaciones.
+- `POST /api/trabaja` requiere `{ idPersonaOpe, idSede, fechaInicio, fechaFin? }`.
+- `DELETE /api/trabaja/:idPersonaOpe/:idSede` desasigna.
+
+### 6.12 Reservas y acompanantes
+- `POST /api/reservas` crea reserva (cliente). Campos obligatorios: `idCliente`, `idCancha`, `iniciaEn`, `terminaEn`, `cantidadPersonas`, `montoBase`, `montoExtra`, `montoTotal`.
+- `GET /api/reservas` y `GET /api/reservas/:id` devuelven datos con relaciones (segun servicio).
+- `PATCH /api/reservas/:id` actualiza montos/fechas/estado.
+- `DELETE /api/reservas/:id` elimina (soft delete).
+- Participantes: `POST /api/participa`, `PATCH /api/participa/:idReserva/:idCliente`, `DELETE /api/participa/:idReserva/:idCliente`.
+- Cancelaciones: `POST /api/cancelacion` con `idReserva`, `motivo`, `canal`; `GET /api/cancelacion` historial.
+
+### 6.13 Pagos y pases de acceso
+- `POST /api/transacciones` registra pago (pasarela, metodo, monto, estado, etc.).
+- `GET /api/transacciones` / `:id` para historico.
+- `POST /api/pases-acceso` genera pase para reserva. Usa `hashCode` (QR) y vigencia.
+- `GET /api/pases-acceso?reserva=:id`, `PATCH /api/pases-acceso/:id`, `DELETE /api/pases-acceso/:id`.
+- `POST /api/controla` registra accion de un controlador sobre un pase (check-in, rechazo). Cada registro incluye `accion`, `resultado`, `fecha`.
+
+### 6.14 Calificaciones y denuncias
+- `POST /api/califica` crea o actualiza calificacion (usar `PATCH` para edicion).
+- `GET /api/califica?cancha=:id` para promedio/feedback.
+- `POST /api/denuncia` levanta reporte. `estado` puede cambiar con `PATCH` (p.ej. `RESUELTA`).
+
+7. Workflows clave
+-------------------
+### 7.1 Onboarding de dueno
+1. Usuario se registra (rol CLIENTE).
+2. Accede a `POST /api/duenios/me` -> backend crea registro y asigna rol DUENIO.
+3. Usuario vuelve a iniciar sesion para obtener token con rol.
+4. Con rol DUENIO: crea sedes (`POST /api/sede`) y canchas (`POST /api/cancha`).
+5. Puede administrar fotos, disciplinas y staff (`trabaja`).
+
+### 7.2 Onboarding de controlador
+1. Usuario existente o creado por admin.
+2. `POST /api/controlador/me` -> asigna rol CONTROLADOR.
+3. Admin/dueno asigna controlador a una sede con `POST /api/trabaja` (define turno via `turno` en controlador y `fechaInicio/Fin`).
+4. Controlador puede registrar accesos con `POST /api/controla` usando pases generados para las reservas.
+
+### 7.3 Ciclo de reserva
+1. Cliente crea reserva (`POST /api/reservas`).
+2. Backend puede generar pases (`POST /api/pases-acceso`) e iniciar transaccion (`POST /api/transacciones`).
+3. Participantes adicionales se agregan con `POST /api/participa`.
+4. En la sede, controlador valida pase (`POST /api/controla`).
+5. Cancelacion se registra con `POST /api/cancelacion`; pagos se actualizan (`PATCH /api/transacciones/:id`).
+
+8. Manejo de errores
+--------------------
+- Estructura general:
+
+```json
+{
+  "statusCode": 400,
+  "message": ["telefono must be a string"],
+  "error": "Bad Request"
+}
+```
+
+- Casos comunes:
+  * 400 `BadRequestException`: validacion de DTO o reglas de negocio (documento duplicado, pase vencido).
+  * 401 `UnauthorizedException`: token invalido/ausente.
+  * 403 `ForbiddenException`: guardias de rol/propiedad.
+  * 404 `NotFoundException`: recurso inexistente.
+  * 409 `ConflictException`: intento de duplicar usuario o asignacion.
+
+9. Seed y entorno
+-----------------
+- `npm run db:seed-admin` crea/actualiza admin idempotente.
+- El script sincroniza schema (`DataSource.synchronize()`) si `NODE_ENV !== 'production'`.
+- Crea persona/usuario admin, asegura rol ADMIN y contrasena `Admin123` con correo `admin@example.com`.
+
+10. Checklist para frontend
+---------------------------
+- Decodificar JWT en cada login para habilitar menus segun `roles`.
+- Tras promover a dueno/controlador, forzar reinicio de sesion para obtener token actualizado.
+- En formulios, cumplir DTOs: formatos (telefono string), enums (`genero`, `estado`), fechas ISO string.
+- Manejar soft delete: usar endpoints `restore` cuando existan.
+- Normalizar valores monetarios a numero decimal en cliente.
+- Al crear sedes/canchas desde UI, omitir `idPersonaD` e `idSede` en body si el backend los infiere desde guardias; de ser requerido, usar valores disponibles tras `GET /api/duenios/me`.
+- Implementar manejo de errores del backend y mostrar mensajes del `message` (string o array) retornado.
+
+11. Referencias rapidas
+-----------------------
+- Esquema detallado, llaves y endpoints: `estructa.json`.
+- Guardias de seguridad clave:
+  * `JwtAuthGuard` + `RolesGuard`: protege rutas con roles.
+  * `DuenioOwnerGuard`: valida que el dueno autenticado sea propietario de la sede/cancha.
+- Servicios importantes:
+  * `PersonasService`: valida unicidad de documento.
+  * `UsuariosService`: gestiona hash y bloqueo por intentos fallidos.
+  * `RedisService`: trackea actividad para expiracion de sesion.
+
+Fin del documento.
+
