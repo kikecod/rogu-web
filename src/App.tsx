@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import AuthModal from './components/AuthModal';
-import HomePage from './pages/HomePage';
-import HostSpacePage from './pages/HostSpacePage';
-import AdminSpacesPage from './pages/AdminSpacesPage';
-import TestRolesPage from './pages/TestRolesPage';
-import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
-import AboutUsPage from './pages/AboutUsPage';
-import SportFieldDetailPage from './pages/SportFieldDetailPage';
-import SedeDetailPage from './pages/SedeDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
-import BookingConfirmationPage from './pages/BookingConfirmationPage';
-import MyBookingsPage from './pages/MyBookingsPage';
+import Header from './shared/components/layout/Header';
+import AuthModal from './features/auth/components/AuthModal';
+import HomePage from './app/publico/pages/HomePage';
+import HostSpacePage from './app/duenio/pages/HostSpacePage';
+import AdminSpacesPage from './app/admin/pages/AdminSpacesPage';
+import TestRolesPage from './app/admin/pages/TestRolesPage';
+import { AuthProvider, useAuth, type User } from './features/auth/context/AuthContext';
+import AboutUsPage from './app/publico/pages/AboutUsPage';
+import SportFieldDetailPage from './app/publico/pages/SportFieldDetailPage';
+import SedeDetailPage from './app/publico/pages/SedeDetailPage';
+import CheckoutPage from './app/cliente/pages/CheckoutPage';
+import BookingConfirmationPage from './app/cliente/pages/BookingConfirmationPage';
+import MyBookingsPage from './app/cliente/pages/MyBookingsPage';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);

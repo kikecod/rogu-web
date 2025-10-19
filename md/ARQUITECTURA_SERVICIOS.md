@@ -124,7 +124,7 @@ Ejemplo para un nuevo servicio de usuarios:
 ```typescript
 // types/usuario.types.ts
 export interface Usuario {
-  idUsuario: number;
+  id_usuario: number;
   nombre: string;
   email: string;
 }

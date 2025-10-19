@@ -29,15 +29,15 @@ http://localhost:3000/api/reservas
 
 ```json
 {
-  "idCliente": 5,
-  "idCancha": 4,
-  "iniciaEn": "2025-10-20T09:00:00",
-  "terminaEn": "2025-10-20T10:00:00",
-  "cantidadPersonas": 8,
-  "requiereAprobacion": false,
-  "montoBase": 45.00,
-  "montoExtra": 0.00,
-  "montoTotal": 45.00
+  "id_cliente": 5,
+  "id_cancha": 4,
+  "inicia_en": "2025-10-20T09:00:00",
+  "termina_en": "2025-10-20T10:00:00",
+  "cantidad_personas": 8,
+  "requiere_aprobacion": false,
+  "monto_base": 45.00,
+  "monto_extra": 0.00,
+  "monto_total": 45.00
 }
 ```
 
@@ -45,15 +45,15 @@ http://localhost:3000/api/reservas
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `idCliente` | `number` | ID del usuario autenticado (`user.idUsuario`) | `5` |
-| `idCancha` | `number` | ID de la cancha a reservar | `4` |
-| `iniciaEn` | `string` | Fecha/hora inicio (ISO 8601) | `"2025-10-20T09:00:00"` |
-| `terminaEn` | `string` | Fecha/hora fin (ISO 8601) | `"2025-10-20T10:00:00"` |
-| `cantidadPersonas` | `number` | Número de participantes | `8` |
-| `requiereAprobacion` | `boolean` | Si requiere aprobación del dueño | `false` |
-| `montoBase` | `number` | Precio base de la reserva | `45.00` |
-| `montoExtra` | `number` | Cargos adicionales | `0.00` |
-| `montoTotal` | `number` | Total = montoBase + montoExtra | `45.00` |
+| `id_cliente` | `number` | ID del usuario autenticado (`user.id_usuario`) | `5` |
+| `id_cancha` | `number` | ID de la cancha a reservar | `4` |
+| `inicia_en` | `string` | Fecha/hora inicio (ISO 8601) | `"2025-10-20T09:00:00"` |
+| `termina_en` | `string` | Fecha/hora fin (ISO 8601) | `"2025-10-20T10:00:00"` |
+| `cantidad_personas` | `number` | Número de participantes | `8` |
+| `requiere_aprobacion` | `boolean` | Si requiere aprobación del dueño | `false` |
+| `monto_base` | `number` | Precio base de la reserva | `45.00` |
+| `monto_extra` | `number` | Cargos adicionales | `0.00` |
+| `monto_total` | `number` | Total = monto_base + monto_extra | `45.00` |
 
 ---
 
@@ -65,18 +65,18 @@ http://localhost:3000/api/reservas
 {
   "message": "Reserva creada exitosamente",
   "reserva": {
-    "idReserva": 123,
-    "idCliente": 5,
-    "idCancha": 4,
-    "iniciaEn": "2025-10-20T09:00:00.000Z",
-    "terminaEn": "2025-10-20T10:00:00.000Z",
-    "cantidadPersonas": 8,
-    "requiereAprobacion": false,
-    "montoBase": "45.00",
-    "montoExtra": "0.00",
-    "montoTotal": "45.00",
-    "creadoEn": "2025-10-16T15:30:45.123Z",
-    "actualizadoEn": "2025-10-16T15:30:45.123Z"
+    "id_reserva": 123,
+    "id_cliente": 5,
+    "id_cancha": 4,
+    "inicia_en": "2025-10-20T09:00:00.000Z",
+    "termina_en": "2025-10-20T10:00:00.000Z",
+    "cantidad_personas": 8,
+    "requiere_aprobacion": false,
+    "monto_base": "45.00",
+    "monto_extra": "0.00",
+    "monto_total": "45.00",
+    "creado_en": "2025-10-16T15:30:45.123Z",
+    "actualizado_en": "2025-10-16T15:30:45.123Z"
   }
 }
 ```
@@ -101,7 +101,7 @@ http://localhost:3000/api/reservas
 ```json
 {
   "error": "Datos de reserva inválidos",
-  "detalles": ["El campo 'iniciaEn' es requerido"]
+  "detalles": ["El campo 'inicia_en' es requerido"]
 }
 ```
 
@@ -115,32 +115,32 @@ Agregados tipos TypeScript:
 
 ```typescript
 export interface CreateReservaRequest {
-  idCliente: number;
-  idCancha: number;
-  iniciaEn: string;
-  terminaEn: string;
-  cantidadPersonas: number;
-  requiereAprobacion: boolean;
-  montoBase: number;
-  montoExtra: number;
-  montoTotal: number;
+  id_cliente: number;
+  id_cancha: number;
+  inicia_en: string;
+  termina_en: string;
+  cantidad_personas: number;
+  requiere_aprobacion: boolean;
+  monto_base: number;
+  monto_extra: number;
+  monto_total: number;
 }
 
 export interface CreateReservaResponse {
   message: string;
   reserva: {
-    idReserva: number;
-    idCliente: number;
-    idCancha: number;
-    iniciaEn: string;
-    terminaEn: string;
-    cantidadPersonas: number;
-    requiereAprobacion: boolean;
-    montoBase: string;
-    montoExtra: string;
-    montoTotal: string;
-    creadoEn: string;
-    actualizadoEn: string;
+    id_reserva: number;
+    id_cliente: number;
+    id_cancha: number;
+    inicia_en: string;
+    termina_en: string;
+    cantidad_personas: number;
+    requiere_aprobacion: boolean;
+    monto_base: string;
+    monto_extra: string;
+    monto_total: string;
+    creado_en: string;
+    actualizado_en: string;
   };
 }
 ```
@@ -260,20 +260,20 @@ const handlePayment = async () => {
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const day = String(selectedDate.getDate()).padStart(2, '0');
     
-    const iniciaEn = `${year}-${month}-${day}T${startTime}:00`;
-    const terminaEn = `${year}-${month}-${day}T${endTime}:00`;
+    const inicia_en = `${year}-${month}-${day}T${startTime}:00`;
+    const termina_en = `${year}-${month}-${day}T${endTime}:00`;
 
     // Construir request
     const reservaData: CreateReservaRequest = {
-      idCliente: user.idUsuario,
-      idCancha: parseInt(fieldId),
-      iniciaEn: iniciaEn,
-      terminaEn: terminaEn,
-      cantidadPersonas: participants || 1,
-      requiereAprobacion: false,
-      montoBase: totalPrice || 0,
-      montoExtra: 0,
-      montoTotal: totalPrice || 0
+      id_cliente: user.id_usuario,
+      id_cancha: parseInt(fieldId),
+      inicia_en: inicia_en,
+      termina_en: termina_en,
+      cantidad_personas: participants || 1,
+      requiere_aprobacion: false,
+      monto_base: totalPrice || 0,
+      monto_extra: 0,
+      monto_total: totalPrice || 0
     };
 
     // Crear reserva en el backend
@@ -284,7 +284,7 @@ const handlePayment = async () => {
       state: {
         bookingDetails,
         paymentMethod,
-        reservaId: response.reserva.idReserva,
+        reservaId: response.reserva.id_reserva,
         reserva: response.reserva
       }
     });
@@ -344,15 +344,15 @@ if (!isLoggedIn || !user) {
 ### **Paso 5: Construcción del JSON**
 ```typescript
 const reservaData: CreateReservaRequest = {
-  idCliente: user.idUsuario,        // Del AuthContext
-  idCancha: parseInt(fieldId),      // Del state
-  iniciaEn: "2025-10-20T09:00:00", // Construido
-  terminaEn: "2025-10-20T10:00:00", // Construido
-  cantidadPersonas: participants,   // Del state
-  requiereAprobacion: false,
-  montoBase: totalPrice,
-  montoExtra: 0,
-  montoTotal: totalPrice
+  id_cliente: user.id_usuario,        // Del AuthContext
+  id_cancha: parseInt(fieldId),      // Del state
+  inicia_en: "2025-10-20T09:00:00", // Construido
+  termina_en: "2025-10-20T10:00:00", // Construido
+  cantidad_personas: participants,   // Del state
+  requiere_aprobacion: false,
+  monto_base: totalPrice,
+  monto_extra: 0,
+  monto_total: totalPrice
 };
 ```
 
@@ -375,7 +375,7 @@ Content-Type: application/json
 {
   "message": "Reserva creada exitosamente",
   "reserva": {
-    "idReserva": 123,
+    "id_reserva": 123,
     ...
   }
 }
@@ -387,7 +387,7 @@ navigate('/booking-confirmation', {
   state: {
     bookingDetails,
     paymentMethod,
-    reservaId: response.reserva.idReserva,
+    reservaId: response.reserva.id_reserva,
     reserva: response.reserva
   }
 });
@@ -420,15 +420,15 @@ fetch('http://localhost:3000/api/reservas', {
     'Authorization': `Bearer ${token}`
   },
   body: JSON.stringify({
-    idCliente: 5,
-    idCancha: 4,
-    iniciaEn: "2025-10-20T09:00:00",
-    terminaEn: "2025-10-20T10:00:00",
-    cantidadPersonas: 8,
-    requiereAprobacion: false,
-    montoBase: 45.00,
-    montoExtra: 0.00,
-    montoTotal: 45.00
+    id_cliente: 5,
+    id_cancha: 4,
+    inicia_en: "2025-10-20T09:00:00",
+    termina_en: "2025-10-20T10:00:00",
+    cantidad_personas: 8,
+    requiere_aprobacion: false,
+    monto_base: 45.00,
+    monto_extra: 0.00,
+    monto_total: 45.00
   })
 })
   .then(res => res.json())
@@ -492,7 +492,7 @@ console.log('✅ Reserva creada:', response);
 
 1. **Reservas Múltiples:** Soportar múltiples slots en una sola reserva
 2. **Validación de Disponibilidad:** Verificar disponibilidad antes de enviar
-3. **Manejo de Extras:** Agregar equipos, servicios adicionales (montoExtra)
+3. **Manejo de Extras:** Agregar equipos, servicios adicionales (monto_extra)
 4. **Confirmación por Email:** Enviar email con QR al usuario
 5. **Historial de Reservas:** Página "Mis Reservas" consumiendo `/api/reservas/usuario/:id`
 6. **Cancelación de Reservas:** Endpoint `DELETE /api/reservas/:id`

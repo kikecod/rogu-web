@@ -11,9 +11,9 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  Backend devuelve lista de canchas:                             │
 │  [                                                               │
-│    { idCancha: 1, nombre: "Wally 1", ... },                    │
-│    { idCancha: 2, nombre: "Cancha B", ... },                   │
-│    { idCancha: 4, nombre: "Cancha Central", ... },             │
+│    { id_cancha: 1, nombre: "Wally 1", ... },                    │
+│    { id_cancha: 2, nombre: "Cancha B", ... },                   │
+│    { id_cancha: 4, nombre: "Cancha Central", ... },             │
 │  ]                                                               │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -209,5 +209,5 @@ Usuario en /field/999
    ```
    Deberías ver:
    🔍 Cargando cancha con ID: {ID_DINÁMICO}
-   ✅ Cancha obtenida: { idCancha: {ID_DINÁMICO}, ... }
+   ✅ Cancha obtenida: { id_cancha: {ID_DINÁMICO}, ... }
    ```

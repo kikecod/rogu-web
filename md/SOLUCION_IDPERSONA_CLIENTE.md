@@ -1,8 +1,8 @@
-# ✅ CORRECCIÓN FINAL: idPersona como idCliente
+# ✅ CORRECCIÓN FINAL: id_persona como id_cliente
 
 ## 🎯 Solución Aplicada
 
-El backend está configurado para usar el **`idPersona`** como identificador del cliente en las reservas.
+El backend está configurado para usar el **`id_persona`** como identificador del cliente en las reservas.
 
 ---
 
@@ -10,12 +10,12 @@ El backend está configurado para usar el **`idPersona`** como identificador del
 
 ### Antes (❌ Incorrecto):
 ```typescript
-const idCliente = user.idCliente || user.idUsuario;
+const id_cliente = user.id_cliente || user.id_usuario;
 ```
 
 ### Ahora (✅ Correcto):
 ```typescript
-const idCliente = user.idPersona;
+const id_cliente = user.id_persona;
 ```
 
 ---
@@ -31,10 +31,10 @@ if (!user.roles?.includes('CLIENTE')) {
   return;
 }
 
-// Usar idPersona como idCliente (el backend lo asocia así)
-const idCliente = user.idPersona;
+// Usar id_persona como id_cliente (el backend lo asocia así)
+const id_cliente = user.id_persona;
 
-if (!idCliente) {
+if (!id_cliente) {
   alert('No se encontró la información de persona del usuario');
   return;
 }
@@ -48,15 +48,15 @@ setIsProcessing(true);
 
 ```json
 {
-  "idCliente": 2,           // ← Ahora usa user.idPersona
-  "idCancha": 5,
-  "iniciaEn": "2025-10-16T17:00:00",
-  "terminaEn": "2025-10-16T18:00:00",
-  "cantidadPersonas": 10,
-  "requiereAprobacion": false,
-  "montoBase": 45.00,
-  "montoExtra": 0.00,
-  "montoTotal": 45.00
+  "id_cliente": 2,           // ← Ahora usa user.id_persona
+  "id_cancha": 5,
+  "inicia_en": "2025-10-16T17:00:00",
+  "termina_en": "2025-10-16T18:00:00",
+  "cantidad_personas": 10,
+  "requiere_aprobacion": false,
+  "monto_base": 45.00,
+  "monto_extra": 0.00,
+  "monto_total": 45.00
 }
 ```
 
@@ -68,8 +68,8 @@ setIsProcessing(true);
 export interface User {
   correo: string;
   usuario: string;
-  idPersona: number;    // ← Este se usa como idCliente
-  idUsuario: number;
+  id_persona: number;    // ← Este se usa como id_cliente
+  id_usuario: number;
   roles: string[];
   avatar?: string;
 }
@@ -79,13 +79,13 @@ export interface User {
 
 ## ✅ Verificación
 
-Para verificar que tienes el `idPersona` correcto:
+Para verificar que tienes el `id_persona` correcto:
 
 ```javascript
 // En la consola del navegador (F12)
 const user = JSON.parse(localStorage.getItem('user'));
-console.log('idPersona:', user.idPersona);
-console.log('idUsuario:', user.idUsuario);
+console.log('id_persona:', user.id_persona);
+console.log('id_usuario:', user.id_usuario);
 ```
 
 **Ejemplo de salida:**
@@ -93,8 +93,8 @@ console.log('idUsuario:', user.idUsuario);
 {
   correo: "usuario@ejemplo.com",
   usuario: "usuario123",
-  idPersona: 2,       // ← Este valor se usa como idCliente
-  idUsuario: 3,
+  id_persona: 2,       // ← Este valor se usa como id_cliente
+  id_usuario: 3,
   roles: ["CLIENTE"]
 }
 ```
@@ -104,12 +104,12 @@ console.log('idUsuario:', user.idUsuario);
 ## 🎯 Flujo Completo
 
 1. Usuario inicia sesión
-2. Backend devuelve `user` con `idPersona: 2`
+2. Backend devuelve `user` con `id_persona: 2`
 3. Frontend guarda en localStorage
 4. Usuario hace una reserva
-5. Frontend usa `user.idPersona` como `idCliente`
-6. Se envía: `{ idCliente: 2, ... }`
-7. Backend busca en tabla `Cliente` con `idPersonaC = 2`
+5. Frontend usa `user.id_persona` como `id_cliente`
+6. Se envía: `{ id_cliente: 2, ... }`
+7. Backend busca en tabla `Cliente` con `id_personaC = 2`
 8. ✅ Reserva creada exitosamente
 
 ---
@@ -117,38 +117,38 @@ console.log('idUsuario:', user.idUsuario);
 ## 📊 Relación de Tablas en el Backend
 
 ```
-Usuario (idUsuario)
+Usuario (id_usuario)
     ↓
-Persona (idPersona)
+Persona (id_persona)
     ↓
-Cliente (idCliente, idPersonaC = idPersona)
+Cliente (id_cliente, id_personaC = id_persona)
     ↓
-Reserva (idReserva, idCliente)
+Reserva (id_reserva, id_cliente)
 ```
 
 **Campos clave:**
-- `Usuario.idPersona` → `Persona.idPersona`
-- `Cliente.idPersonaC` → `Persona.idPersona`
-- `Reserva.idCliente` → `Cliente.idCliente`
+- `Usuario.id_persona` → `Persona.id_persona`
+- `Cliente.id_personaC` → `Persona.id_persona`
+- `Reserva.id_cliente` → `Cliente.id_cliente`
 
 ---
 
 ## 🧪 Prueba
 
-1. **Verificar tu idPersona:**
+1. **Verificar tu id_persona:**
    ```javascript
-   console.log(JSON.parse(localStorage.getItem('user')).idPersona);
+   console.log(JSON.parse(localStorage.getItem('user')).id_persona);
    ```
 
 2. **Verificar que existe en Cliente:**
    ```sql
-   SELECT * FROM Cliente WHERE idPersonaC = 2; -- Reemplaza 2 con tu idPersona
+   SELECT * FROM Cliente WHERE id_personaC = 2; -- Reemplaza 2 con tu id_persona
    ```
 
 3. **Si no existe, créalo:**
    ```sql
-   INSERT INTO Cliente (idPersonaC, creadoEn, actualizadoEn) 
-   VALUES (2, NOW(), NOW()); -- Reemplaza 2 con tu idPersona
+   INSERT INTO Cliente (id_personaC, creado_en, actualizado_en) 
+   VALUES (2, NOW(), NOW()); -- Reemplaza 2 con tu id_persona
    ```
 
 4. **Hacer una reserva desde el frontend**
@@ -160,24 +160,24 @@ Reserva (idReserva, idCliente)
 - ✅ No requiere cambios en el backend
 - ✅ Usa la estructura existente de relaciones
 - ✅ Simplifica el código del frontend
-- ✅ Validación clara de idPersona
+- ✅ Validación clara de id_persona
 - ✅ Mensaje de error específico si falta
 
 ---
 
 ## 🎉 Resultado
 
-Ahora las reservas funcionarán correctamente usando el `idPersona` del usuario autenticado como identificador del cliente.
+Ahora las reservas funcionarán correctamente usando el `id_persona` del usuario autenticado como identificador del cliente.
 
 ```
 POST http://localhost:3000/api/reservas
 Authorization: Bearer {token}
 
 {
-  "idCliente": 2,  // user.idPersona
-  "idCancha": 5,
-  "iniciaEn": "2025-10-16T17:00:00",
-  "terminaEn": "2025-10-16T18:00:00",
+  "id_cliente": 2,  // user.id_persona
+  "id_cancha": 5,
+  "inicia_en": "2025-10-16T17:00:00",
+  "termina_en": "2025-10-16T18:00:00",
   ...
 }
 ```
@@ -189,4 +189,4 @@ Authorization: Bearer {token}
 
 **Última actualización:** 16 de octubre de 2025  
 **Estado:** 🟢 SOLUCIONADO  
-**Cambio:** `idCliente = user.idPersona`
+**Cambio:** `id_cliente = user.id_persona`

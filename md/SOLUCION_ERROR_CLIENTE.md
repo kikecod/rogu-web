@@ -17,7 +17,7 @@ Error: Cliente no encontrado
 
 2. ⚠️ **Cliente no existe en la base de datos**
    - El backend espera un registro en la tabla `Cliente`
-   - Enviamos `idCliente: 3` pero no existe en la BD
+   - Enviamos `id_cliente: 3` pero no existe en la BD
 
 ---
 
@@ -33,30 +33,30 @@ Error: Cliente no encontrado
 // Después de crear el usuario con rol CLIENTE
 if (usuario.roles.includes('CLIENTE')) {
   await Cliente.create({
-    idUsuarioC: usuario.idUsuario,
+    id_usuarioC: usuario.id_usuario,
     // otros campos si son necesarios
   });
 }
 ```
 
-### Solución 2: Endpoint para obtener idCliente
+### Solución 2: Endpoint para obtener id_cliente
 
-**Backend:** Crear un endpoint que devuelva el `idCliente` basado en el `idUsuario`:
+**Backend:** Crear un endpoint que devuelva el `id_cliente` basado en el `id_usuario`:
 
 ```javascript
-// GET /api/clientes/usuario/:idUsuario
-router.get('/clientes/usuario/:idUsuario', async (req, res) => {
-  const { idUsuario } = req.params;
+// GET /api/clientes/usuario/:id_usuario
+router.get('/clientes/usuario/:id_usuario', async (req, res) => {
+  const { id_usuario } = req.params;
   
   const cliente = await Cliente.findOne({
-    where: { idUsuarioC: idUsuario }
+    where: { id_usuarioC: id_usuario }
   });
   
   if (!cliente) {
     return res.status(404).json({ error: 'Cliente no encontrado' });
   }
   
-  res.json({ idCliente: cliente.idCliente });
+  res.json({ id_cliente: cliente.id_cliente });
 });
 ```
 
@@ -66,7 +66,7 @@ router.get('/clientes/usuario/:idUsuario', async (req, res) => {
 // En AuthContext.tsx después del login exitoso
 if (user.roles.includes('CLIENTE')) {
   const clienteResponse = await fetch(
-    `http://localhost:3000/api/clientes/usuario/${user.idUsuario}`,
+    `http://localhost:3000/api/clientes/usuario/${user.id_usuario}`,
     {
       headers: { 'Authorization': `Bearer ${token}` }
     }
@@ -74,46 +74,46 @@ if (user.roles.includes('CLIENTE')) {
   
   if (clienteResponse.ok) {
     const clienteData = await clienteResponse.json();
-    user.idCliente = clienteData.idCliente;
+    user.id_cliente = clienteData.id_cliente;
   }
 }
 ```
 
 ### Solución 3: Modificar el endpoint de login
 
-**Backend:** El endpoint `/api/auth/login` debe devolver el `idCliente` si existe:
+**Backend:** El endpoint `/api/auth/login` debe devolver el `id_cliente` si existe:
 
 ```javascript
 // En auth.controller.js
 
 const loginResult = {
   usuario: {
-    idUsuario: usuario.idUsuario,
+    id_usuario: usuario.id_usuario,
     correo: usuario.correo,
     usuario: usuario.usuario,
-    idPersona: usuario.idPersona,
+    id_persona: usuario.id_persona,
     roles: usuario.roles,
-    idCliente: null,  // ← AGREGAR ESTO
+    id_cliente: null,  // ← AGREGAR ESTO
     idDuenio: null    // ← AGREGAR ESTO
   },
   token: token
 };
 
-// Si tiene rol CLIENTE, buscar el idCliente
+// Si tiene rol CLIENTE, buscar el id_cliente
 if (usuario.roles.includes('CLIENTE')) {
   const cliente = await Cliente.findOne({
-    where: { idUsuarioC: usuario.idUsuario }
+    where: { id_usuarioC: usuario.id_usuario }
   });
   
   if (cliente) {
-    loginResult.usuario.idCliente = cliente.idCliente;
+    loginResult.usuario.id_cliente = cliente.id_cliente;
   }
 }
 
 // Si tiene rol DUENIO, buscar el idDuenio
 if (usuario.roles.includes('DUENIO')) {
   const duenio = await Duenio.findOne({
-    where: { idUsuarioD: usuario.idUsuario }
+    where: { id_usuarioD: usuario.id_usuario }
   });
   
   if (duenio) {
@@ -128,24 +128,24 @@ res.json(loginResult);
 
 **SQL:**
 ```sql
--- Verificar tu idUsuario actual
+-- Verificar tu id_usuario actual
 SELECT * FROM Usuario WHERE correo = 'tu_correo@ejemplo.com';
--- Supongamos que tu idUsuario es 3
+-- Supongamos que tu id_usuario es 3
 
 -- Crear un registro de Cliente
-INSERT INTO Cliente (idUsuarioC, creadoEn, actualizadoEn) 
+INSERT INTO Cliente (id_usuarioC, creado_en, actualizado_en) 
 VALUES (3, NOW(), NOW());
 
 -- Verificar que se creó
-SELECT * FROM Cliente WHERE idUsuarioC = 3;
--- Esto te dará el idCliente (por ejemplo: 1)
+SELECT * FROM Cliente WHERE id_usuarioC = 3;
+-- Esto te dará el id_cliente (por ejemplo: 1)
 ```
 
 **Luego actualizar manualmente el localStorage:**
 ```javascript
 // En la consola del navegador (F12)
 const user = JSON.parse(localStorage.getItem('user'));
-user.idCliente = 1; // El idCliente que obtuviste de la BD
+user.id_cliente = 1; // El id_cliente que obtuviste de la BD
 localStorage.setItem('user', JSON.stringify(user));
 
 // Recargar la página
@@ -156,7 +156,7 @@ location.reload();
 
 ## 🎯 Solución Recomendada
 
-**La MEJOR solución es la #3**: Modificar el endpoint de login para que devuelva automáticamente `idCliente` e `idDuenio`.
+**La MEJOR solución es la #3**: Modificar el endpoint de login para que devuelva automáticamente `id_cliente` e `idDuenio`.
 
 ### Paso a Paso:
 
@@ -172,43 +172,43 @@ router.post('/login', async (req, res) => {
     // ... validaciones y verificación de contraseña ...
     
     const token = jwt.sign(
-      { idUsuario: usuario.idUsuario, correo: usuario.correo },
+      { id_usuario: usuario.id_usuario, correo: usuario.correo },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     // Preparar respuesta
     const usuarioResponse = {
-      idUsuario: usuario.idUsuario,
+      id_usuario: usuario.id_usuario,
       correo: usuario.correo,
       usuario: usuario.usuario,
-      idPersona: usuario.idPersona,
+      id_persona: usuario.id_persona,
       roles: usuario.roles.map(r => r.nombre),
-      idCliente: null,
+      id_cliente: null,
       idDuenio: null
     };
 
-    // Buscar idCliente si tiene rol CLIENTE
+    // Buscar id_cliente si tiene rol CLIENTE
     if (usuarioResponse.roles.includes('CLIENTE')) {
       const cliente = await Cliente.findOne({
-        where: { idUsuarioC: usuario.idUsuario }
+        where: { id_usuarioC: usuario.id_usuario }
       });
       
       if (cliente) {
-        usuarioResponse.idCliente = cliente.idCliente;
+        usuarioResponse.id_cliente = cliente.id_cliente;
       } else {
         // OPCIONAL: Crear cliente automáticamente
         const nuevoCliente = await Cliente.create({
-          idUsuarioC: usuario.idUsuario
+          id_usuarioC: usuario.id_usuario
         });
-        usuarioResponse.idCliente = nuevoCliente.idCliente;
+        usuarioResponse.id_cliente = nuevoCliente.id_cliente;
       }
     }
 
     // Buscar idDuenio si tiene rol DUENIO
     if (usuarioResponse.roles.includes('DUENIO')) {
       const duenio = await Duenio.findOne({
-        where: { idPersonaD: usuario.idPersona }
+        where: { id_personaD: usuario.id_persona }
       });
       
       if (duenio) {
@@ -231,16 +231,16 @@ router.post('/login', async (req, res) => {
 
 #### 2. **Frontend: Ya está preparado** ✅
 
-El frontend ya está listo para recibir `idCliente`:
+El frontend ya está listo para recibir `id_cliente`:
 
 ```typescript
 // src/contexts/AuthContext.tsx
 export interface User {
   correo: string;
   usuario: string;
-  idPersona: number;
-  idUsuario: number;
-  idCliente?: number;  // ← YA AGREGADO
+  id_persona: number;
+  id_usuario: number;
+  id_cliente?: number;  // ← YA AGREGADO
   idDuenio?: number;   // ← YA AGREGADO
   roles: string[];
   avatar?: string;
@@ -249,7 +249,7 @@ export interface User {
 
 ```typescript
 // src/pages/CheckoutPage.tsx
-const idCliente = user.idCliente || user.idUsuario; // ← YA IMPLEMENTADO
+const id_cliente = user.id_cliente || user.id_usuario; // ← YA IMPLEMENTADO
 ```
 
 #### 3. **Probar:**
@@ -262,8 +262,8 @@ JSON.parse(localStorage.getItem('user'))
 
 # Deberías ver:
 # {
-#   idUsuario: 3,
-#   idCliente: 1,  ← NUEVO
+#   id_usuario: 3,
+#   id_cliente: 1,  ← NUEVO
 #   correo: "...",
 #   roles: ["CLIENTE"],
 #   ...
@@ -276,8 +276,8 @@ JSON.parse(localStorage.getItem('user'))
 
 - [ ] Tabla `Cliente` existe en la BD
 - [ ] Registro de `Cliente` existe para el usuario actual
-- [ ] Endpoint `/api/auth/login` devuelve `idCliente`
-- [ ] Frontend recibe y guarda `idCliente` en `user`
+- [ ] Endpoint `/api/auth/login` devuelve `id_cliente`
+- [ ] Frontend recibe y guarda `id_cliente` en `user`
 - [ ] La URL de reservas es correcta: `http://localhost:3000/api/reservas`
 - [ ] El token JWT es válido y se envía en los headers
 
@@ -288,27 +288,27 @@ JSON.parse(localStorage.getItem('user'))
 ```sql
 -- Ver todos los usuarios y sus clientes
 SELECT 
-  u.idUsuario,
+  u.id_usuario,
   u.correo,
   u.usuario,
-  c.idCliente,
-  c.idUsuarioC,
+  c.id_cliente,
+  c.id_usuarioC,
   r.nombre as rol
 FROM Usuario u
-LEFT JOIN Cliente c ON c.idUsuarioC = u.idUsuario
-LEFT JOIN UsuarioRol ur ON ur.idUsuario = u.idUsuario
+LEFT JOIN Cliente c ON c.id_usuarioC = u.id_usuario
+LEFT JOIN UsuarioRol ur ON ur.id_usuario = u.id_usuario
 LEFT JOIN Rol r ON r.idRol = ur.idRol
 WHERE r.nombre = 'CLIENTE';
 
 -- Si no tienes Cliente, créalo:
-INSERT INTO Cliente (idUsuarioC, creadoEn, actualizadoEn)
-SELECT idUsuario, NOW(), NOW()
+INSERT INTO Cliente (id_usuarioC, creado_en, actualizado_en)
+SELECT id_usuario, NOW(), NOW()
 FROM Usuario u
-INNER JOIN UsuarioRol ur ON ur.idUsuario = u.idUsuario
+INNER JOIN UsuarioRol ur ON ur.id_usuario = u.id_usuario
 INNER JOIN Rol r ON r.idRol = ur.idRol
 WHERE r.nombre = 'CLIENTE'
 AND NOT EXISTS (
-  SELECT 1 FROM Cliente c WHERE c.idUsuarioC = u.idUsuario
+  SELECT 1 FROM Cliente c WHERE c.id_usuarioC = u.id_usuario
 );
 ```
 
@@ -318,9 +318,9 @@ AND NOT EXISTS (
 
 Una vez aplicada la solución, el flujo será:
 
-1. Usuario hace login → Backend devuelve `idCliente: 1`
-2. Frontend guarda `user.idCliente = 1`
-3. Usuario hace reserva → Se envía `idCliente: 1`
+1. Usuario hace login → Backend devuelve `id_cliente: 1`
+2. Frontend guarda `user.id_cliente = 1`
+3. Usuario hace reserva → Se envía `id_cliente: 1`
 4. Backend encuentra el cliente → Reserva creada ✅
 
 ---

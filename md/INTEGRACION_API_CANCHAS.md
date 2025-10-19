@@ -110,7 +110,7 @@ El endpoint `/api/cancha` debe devolver un array de objetos con esta estructura:
 ```json
 [
   {
-    "idCancha": 1,
+    "id_cancha": 1,
     "id_Sede": 1,
     "nombre": "Nombre de la Cancha",
     "superficie": "Parquet",
@@ -121,14 +121,14 @@ El endpoint `/api/cancha` debe devolver un array de objetos con esta estructura:
     "iluminacion": "Halógena",
     "estado": "Disponible",
     "precio": "20.00",
-    "creadoEn": "2025-10-07T12:30:56.202Z",
-    "actualizadoEn": "2025-10-07T12:30:56.202Z",
+    "creado_en": "2025-10-07T12:30:56.202Z",
+    "actualizado_en": "2025-10-07T12:30:56.202Z",
     "eliminadoEn": null,
     "parte": [],
     "fotos": [
       {
         "idFoto": 5,
-        "idCancha": 1,
+        "id_cancha": 1,
         "urlFoto": "/uploads/img_1759843074551.jpg"
       }
     ],

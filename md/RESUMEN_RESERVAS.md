@@ -18,15 +18,15 @@ POST http://localhost:3000/api/reservas
 
 ```json
 {
-  "idCliente": 5,
-  "idCancha": 4,
-  "iniciaEn": "2025-10-20T09:00:00",
-  "terminaEn": "2025-10-20T10:00:00",
-  "cantidadPersonas": 8,
-  "requiereAprobacion": false,
-  "montoBase": 45.00,
-  "montoExtra": 0.00,
-  "montoTotal": 45.00
+  "id_cliente": 5,
+  "id_cancha": 4,
+  "inicia_en": "2025-10-20T09:00:00",
+  "termina_en": "2025-10-20T10:00:00",
+  "cantidad_personas": 8,
+  "requiere_aprobacion": false,
+  "monto_base": 45.00,
+  "monto_extra": 0.00,
+  "monto_total": 45.00
 }
 ```
 
@@ -38,18 +38,18 @@ POST http://localhost:3000/api/reservas
 {
   "message": "Reserva creada exitosamente",
   "reserva": {
-    "idReserva": 123,
-    "idCliente": 5,
-    "idCancha": 4,
-    "iniciaEn": "2025-10-20T09:00:00.000Z",
-    "terminaEn": "2025-10-20T10:00:00.000Z",
-    "cantidadPersonas": 8,
-    "requiereAprobacion": false,
-    "montoBase": "45.00",
-    "montoExtra": "0.00",
-    "montoTotal": "45.00",
-    "creadoEn": "2025-10-16T15:30:45.123Z",
-    "actualizadoEn": "2025-10-16T15:30:45.123Z"
+    "id_reserva": 123,
+    "id_cliente": 5,
+    "id_cancha": 4,
+    "inicia_en": "2025-10-20T09:00:00.000Z",
+    "termina_en": "2025-10-20T10:00:00.000Z",
+    "cantidad_personas": 8,
+    "requiere_aprobacion": false,
+    "monto_base": "45.00",
+    "monto_extra": "0.00",
+    "monto_total": "45.00",
+    "creado_en": "2025-10-16T15:30:45.123Z",
+    "actualizado_en": "2025-10-16T15:30:45.123Z"
   }
 }
 ```
@@ -71,7 +71,7 @@ POST http://localhost:3000/api/reservas
                         ↓
                 ┌───────────────┐
                 │   user.       │
-                │  idUsuario?   │
+                │  id_usuario?   │
                 └───────┬───────┘
                         ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -94,15 +94,15 @@ POST http://localhost:3000/api/reservas
 │ 4. handlePayment() [ASYNC]                                      │
 │    Construir JSON:                                              │
 │    {                                                            │
-│      idCliente: user.idUsuario,                                 │
-│      idCancha: parseInt(fieldId),                               │
-│      iniciaEn: "2025-10-20T09:00:00",                           │
-│      terminaEn: "2025-10-20T10:00:00",                          │
-│      cantidadPersonas: participants,                            │
-│      requiereAprobacion: false,                                 │
-│      montoBase: totalPrice,                                     │
-│      montoExtra: 0,                                             │
-│      montoTotal: totalPrice                                     │
+│      id_cliente: user.id_usuario,                                 │
+│      id_cancha: parseInt(fieldId),                               │
+│      inicia_en: "2025-10-20T09:00:00",                           │
+│      termina_en: "2025-10-20T10:00:00",                          │
+│      cantidad_personas: participants,                            │
+│      requiere_aprobacion: false,                                 │
+│      monto_base: totalPrice,                                     │
+│      monto_extra: 0,                                             │
+│      monto_total: totalPrice                                     │
 │    }                                                            │
 └───────────────────────┬─────────────────────────────────────────┘
                         ↓
@@ -125,7 +125,7 @@ POST http://localhost:3000/api/reservas
 │    {                                                            │
 │      message: "Reserva creada exitosamente",                    │
 │      reserva: {                                                 │
-│        idReserva: 123,                                          │
+│        id_reserva: 123,                                          │
 │        ...                                                      │
 │      }                                                          │
 │    }                                                            │
@@ -147,12 +147,12 @@ POST http://localhost:3000/api/reservas
 
 | Dato | Origen | Ejemplo |
 |------|--------|---------|
-| `idCliente` | `user.idUsuario` (AuthContext) | `5` |
-| `idCancha` | `id` param de URL | `4` |
-| `iniciaEn` | Construido: `YYYY-MM-DDTHH:mm:ss` | `"2025-10-20T09:00:00"` |
-| `terminaEn` | Construido: `YYYY-MM-DDTHH:mm:ss` | `"2025-10-20T10:00:00"` |
-| `cantidadPersonas` | Estado `participants` | `8` |
-| `montoTotal` | Suma de precios de slots | `45.00` |
+| `id_cliente` | `user.id_usuario` (AuthContext) | `5` |
+| `id_cancha` | `id` param de URL | `4` |
+| `inicia_en` | Construido: `YYYY-MM-DDTHH:mm:ss` | `"2025-10-20T09:00:00"` |
+| `termina_en` | Construido: `YYYY-MM-DDTHH:mm:ss` | `"2025-10-20T10:00:00"` |
+| `cantidad_personas` | Estado `participants` | `8` |
+| `monto_total` | Suma de precios de slots | `45.00` |
 | `token` | `localStorage.getItem('token')` | `eyJhbG...` |
 
 ---
@@ -196,7 +196,7 @@ POST http://localhost:3000/api/reservas
 ```javascript
 // Abrir DevTools (F12) → Console
 // Deberías ver:
-📝 Creando reserva: {idCliente: 5, idCancha: 4, ...}
+📝 Creando reserva: {id_cliente: 5, id_cancha: 4, ...}
 ✅ Reserva creada exitosamente: {message: "...", reserva: {...}}
 ```
 
@@ -233,7 +233,7 @@ POST http://localhost:3000/api/reservas
 Cuando el usuario completa el flujo:
 
 1. ✅ Se crea una reserva en la base de datos
-2. ✅ Se obtiene un `idReserva` único
+2. ✅ Se obtiene un `id_reserva` único
 3. ✅ Se navega a la página de confirmación
 4. ✅ Se muestra el QR de acceso
 5. ✅ El usuario puede ver su reserva en "Mis Reservas"

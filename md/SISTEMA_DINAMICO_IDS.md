@@ -119,7 +119,7 @@ Al navegar a cualquier cancha, verás:
 
 ```javascript
 🔍 Cargando cancha con ID: 1     // ← ID dinámico
-✅ Cancha obtenida: { idCancha: 1, nombre: "Wally 1", ... }
+✅ Cancha obtenida: { id_cancha: 1, nombre: "Wally 1", ... }
 ✅ Reservas obtenidas: [...]
 ✅ Reseñas obtenidas: [...]
 ```
@@ -128,7 +128,7 @@ Si navegas a otra cancha:
 
 ```javascript
 🔍 Cargando cancha con ID: 4     // ← ID cambió dinámicamente
-✅ Cancha obtenida: { idCancha: 4, nombre: "Cancha Central", ... }
+✅ Cancha obtenida: { id_cancha: 4, nombre: "Cancha Central", ... }
 ✅ Reservas obtenidas: [...]
 ✅ Reseñas obtenidas: [...]
 ```
@@ -170,7 +170,7 @@ Prueba estas URLs directamente:
 ```typescript
 // En helpers.ts - convertApiCanchaToSportField
 return {
-  id: apiCancha.idCancha.toString(),  // 👈 Convierte número a string
+  id: apiCancha.id_cancha.toString(),  // 👈 Convierte número a string
   sedeId: apiCancha.id_Sede.toString(),
   // ... resto de campos
 };
@@ -178,7 +178,7 @@ return {
 
 **Ejemplo**:
 ```json
-API Backend: { "idCancha": 4 }
+API Backend: { "id_cancha": 4 }
    ↓
 Frontend: { "id": "4" }
    ↓

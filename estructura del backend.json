@@ -2,12 +2,12 @@
   "1_persona": {
     "description": "Persona base usada por usuarios, clientes, duenos y controladores.",
     "columns": {
-      "idPersona": "int",
+      "id_persona": "int",
       "nombres": "varchar(100)",
       "paterno": "varchar(100)",
       "materno": "varchar(100)",
-      "documentoTipo": "enum['CC','CE','TI','PP']|null",
-      "documentoNumero": "varchar(20)|null",
+      "documento_tipo": "enum['CC','CE','TI','PP']|null",
+      "documento_numero": "varchar(20)|null",
       "telefono": "varchar(15)",
       "telefonoVerificado": "boolean (default:false)",
       "fechaNacimiento": "date",
@@ -17,7 +17,7 @@
       "actualizadoEn": "timestamp (updateDate)",
       "eliminadoEn": "timestamp|null (soft delete)"
     },
-    "primary_key": ["idPersona"],
+    "primary_key": ["id_persona"],
     "foreign_keys": [],
     "endpoints": [
       "GET /api/personas",
@@ -27,7 +27,7 @@
       "DELETE /api/personas/:id"
     ],
     "notes": [
-      "documentoTipo y documentoNumero se validan como par unico si vienen definidos.",
+      "documento_tipo y documento_numero se validan como par unico si vienen definidos.",
       "fechaNacimiento llega y se envia como cadena ISO 8601 (YYYY-MM-DD)."
     ]
   },
@@ -59,8 +59,8 @@
   "3_usuarios": {
     "description": "Credenciales y configuracion de acceso de cada usuario.",
     "columns": {
-      "idUsuario": "int",
-      "idPersona": "int",
+      "id_usuario": "int",
+      "id_persona": "int",
       "usuario": "varchar(50) UNIQUE",
       "correo": "varchar(255) UNIQUE",
       "correoVerificado": "boolean (default:false)",
@@ -70,9 +70,9 @@
       "actualizadoEn": "timestamp (updateDate)",
       "ultimoAccesoEn": "timestamp|null"
     },
-    "primary_key": ["idUsuario"],
+    "primary_key": ["id_usuario"],
     "foreign_keys": [
-      { "column": "idPersona", "references": "persona(idPersona)" }
+      { "column": "id_persona", "references": "persona(id_persona)" }
     ],
     "endpoints": [
       "GET /api/usuarios",
@@ -91,14 +91,14 @@
   "4_cliente": {
     "description": "Perfil de cliente ligado uno a uno con persona.",
     "columns": {
-      "idCliente": "int (PK=FK persona.idPersona)",
+      "idCliente": "int (PK=FK persona.id_persona)",
       "apodo": "varchar(100)|null",
       "nivel": "int (default:1)",
       "observaciones": "text|null"
     },
     "primary_key": ["idCliente"],
     "foreign_keys": [
-      { "column": "idCliente", "references": "persona(idPersona)" }
+      { "column": "idCliente", "references": "persona(id_persona)" }
     ],
     "endpoints": [
       "GET /api/clientes",
@@ -108,22 +108,22 @@
     ],
     "notes": [
       "Se crea automaticamente al registrar un usuario.",
-      "idCliente coincide con idPersona."
+      "idCliente coincide con id_persona."
     ]
   },
 
   "5_duenio": {
     "description": "Propietarios de sedes y canchas.",
     "columns": {
-      "idPersonaD": "int (PK=FK persona.idPersona)",
+      "id_personaD": "int (PK=FK persona.id_persona)",
       "verificado": "boolean (default:false)",
       "verificadoEn": "timestamp|null",
       "imagenCi": "text|null",
       "imgfacial": "text|null"
     },
-    "primary_key": ["idPersonaD"],
+    "primary_key": ["id_personaD"],
     "foreign_keys": [
-      { "column": "idPersonaD", "references": "persona(idPersona)" }
+      { "column": "id_personaD", "references": "persona(id_persona)" }
     ],
     "endpoints": [
       "POST /api/duenios",
@@ -144,14 +144,14 @@
   "6_controlador": {
     "description": "Operadores que controlan accesos a reservas y sedes.",
     "columns": {
-      "idPersonaOpe": "int (PK=FK persona.idPersona)",
+      "id_personaOpe": "int (PK=FK persona.id_persona)",
       "codigoEmpleado": "varchar(100)",
       "activo": "boolean (default:true)",
       "turno": "varchar(100)"
     },
-    "primary_key": ["idPersonaOpe"],
+    "primary_key": ["id_personaOpe"],
     "foreign_keys": [
-      { "column": "idPersonaOpe", "references": "persona(idPersona)" }
+      { "column": "id_personaOpe", "references": "persona(id_persona)" }
     ],
     "endpoints": [
       "POST /api/controlador",
@@ -173,7 +173,7 @@
     "description": "Sedes o complejos administrados por duenos.",
     "columns": {
       "idSede": "int",
-      "idPersonaD": "int",
+      "id_personaD": "int",
       "nombre": "varchar(100)",
       "descripcion": "varchar(100)",
       "direccion": "varchar(100)",
@@ -191,7 +191,7 @@
     },
     "primary_key": ["idSede"],
     "foreign_keys": [
-      { "column": "idPersonaD", "references": "duenio(idPersonaD)" }
+      { "column": "id_personaD", "references": "duenio(id_personaD)" }
     ],
     "endpoints": [
       "GET /api/sede",
@@ -202,7 +202,7 @@
       "DELETE /api/sede/:id"
     ],
     "notes": [
-      "Se valida que idPersonaD pertenezca al dueno autenticado salvo rol ADMIN.",
+      "Se valida que id_personaD pertenezca al dueno autenticado salvo rol ADMIN.",
       "latitud y longitud se almacenan como decimal(9,6) en la entidad."
     ]
   },
@@ -316,24 +316,24 @@
   "12_usuarios_roles": {
     "description": "Tabla puente muchos-a-muchos entre usuarios y roles.",
     "columns": {
-      "idUsuario": "int",
+      "id_usuario": "int",
       "idRol": "int",
       "asignadoEn": "timestamp (default now)",
       "revocadoEn": "timestamp|null",
       "eliminadoEn": "timestamp|null (soft delete)"
     },
-    "primary_key": ["idUsuario", "idRol"],
+    "primary_key": ["id_usuario", "idRol"],
     "foreign_keys": [
-      { "column": "idUsuario", "references": "usuarios(idUsuario)" },
+      { "column": "id_usuario", "references": "usuarios(id_usuario)" },
       { "column": "idRol", "references": "rol(idRol)" }
     ],
     "endpoints": [
       "POST /api/usuario-rol",
       "GET /api/usuario-rol",
-      "GET /api/usuario-rol/:idUsuario/:idRol",
-      "PATCH /api/usuario-rol/:idUsuario/:idRol",
-      "PATCH /api/usuario-rol/restore/:idUsuario/:idRol",
-      "DELETE /api/usuario-rol/:idUsuario/:idRol"
+      "GET /api/usuario-rol/:id_usuario/:idRol",
+      "PATCH /api/usuario-rol/:id_usuario/:idRol",
+      "PATCH /api/usuario-rol/restore/:id_usuario/:idRol",
+      "DELETE /api/usuario-rol/:id_usuario/:idRol"
     ],
     "notes": [
       "Los flujos de duenio y controlador recrean/rehabilitan los enlaces automaticamente.",
@@ -465,16 +465,16 @@
   "17_controla": {
     "description": "Bitacora de controles realizados por operadores en accesos.",
     "columns": {
-      "idPersonaOpe": "int",
+      "id_personaOpe": "int",
       "idReserva": "int",
       "idPaseAcceso": "int",
       "accion": "varchar",
       "resultado": "varchar",
       "fecha": "timestamp (default now)"
     },
-    "primary_key": ["idPersonaOpe", "idReserva", "idPaseAcceso"],
+    "primary_key": ["id_personaOpe", "idReserva", "idPaseAcceso"],
     "foreign_keys": [
-      { "column": "idPersonaOpe", "references": "controlador(idPersonaOpe)" },
+      { "column": "id_personaOpe", "references": "controlador(id_personaOpe)" },
       { "column": "idReserva", "references": "reserva(idReserva)" },
       { "column": "idPaseAcceso", "references": "pases_acceso(idPaseAcceso)" }
     ],
@@ -491,21 +491,21 @@
   "18_trabaja": {
     "description": "Asignaciones de controladores a sedes en periodos dados.",
     "columns": {
-      "idPersonaOpe": "int",
+      "id_personaOpe": "int",
       "idSede": "int",
       "fechaInicio": "date",
       "fechaFin": "date",
       "activo": "boolean (default:true)"
     },
-    "primary_key": ["idPersonaOpe", "idSede"],
+    "primary_key": ["id_personaOpe", "idSede"],
     "foreign_keys": [
-      { "column": "idPersonaOpe", "references": "controlador(idPersonaOpe)" },
+      { "column": "id_personaOpe", "references": "controlador(id_personaOpe)" },
       { "column": "idSede", "references": "sede(idSede)" }
     ],
     "endpoints": [
       "GET /api/trabaja",
       "POST /api/trabaja",
-      "DELETE /api/trabaja/:idPersonaOpe/:idSede"
+      "DELETE /api/trabaja/:id_personaOpe/:idSede"
     ],
     "notes": [
       "Sirve para habilitar controladores en sedes especificas.",

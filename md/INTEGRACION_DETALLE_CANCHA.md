@@ -14,7 +14,7 @@ Se ha conectado exitosamente la página de detalles de canchas (`SportFieldDetai
 **Respuesta**:
 ```json
 {
-  "idCancha": 4,
+  "id_cancha": 4,
   "nombre": "Cancha Central",
   "superficie": "Césped sintético",
   "cubierta": true,
@@ -46,7 +46,7 @@ Se ha conectado exitosamente la página de detalles de canchas (`SportFieldDetai
 ```json
 [
   {
-    "idReserva": 1,
+    "id_reserva": 1,
     "fecha": "2025-10-20",
     "horaInicio": "09:00",
     "horaFin": "10:00",
@@ -59,7 +59,7 @@ Se ha conectado exitosamente la página de detalles de canchas (`SportFieldDetai
 - ✅ **Disponible**: Sin reserva o estado "Cancelada"
 - ❌ **No disponible**: Estado "Confirmada" o "Pendiente"
 
-### 3. GET `/api/califica-cancha/cancha/:idCancha`
+### 3. GET `/api/califica-cancha/cancha/:id_cancha`
 **Propósito**: Obtener reseñas y calificaciones
 
 **Respuesta**:
@@ -67,7 +67,7 @@ Se ha conectado exitosamente la página de detalles de canchas (`SportFieldDetai
 [
   {
     "idResena": "5-4-1",
-    "idUsuario": 5,
+    "id_usuario": 5,
     "calificacion": 5,
     "comentario": "Excelente cancha...",
     "fecha": "2025-10-15T10:00:00.000Z",
