@@ -29,6 +29,8 @@ export class HttpClient {
   private baseURL: string;
   private timeout: number;
   private defaultHeaders: Record<string, string>;
+  private isRefreshing = false;
+  private refreshPromise: Promise<string | null> | null = null;
 
   constructor(config: HttpClientConfig = {}) {
     this.baseURL = config.baseURL || API_CONFIG.baseURL;
@@ -68,8 +70,6 @@ export class HttpClient {
     switch (response.status) {
       case 401:
         error.message = 'No autorizado. Por favor, inicia sesión nuevamente.';
-        // Redirigir al login o limpiar token
-        localStorage.removeItem('token');
         break;
       case 403:
         error.message = 'No tienes permisos para realizar esta acción.';
@@ -86,6 +86,50 @@ export class HttpClient {
   }
 
   /**
+   * Determina si se deben incluir credenciales (cookies) en la petición
+   * Útil para endpoints de auth con refresh tokens en httpOnly cookies
+   */
+  private shouldIncludeCredentials(url: string): boolean {
+    // Si el path apunta a endpoints de autenticación, incluir cookies
+    // url puede ser relativo ("/auth/…") o absoluto
+    return url.includes('/auth/');
+  }
+
+  /**
+   * Intenta refrescar el token de acceso usando /auth/refresh
+   * Retorna el nuevo token o null si falla
+   */
+  private async tryRefreshToken(): Promise<string | null> {
+    if (this.isRefreshing && this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.isRefreshing = true;
+    this.refreshPromise = (async () => {
+      try {
+        // Hacemos la llamada directamente usando request para garantizar credentials
+        const res = await this.request<{ token: string }>(`/auth/refresh`, {
+          method: 'POST',
+          // headers se completan en request(); credentials se incluyen por shouldIncludeCredentials
+        });
+        const newToken = res?.data?.token;
+        if (newToken) {
+          localStorage.setItem('token', newToken);
+          return newToken;
+        }
+        return null;
+      } catch (err) {
+        return null;
+      } finally {
+        this.isRefreshing = false;
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
+  }
+
+  /**
    * Realiza una petición HTTP genérica
    */
   private async request<T>(
@@ -97,6 +141,7 @@ export class HttpClient {
     const config: RequestInit = {
       ...options,
       headers: this.getHeaders(options.headers as Record<string, string>),
+      credentials: this.shouldIncludeCredentials(url) ? 'include' : options.credentials,
     };
 
     // Timeout de la petición
@@ -104,10 +149,7 @@ export class HttpClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const response = await fetch(fullUrl, {
-        ...config,
-        signal: controller.signal,
-      });
+      let response = await fetch(fullUrl, { ...config, signal: controller.signal });
 
       clearTimeout(timeoutId);
 
@@ -118,6 +160,30 @@ export class HttpClient {
         data = await response.json();
       } else {
         data = await response.text();
+      }
+
+      // Si el token expiró, intentamos un refresh una sola vez por petición
+      if (response.status === 401 && !this.shouldIncludeCredentials(url) && !(options as any)._retried) {
+        const newToken = await this.tryRefreshToken();
+        if (newToken) {
+          // Reintentar la petición original con el nuevo token
+          const retryConfig: RequestInit = {
+            ...config,
+            headers: this.getHeaders(options.headers as Record<string, string>),
+            credentials: this.shouldIncludeCredentials(url) ? 'include' : options.credentials,
+          } as RequestInit & { _retried?: boolean };
+          (retryConfig as any)._retried = true;
+
+          // Rehacer fetch y parsear respuesta
+          response = await fetch(fullUrl, { ...retryConfig, signal: controller.signal });
+
+          const retryContentType = response.headers.get('content-type');
+          if (retryContentType && retryContentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            data = await response.text();
+          }
+        }
       }
 
       if (!response.ok) {

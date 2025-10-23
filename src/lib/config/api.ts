@@ -6,7 +6,7 @@ export const API_CONFIG = {
     // Endpoints principales
     canchas: '/cancha',
     sedes: '/sede',
-    reservas: '/reserva',
+    reservas: '/reservas',
     
     // Endpoints relacionados
     disciplinas: '/disciplina',
@@ -18,7 +18,7 @@ export const API_CONFIG = {
     
     // Endpoints de gestión
     denuncia: '/denuncia',
-    calificacion: '/califica_cancha',
+  calificacion: '/califica-cancha',
     cancelacion: '/cancelacion',
   },
   timeout: 10000, // 10 segundos

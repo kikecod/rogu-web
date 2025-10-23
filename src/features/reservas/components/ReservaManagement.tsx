@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Users, DollarSign, ArrowLeft, Eye, AlertCircle } from 'lucide-react';
+import reservaService from '../services/reserva.service';
 
 interface Reserva {
   id_reserva: number;
@@ -49,46 +50,14 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
   const [selectedReserva, setSelectedReserva] = useState<Reserva | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Cargar reservas de la cancha
+  // Cargar reservas de la cancha usando el servicio centralizado
   const loadReservas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/reservas/cancha/${cancha.id_cancha}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const reservasData = await response.json();
-        
-        // Para cada reserva, intentar cargar los datos del usuario y persona
-        const reservasConUsuario = await Promise.all(
-          reservasData.map(async (reserva: Reserva) => {
-            try {
-              console.log('Cargando usuario:', reserva.id_cliente);
-              const usuarioResponse = await fetch(`http://localhost:3000/api/usuarios/persona/${reserva.id_cliente}`, {
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-              });
-              
-              if (usuarioResponse.ok) {
-                const usuarioData = await usuarioResponse.json();
-                return { ...reserva, usuario: usuarioData };
-              }
-              return reserva;
-            } catch (error) {
-              return reserva;
-            }
-          })
-        );
-        
-        setReservas(reservasConUsuario);
-      } else {
-        console.error('Error al cargar reservas');
-      }
+      const reservasData = await reservaService.getReservasPorCancha(cancha.id_cancha);
+      setReservas(reservasData as unknown as Reserva[]);
     } catch (error) {
-      console.error('Error loading reservas:', error);
+      console.error('Error al cargar reservas por cancha:', error);
+      setReservas([]);
     } finally {
       setLoading(false);
     }

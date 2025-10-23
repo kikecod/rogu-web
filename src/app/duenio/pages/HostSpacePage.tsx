@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Shield, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import { httpClient } from '../../../lib/api/http-client';
 
 const HostSpacePage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -18,21 +19,8 @@ const HostSpacePage: React.FC = () => {
       imagenFacial: 'pending_upload', // Placeholder hasta que implementes la subida
     };
 
-    const response = await fetch('http://localhost:3000/api/duenio', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`, // Agregar autorización
-      },
-      body: JSON.stringify(duenioData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear el dueño');
-    }
-
-    return await response.json();
+    const res = await httpClient.post('/duenio', duenioData);
+    return res.data;
   };
 
   const handleConfirmOwnership = async () => {

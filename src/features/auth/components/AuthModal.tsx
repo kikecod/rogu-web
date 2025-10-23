@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Trophy, Users, Zap } from 'lucide-react';
 import { useAuth, type User } from '../context/AuthContext';
+import authService, { type RegisterData } from '../services/auth.service';
+import { httpClient } from '../../../lib/api/http-client';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -69,22 +71,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
           genero: formData.genero
         };
 
-        const personaResponse = await fetch('http://localhost:3000/api/personas', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(personaData),
-        });
-        
-        if (!personaResponse.ok) {
-          const errorText = await personaResponse.text();
-          throw new Error(`Error al crear la persona: ${errorText}`);
-        }
-
-        const personaResult = await personaResponse.json();
+        const personaResp = await httpClient.post<any>('/personas', personaData);
+        const personaResult = personaResp.data;
         // El backend puede devolver distintas formas de id; normalizamos y aseguramos que sea number
-        const rawId = personaResult.id ?? personaResult.id_persona ?? personaResult.id_persona;
+        const rawId = personaResult.id ?? personaResult.idPersona ?? personaResult.id_persona;
         const id_personaNum = typeof rawId === 'number' ? rawId : Number(rawId);
 
         if (!id_personaNum || Number.isNaN(id_personaNum)) {
@@ -100,18 +90,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
           contrasena: formData.password
         };
 
-        const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(registerData),
-        });
-
-        if (!registerResponse.ok) {
-          const errorText = await registerResponse.text();
-          throw new Error(`Error al registrar el usuario: ${errorText}`);
-        }
+        await authService.register(registerData as RegisterData);
 
         alert('Registro exitoso! Tu cuenta ha sido creada con rol de cliente. Ahora puedes iniciar sesión');
         onSwitchMode(); // Cambiar a modo login
@@ -129,20 +108,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
           contrasena: formData.password
         };
 
-        const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(loginData),
-        });
-
-        if (!loginResponse.ok) {
-          const errorText = await loginResponse.text();
-          throw new Error(`Error en el login: ${errorText}`);
-        }
-
-        const loginResult = await loginResponse.json();
+        const loginResult = await authService.login(loginData.correo, loginData.contrasena);
         
         // Usar el hook de auth para manejar el login
         login(loginResult.usuario, loginResult.token);
@@ -159,7 +125,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
       }
     } catch (error) {
       console.error('Error completo:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const apiErr = error as any;
+      const backendMessage = apiErr?.data?.message || apiErr?.data?.error;
+      const errorMessage = backendMessage || (error instanceof Error ? error.message : 'Error desconocido');
       alert(`Error en el proceso: ${errorMessage}`);
     } finally {
       setIsLoading(false);

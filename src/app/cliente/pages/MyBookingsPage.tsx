@@ -8,6 +8,7 @@ import {
 import Footer from '../../../shared/components/layout/Footer';
 import { getSportFieldImages } from '../../../shared/utils/helpers';
 import reservaService from '../../../features/reservas/services/reserva.service';
+import { useAuth } from '../../../features/auth/context/AuthContext';
 
 interface Booking {
   id: string;
@@ -32,6 +33,7 @@ interface Booking {
 
 const MyBookingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isLoggedIn } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
@@ -133,15 +135,10 @@ const MyBookingsPage: React.FC = () => {
   // Cargar reservas reales del backend (si hay token), si falla usar mocks
   React.useEffect(() => {
     const load = async () => {
-      const token = localStorage.getItem('token') || undefined;
-      if (!token) {
-        // Sin token no intentamos cargar reservas
-        setLoading(false);
-        return;
-      }
+      if (!isLoggedIn || !user) { setLoading(false); return; }
 
       try {
-        const reservas = await reservaService.getReservasPorCliente(token);
+        const reservas = await reservaService.getReservasPorUsuario(user.id_usuario);
         // Transformar reservas raw al shape de UI (simple mapping)
         const mapped: Booking[] = reservas.map((r: any) => ({
           id: String(r.id_reserva),
@@ -170,7 +167,7 @@ const MyBookingsPage: React.FC = () => {
       }
     };
     load();
-  }, []);
+  }, [isLoggedIn, user?.id_usuario]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">

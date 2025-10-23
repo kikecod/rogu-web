@@ -12,41 +12,33 @@ export interface ReservaRaw {
   creado_en: string;
   actualizado_en: string;
 }
+import { API_CONFIG } from '../../../lib/config/api';
+import { httpClient } from '../../../lib/api/http-client';
 
-const API_BASE = 'http://localhost:3000/api';
+const RESERVAS_ENDPOINT = API_CONFIG.endpoints.reservas; // '/reservas'
 
-export async function getReservasPorCliente(token?: string): Promise<ReservaRaw[]> {
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch(`${API_BASE}/reservas/cliente`, { headers });
-  if (!res.ok) {
-    throw new Error(`Error fetching reservas por cliente: ${res.status}`);
-  }
-  return res.json();
+// Nuevo: obtener reservas por usuario desde el backend (ruta real)
+export async function getReservasPorUsuario(id_usuario: number): Promise<ReservaRaw[]> {
+  const res = await httpClient.get<ReservaRaw[]>(`${RESERVAS_ENDPOINT}/usuario/${id_usuario}`);
+  return res.data;
 }
 
-export async function getReservasPorCancha(canchaId: number, token?: string): Promise<ReservaRaw[]> {
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch(`${API_BASE}/reservas/cancha/${canchaId}`, { headers });
-  if (!res.ok) {
-    throw new Error(`Error fetching reservas por cancha: ${res.status}`);
-  }
-  return res.json();
+// Obtener reservas por cancha (ruta real)
+export async function getReservasPorCancha(canchaId: number): Promise<ReservaRaw[]> {
+  const res = await httpClient.get<ReservaRaw[]>(`${RESERVAS_ENDPOINT}/cancha/${canchaId}`);
+  return res.data;
 }
 
+// Export por defecto para compatibilidad (antes había getReservasPorCliente)
 export default {
-  getReservasPorCliente,
+  getReservasPorUsuario,
   getReservasPorCancha
 };
 /**
  * Servicio para manejar operaciones CRUD de Reservas
  */
 
-import { httpClient } from '../../../lib/api/http-client';
-import { API_CONFIG } from '../../../lib/config/api';
+import { httpClient as _httpClient } from '../../../lib/api/http-client';
 import type {
   Reserva,
   CreateReservaRequest,
@@ -60,7 +52,7 @@ export class ReservaService {
    * Obtiene todas las reservas
    */
   async getAll(): Promise<Reserva[]> {
-    const response = await httpClient.get<Reserva[]>(this.endpoint);
+    const response = await _httpClient.get<Reserva[]>(this.endpoint);
     return response.data;
   }
 
@@ -68,7 +60,7 @@ export class ReservaService {
    * Obtiene una reserva por ID
    */
   async getById(id: number): Promise<Reserva> {
-    const response = await httpClient.get<Reserva>(`${this.endpoint}/${id}`);
+    const response = await _httpClient.get<Reserva>(`${this.endpoint}/${id}`);
     return response.data;
   }
 
@@ -76,23 +68,23 @@ export class ReservaService {
    * Obtiene reservas por cancha
    */
   async getByCancha(id_cancha: number): Promise<Reserva[]> {
-    const allReservas = await this.getAll();
-    return allReservas.filter(reserva => reserva.id_cancha === id_cancha);
+    const response = await _httpClient.get<Reserva[]>(`${this.endpoint}/cancha/${id_cancha}`);
+    return response.data;
   }
 
   /**
    * Obtiene reservas por cliente
    */
   async getByCliente(id_cliente: number): Promise<Reserva[]> {
-    const allReservas = await this.getAll();
-    return allReservas.filter(reserva => reserva.id_cliente === id_cliente);
+    const response = await _httpClient.get<Reserva[]>(`${this.endpoint}/usuario/${id_cliente}`);
+    return response.data;
   }
 
   /**
    * Crea una nueva reserva
    */
   async create(data: CreateReservaRequest): Promise<Reserva> {
-    const response = await httpClient.post<Reserva>(this.endpoint, data);
+    const response = await _httpClient.post<Reserva>(this.endpoint, data);
     return response.data;
   }
 
@@ -100,7 +92,7 @@ export class ReservaService {
    * Actualiza una reserva existente
    */
   async update(id: number, data: UpdateReservaRequest): Promise<Reserva> {
-    const response = await httpClient.patch<Reserva>(`${this.endpoint}/${id}`, data);
+    const response = await _httpClient.patch<Reserva>(`${this.endpoint}/${id}`, data);
     return response.data;
   }
 
@@ -108,7 +100,7 @@ export class ReservaService {
    * Elimina una reserva
    */
   async delete(id: number): Promise<void> {
-    await httpClient.delete(`${this.endpoint}/${id}`);
+    await _httpClient.delete(`${this.endpoint}/${id}`);
   }
 
   /**

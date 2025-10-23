@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import authService from '../services/auth.service';
 
 export interface User {
   correo: string;
@@ -44,8 +45,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  const initializedRef = useRef(false);
+
   useEffect(() => {
-    const initAuth = () => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    const initAuth = async () => {
       try {
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
@@ -54,6 +59,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
           setIsLoggedIn(true);
+        } else if (!token) {
+          const refreshOnStart = import.meta.env.VITE_AUTH_REFRESH_ON_START !== 'false';
+          if (!refreshOnStart) {
+            setUser(null);
+            setIsLoggedIn(false);
+            setIsLoading(false);
+            return;
+          }
+          // Intentar refrescar sesión si existe refresh cookie httpOnly
+          const refreshed = await authService.refresh();
+          if (refreshed?.token) {
+            // Guardar nuevo access token y obtener perfil del usuario
+            localStorage.setItem('token', refreshed.token);
+            try {
+              const currentUser = await authService.profile();
+              // Asegurar forma User según nuestro contexto
+              const normalizedUser: User = {
+                correo: currentUser?.correo,
+                usuario: currentUser?.usuario,
+                id_persona: currentUser?.id_persona,
+                id_usuario: currentUser?.id_usuario,
+                roles: currentUser?.roles || [],
+                avatar: currentUser?.avatar,
+              };
+              localStorage.setItem('user', JSON.stringify(normalizedUser));
+              setUser(normalizedUser);
+              setIsLoggedIn(true);
+            } catch {
+              // Si falla obtener perfil, limpiar estado
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              setUser(null);
+              setIsLoggedIn(false);
+            }
+          } else {
+            setUser(null);
+            setIsLoggedIn(false);
+          }
         } else {
           setUser(null);
           setIsLoggedIn(false);
@@ -67,7 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    initAuth();
+    void initAuth();
   }, []);
 
   const login = (userData: User, token: string) => {
