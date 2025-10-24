@@ -168,8 +168,8 @@ const MyBookingsPage: React.FC = () => {
 
   const confirmDelete = () => {
     if (bookingToDelete) {
-      setBookings(bookings.map(b => 
-        b.id === bookingToDelete 
+      setBookings(bookings.map(b =>
+        b.id === bookingToDelete
           ? { ...b, status: 'cancelled' as const }
           : b
       ));

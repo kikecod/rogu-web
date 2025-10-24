@@ -1,4 +1,6 @@
 // Utility functions for the ROGU app
+import axios from 'axios';
+
 
 // Import real sport field images
 import futbolImg from '../assets/futbol.jpg';
@@ -7,13 +9,13 @@ import tenisImg from '../assets/tenis.jpg';
 import voleibolImg from '../assets/voleibol.png';
 import padelImg from '../assets/padel.jpeg';
 import hockeyImg from '../assets/hockey.webp';
-import type { 
-  ApiCancha, 
-  ApiCanchaDetalle, 
-  ApiReserva, 
-  ApiResena, 
+import type {
+  ApiCancha,
+  ApiCanchaDetalle,
+  ApiReserva,
+  ApiResena,
   ApiFoto,
-  SportField, 
+  SportField,
   SportType,
   TimeSlot,
   Review,
@@ -416,3 +418,157 @@ export const createReserva = async (
     throw error;
   }
 };
+
+// ==========================================
+// FUNCIONES PARA CONTROLADOR DASHBOARD
+// ==========================================
+
+/**
+ * Obtiene todas las reservas de una sede específica
+ * @param idSede - ID de la sede
+ */
+export const fetchReservasBySede = async (idSede: string): Promise<ApiReserva[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(getApiUrl(`/reservas?sedeId=${idSede}`), {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Error al obtener las reservas');
+
+    const data: ApiReserva[] = await response.json();
+    console.log('✅ Reservas por sede obtenidas:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error al obtener reservas por sede:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene los participantes de una reserva
+ * @param idReserva - ID de la reserva
+ */
+export const fetchParticipantesByReserva = async (idReserva: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(getApiUrl(`/reservas/${idReserva}/participantes`), {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Error al obtener los participantes');
+    const data = await response.json();
+    console.log(`👥 Participantes de reserva ${idReserva}:`, data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error al obtener participantes:', error);
+    return [];
+  }
+};
+
+// ==========================================
+// FUNCIONES PARA DENUNCIAS
+// ==========================================
+
+export interface CreateDenunciaRequest {
+  reporterId: string;
+  reportedId: string;
+  categoria: string;
+  gravedad: string;
+  titulo: string;
+  descripcion: string;
+}
+
+/**
+ * Envía una denuncia al backend
+ */
+export const createDenuncia = async (denunciaData: CreateDenunciaRequest): Promise<boolean> => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(getApiUrl('/denuncias'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(denunciaData)
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al enviar denuncia');
+    }
+
+    console.log('✅ Denuncia enviada:', denunciaData);
+    return true;
+  } catch (error) {
+    console.error('❌ Error al crear denuncia:', error);
+    return false;
+  }
+};
+
+// ==========================================
+// FUNCIONES PARA CALIFICACIONES DE CANCHAS
+// ==========================================
+
+export interface CreateCalificacionRequest {
+  idCliente: string;
+  idCancha: string;
+  puntaje: number;
+  dimensiones?: string;
+  comentario?: string;
+}
+
+/**
+ * Envía una calificación de cancha
+ */
+export const createCalificacion = async (calificacionData: CreateCalificacionRequest): Promise<boolean> => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(getApiUrl('/calificaciones'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(calificacionData)
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al enviar calificación');
+    }
+
+    console.log('⭐ Calificación enviada:', calificacionData);
+    return true;
+  } catch (error) {
+    console.error('❌ Error al crear calificación:', error);
+    return false;
+  }
+};
+
+/**
+ * Valida un QR escaneado contra el backend.
+ * @param idReserva ID de la reserva actual.
+ * @param qrData Texto escaneado del QR.
+ * @param idPersonaOpe ID del operador/controlador.
+ * @returns Objeto con resultado del backend.
+ */
+export const validateQr = async (idReserva: number, qrData: string, idPersonaOpe: number) => {
+  try {
+    const response = await axios.post('/api/qr/validate', {
+      idReserva,
+      qrData,
+      idPersonaOpe,
+    });
+
+    // Se asume que el backend responde con { resultado: "mensaje" }
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error al validar QR:', error);
+    throw new Error(error.response?.data?.message || 'Error validando QR');
+  }
+};
+

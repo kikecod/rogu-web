@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
 import HomePage from './pages/HomePage';
 import HostSpacePage from './pages/HostSpacePage';
 import AdminSpacesPage from './pages/AdminSpacesPage';
 import TestRolesPage from './pages/TestRolesPage';
-import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import AboutUsPage from './pages/AboutUsPage';
 import SportFieldDetailPage from './pages/SportFieldDetailPage';
 import SedeDetailPage from './pages/SedeDetailPage';
 import CheckoutPage from './pages/CheckoutPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import ControladorDashboard from './pages/ControladorDashboard';
+import DenunciaPage from './pages/DenunciaPage';
+import CalificaCanchaPage from './pages/CalificaCanchaPage';
+
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -77,6 +81,10 @@ const AppContent = () => {
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
+
+          <Route path="/controlador-dashboard" element={<ControladorDashboard />} />
+          <Route path="/denuncia/:reportedId" element={<DenunciaPage />} />
+          <Route path="/califica-cancha/:canchaId" element={<CalificaCanchaPage />} />
         </Routes>
       </div>
     </Router>
