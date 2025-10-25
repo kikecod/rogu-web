@@ -16,15 +16,10 @@ export interface HeaderMenuLink {
   className?: string;
 }
 
-export const HEADER_PRIMARY_CTA = {
-  label: 'Ofrece tu espacio',
-  to: ROUTE_PATHS.HOST,
-};
-
 export const HEADER_MENU_LINKS = {
   ADMIN: [
     { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE_ADMIN, className: HEADER_MENU_LINK_CLASSES.neutral },
-    { label: 'Administrar reservas', to: ROUTE_PATHS.BOOKINGS, className: HEADER_MENU_LINK_CLASSES.neutral },
+    { label: 'Administrar reservas', to: ROUTE_PATHS.ADMIN_RESERVATIONS, className: HEADER_MENU_LINK_CLASSES.neutral },
     { label: 'Panel de Administracion', to: ROUTE_PATHS.ADMIN_SPACES, className: HEADER_MENU_LINK_CLASSES.success },
     { label: 'Prueba de Roles (Admin)', to: ROUTE_PATHS.TEST_ROLES, className: HEADER_MENU_LINK_CLASSES.purple },
   ],
@@ -76,4 +71,13 @@ export const FOOTER_LEGAL_LINKS: FooterLink[] = [
   { label: 'Terminos de servicio', to: ROUTE_PATHS.TERMS },
   { label: 'Politica de privacidad', to: ROUTE_PATHS.PRIVACY },
   { label: 'Cookies', to: ROUTE_PATHS.COOKIES },
+];
+
+// Links specifically for the "Acerca de" / company section in the footer
+export const FOOTER_COMPANY_LINKS: FooterLink[] = [
+  { label: 'Acerca de', to: ROUTE_PATHS.ABOUT },
+  { label: 'Nuestra visión', to: ROUTE_PATHS.ABOUT_VISION },
+  { label: 'Nuestra misión', to: ROUTE_PATHS.ABOUT_MISSION },
+  { label: 'Contacto', to: ROUTE_PATHS.CONTACT },
+  { label: 'Cómo funciona', to: ROUTE_PATHS.HOW_IT_WORKS },
 ];

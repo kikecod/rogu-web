@@ -5,6 +5,7 @@ import roguLogo from '../../../assets/img/rogu_logo.png';
 import {
   FOOTER_QUICK_LINKS,
   FOOTER_LEGAL_LINKS,
+  FOOTER_COMPANY_LINKS,
   EXTERNAL_LINKS,
   CONTACT_LINKS,
   SUPPORT_EMAIL,
@@ -74,22 +75,43 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <nav aria-label="Enlaces rápidos">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Enlaces rápidos</h3>
-            <ul className="space-y-2">
-              {FOOTER_QUICK_LINKS.map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          {/* Quick Links + Acerca de */}
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Enlaces</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <nav aria-label="Enlaces rápidos">
+                <h4 className="sr-only">Enlaces rápidos</h4>
+                <ul className="space-y-2">
+                  {FOOTER_QUICK_LINKS.map((link) => (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              <nav aria-label="Acerca de">
+                <h4 className="sr-only">Acerca de</h4>
+                <ul className="space-y-2">
+                  {FOOTER_COMPANY_LINKS.map((link) => (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          </div>
 
           {/* Contact Info */}
           <div>

@@ -1,7 +1,7 @@
 // src/shared/layout/header/Header.Admin.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { HEADER_MENU_LINKS, HEADER_OPTIONAL_HOST_LINK } from '../../../constants';
+import { HEADER_MENU_LINKS } from '../../../constants';
 
 export interface RoleMenuProps {
   user: any;
@@ -10,7 +10,7 @@ export interface RoleMenuProps {
   isDuenio: () => boolean;
 }
 
-const HeaderAdminMenu: React.FC<RoleMenuProps> = ({ user, closeMenu, onLogout, isDuenio }) => {
+const HeaderAdminMenu: React.FC<RoleMenuProps> = ({ user, closeMenu, onLogout }) => {
   return (
     <>
       {/* Información del usuario */}
@@ -26,11 +26,7 @@ const HeaderAdminMenu: React.FC<RoleMenuProps> = ({ user, closeMenu, onLogout, i
         </Link>
       ))}
 
-      {!isDuenio() && (
-        <Link to={HEADER_OPTIONAL_HOST_LINK.to} className={HEADER_OPTIONAL_HOST_LINK.className} onClick={closeMenu}>
-          {HEADER_OPTIONAL_HOST_LINK.label}
-        </Link>
-      )}
+      
       <hr className="my-1" />
       <button
         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"

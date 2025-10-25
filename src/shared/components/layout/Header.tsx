@@ -4,7 +4,7 @@ import { Search, Menu, User, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '../../../assets/img/rogu_logo.png';
 import { useAuth } from '../../../features/auth/context/AuthContext';
-import { ROUTE_PATHS, HEADER_PRIMARY_CTA, getPathsForRoles } from '../../../constants';
+import { ROUTE_PATHS, getPathsForRoles } from '../../../constants';
 
 import HeaderAdminMenu from './Header.Admin';
 import HeaderClienteMenu from './Header.Cliente';
@@ -83,12 +83,6 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 </Link>
               )}
             </div>
-            {/* Mostrar “Ofrece tu espacio” en *layout* solo si NO es dueño */}
-            {(!isLoggedIn || (isLoggedIn && !isDuenio())) && (
-              <Link to={HEADER_PRIMARY_CTA.to} className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600">
-                {HEADER_PRIMARY_CTA.label}
-              </Link>
-            )}
 
             <button className="hidden sm:block p-2 text-neutral-500 hover:text-neutral-700">
               <Globe className="h-4 w-4" />
@@ -157,9 +151,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                         Iniciar sesión
                       </button>
                       <hr className="my-1" />
-                      <Link to={HEADER_PRIMARY_CTA.to} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeMenu}>
-                        {HEADER_PRIMARY_CTA.label}
-                      </Link>
+                      
                     </>
                   )}
                 </div>
