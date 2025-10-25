@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ROUTE_PATHS } from '../../../constants';
 import { Lock } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -15,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRoles = [],
   requireAllRoles = [],
-  redirectTo = '/',
+  redirectTo = ROUTE_PATHS.HOME,
   showUnauthorized = false,
 }) => {
   const { isLoggedIn, isLoading, hasAnyRole, hasAllRoles, user } = useAuth();
@@ -96,3 +97,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 
 export default ProtectedRoute;
+
+
+

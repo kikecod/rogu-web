@@ -6,6 +6,7 @@ import Filters, { type FilterState } from '../../../shared/components/widgets/Fi
 import Footer from '../../../shared/components/layout/Footer';
 import { fetchCanchas } from '../../../shared/utils/helpers';
 import type { SportField } from '../../../domain';
+import { buildRoute } from '../../../constants';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleFieldClick = (field: SportField) => {
-    navigate(`/field/${field.id}`);
+    navigate(buildRoute('SPORT_FIELD_DETAIL', { id: field.id }));
   };
 
   const handleSearch = (e: React.FormEvent) => {

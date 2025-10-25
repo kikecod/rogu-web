@@ -49,7 +49,7 @@ const CheckoutPage: React.FC = () => {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">No hay información de reserva</h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Volver al inicio
@@ -134,7 +134,7 @@ const CheckoutPage: React.FC = () => {
       console.log('✅ Reserva creada exitosamente:', response);
 
       // Navegar a la página de confirmación con QR
-      navigate('/booking-confirmation', {
+      navigate(ROUTE_PATHS.BOOKING_CONFIRMATION, {
         state: {
           bookingDetails,
           paymentMethod,
@@ -502,3 +502,6 @@ const CheckoutPage: React.FC = () => {
 };
 
 export default CheckoutPage;
+
+
+

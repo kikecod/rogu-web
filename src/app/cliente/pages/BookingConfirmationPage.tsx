@@ -6,6 +6,7 @@ import {
   Star, Copy, Check
 } from 'lucide-react';
 import Footer from '../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../constants';
 
 interface BookingDetails {
   fieldName: string;
@@ -35,7 +36,7 @@ const BookingConfirmationPage: React.FC = () => {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">No hay información de confirmación</h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Volver al inicio
@@ -304,14 +305,14 @@ const BookingConfirmationPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
           >
             <Home className="h-5 w-5" />
             Volver al inicio
           </button>
           <button
-            onClick={() => navigate('/bookings')}
+            onClick={() => navigate(ROUTE_PATHS.BOOKINGS)}
             className="flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-blue-600 text-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all"
           >
             <Calendar className="h-5 w-5" />
@@ -326,3 +327,5 @@ const BookingConfirmationPage: React.FC = () => {
 };
 
 export default BookingConfirmationPage;
+
+

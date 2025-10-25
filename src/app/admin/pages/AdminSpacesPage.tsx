@@ -5,6 +5,7 @@ import SedeManagement from '../../../features/sedes/components/SedeManagement';
 import CanchaManagement from '../../../features/canchas/components/CanchaManagement';
 import ProtectedRoute from '../../../features/auth/components/ProtectedRoute';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import { ROUTE_PATHS } from '../../../constants';
 
 interface Sede {
   idSede: number;
@@ -62,7 +63,7 @@ const AdminSpacesPage: React.FC = () => {
                 </div>
                 <div className="mt-4 flex md:mt-0 md:ml-4">
                   <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate(ROUTE_PATHS.HOME)}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -106,3 +107,4 @@ const AdminSpacesPage: React.FC = () => {
 };
 
 export default AdminSpacesPage;
+

@@ -1,7 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Target, Users, TrendingUp, Zap, Heart, Shield } from 'lucide-react';
 import Footer from '../../../shared/components/layout/Footer';
 import roguLogo from '../../../assets/img/rogu_logo.png';
+import { ROUTE_PATHS } from '../../../constants';
 
 const AboutUsPage: React.FC = () => {
   return (
@@ -372,24 +374,24 @@ const AboutUsPage: React.FC = () => {
             que quiere optimizar sus espacios, <span className="font-bold text-white">ROGÜ es tu aliado perfecto</span>.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/"
+            <Link
+              to={ROUTE_PATHS.HOME}
               className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105"
             >
               <span className="flex items-center justify-center">
                 🔍 Explorar Canchas
                 <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </span>
-            </a>
-            <a
-              href="/host"
+            </Link>
+            <Link
+              to={ROUTE_PATHS.HOST}
               className="group bg-gradient-to-r from-blue-700 to-indigo-700 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-blue-800 hover:to-indigo-800 transition-all duration-300 border-2 border-white shadow-xl hover:shadow-2xl hover:scale-105"
             >
               <span className="flex items-center justify-center">
                 🏢 Ofrecer mi Espacio
                 <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </span>
-            </a>
+            </Link>
           </div>
           
           <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
@@ -415,3 +417,5 @@ const AboutUsPage: React.FC = () => {
 };
 
 export default AboutUsPage;
+
+

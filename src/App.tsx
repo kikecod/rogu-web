@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import NotFoundPage from './app/publico/pages/NotFoundPage';
 import Header from './shared/components/layout/Header';
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import AuthModal from './features/auth/components/AuthModal';
 import HomePage from './app/publico/pages/HomePage';
 import HostSpacePage from './app/duenio/pages/HostSpacePage';
@@ -13,6 +15,7 @@ import SedeDetailPage from './app/publico/pages/SedeDetailPage';
 import CheckoutPage from './app/cliente/pages/CheckoutPage';
 import BookingConfirmationPage from './app/cliente/pages/BookingConfirmationPage';
 import MyBookingsPage from './app/cliente/pages/MyBookingsPage';
+import { ROUTE_PATHS } from './constants';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -65,18 +68,44 @@ const AppContent = () => {
         />
 
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/host" element={<HostSpacePage />} />
-          <Route path="/admin-spaces" element={<AdminSpacesPage />} />
+          <Route path={ROUTE_PATHS.HOME} element={<HomePage />} />
+          <Route path={ROUTE_PATHS.HOST} element={
+            <ProtectedRoute requiredRoles={["DUENIO"]}>
+              <HostSpacePage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTE_PATHS.ADMIN_SPACES} element={
+            <ProtectedRoute requiredRoles={["ADMIN"]}>
+              <AdminSpacesPage />
+            </ProtectedRoute>
+          } />
 
-          <Route path="/test-roles" element={<TestRolesPage />} />
-          <Route path="/about" element={<AboutUsPage />} />
-          <Route path="/field/:id" element={<SportFieldDetailPage />} />
-          <Route path="/sede/:id" element={<SedeDetailPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
-          <Route path="/bookings" element={<MyBookingsPage />} />
-          <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
+          <Route path={ROUTE_PATHS.TEST_ROLES} element={<TestRolesPage />} />
+          <Route path={ROUTE_PATHS.ABOUT} element={<AboutUsPage />} />
+          <Route path={ROUTE_PATHS.SPORT_FIELD_DETAIL} element={<SportFieldDetailPage />} />
+          <Route path={ROUTE_PATHS.SEDE_DETAIL} element={<SedeDetailPage />} />
+          <Route path={ROUTE_PATHS.CHECKOUT} element={
+            <ProtectedRoute requiredRoles={["CLIENTE"]}>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTE_PATHS.BOOKING_CONFIRMATION} element={
+            <ProtectedRoute requiredRoles={["CLIENTE"]}>
+              <BookingConfirmationPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTE_PATHS.BOOKINGS} element={
+            <ProtectedRoute requiredRoles={["CLIENTE"]}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTE_PATHS.PROFILE} element={
+            <ProtectedRoute requiredRoles={["CLIENTE"]}>
+              <div className="p-8 text-center">Perfil de usuario - Proximamente</div>
+            </ProtectedRoute>
+          } />
+          {/* Catch-all: rutas no encontradas -> mostrar página 404 */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>

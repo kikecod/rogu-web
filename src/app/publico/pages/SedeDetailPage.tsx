@@ -5,6 +5,7 @@ import {
   Clock, Users, Building2, AlertCircle
 } from 'lucide-react';
 import Footer from '../../../shared/components/layout/Footer';
+import { ROUTE_PATHS, buildRoute } from '../../../constants';
 import type { SportField, LegacySede } from '../../../domain';
 import { getSportFieldImages, generateAvatarUrl } from '../../../shared/utils/helpers';
 
@@ -97,7 +98,7 @@ const SedeDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleFieldClick = (field: SportField) => {
-    navigate(`/field/${field.id}`);
+    navigate(buildRoute('SPORT_FIELD_DETAIL', { id: field.id }));
   };
 
   return (
@@ -106,7 +107,7 @@ const SedeDetailPage: React.FC = () => {
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />

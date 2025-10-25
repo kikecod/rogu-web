@@ -6,6 +6,7 @@ import {
   Download, Share2, Filter, Search
 } from 'lucide-react';
 import Footer from '../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../constants';
 import { getSportFieldImages } from '../../../shared/utils/helpers';
 import reservaService from '../../../features/reservas/services/reserva.service';
 import { useAuth } from '../../../features/auth/context/AuthContext';
@@ -300,7 +301,7 @@ const MyBookingsPage: React.FC = () => {
                 : 'Aún no tienes reservas. ¡Haz tu primera reserva ahora!'}
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTE_PATHS.HOME)}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all"
             >
               Explorar canchas
@@ -602,3 +603,5 @@ const MyBookingsPage: React.FC = () => {
 };
 
 export default MyBookingsPage;
+
+

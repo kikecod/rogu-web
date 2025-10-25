@@ -54,10 +54,11 @@ export interface Usuario {
   correo: string;
   correo_verificado: boolean;
   hash_contrasena: string;
+  hash_refresh_token: string | null;
   estado: EstadoUsuario;
   creado_en: ISODateTime;
   actualizado_en: ISODateTime;
-  ultimoAccesoEn: ISODateTime | null;
+  ultimo_acceso_en: ISODateTime | null;
 }
 
 /** Perfil de cliente (1:1 con persona). PK y FK: id_cliente */
@@ -123,7 +124,7 @@ export interface Cancha {
   cubierta: boolean;
   aforoMax: number;
   dimensiones: string;
-  reglasUso: string;
+  reglas_uso: string;
   iluminacion: string;
   estado: string;
   precio: Decimal;
@@ -138,20 +139,23 @@ export interface Disciplina {
   nombre: string;
   categoria: string;
   descripcion: string;
+  creado_en: ISODateTime;
+  actualizado_en: ISODateTime;
+  eliminado_en: ISODateTime | null;
 }
 
 /** Multimedia asociada a las canchas. */
 export interface Foto {
-  idFoto: number;
+  id_foto: number;
   id_cancha: number;
-  urlFoto: string;
-  creada_en?: ISODateTime;
+  url_foto: string;
 }
 
 /** Tabla parte: relacion cancha-disciplina. PK compuesta. */
 export interface Parte {
-  id_cancha: number;
   id_disciplina: number;
+  id_cancha: number;
+  eliminado_en: ISODateTime | null;
 }
 
 /**

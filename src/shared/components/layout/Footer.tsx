@@ -2,6 +2,14 @@ import React from 'react';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '../../../assets/img/rogu_logo.png';
+import {
+  FOOTER_QUICK_LINKS,
+  FOOTER_LEGAL_LINKS,
+  EXTERNAL_LINKS,
+  CONTACT_LINKS,
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE_DISPLAY,
+} from '../../../constants';
 
 const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -29,7 +37,7 @@ const Footer: React.FC = () => {
 
             <div className="flex space-x-4" aria-label="Redes sociales">
               <a
-                href="https://www.facebook.com/"
+                href={EXTERNAL_LINKS.FACEBOOK}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook de ROGÜ"
@@ -41,7 +49,7 @@ const Footer: React.FC = () => {
               </a>
 
               <a
-                href="https://twitter.com/"
+                href={EXTERNAL_LINKS.TWITTER}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter de ROGÜ"
@@ -53,7 +61,7 @@ const Footer: React.FC = () => {
               </a>
 
               <a
-                href="https://www.instagram.com/"
+                href={EXTERNAL_LINKS.INSTAGRAM}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram de ROGÜ"
@@ -70,54 +78,16 @@ const Footer: React.FC = () => {
           <nav aria-label="Enlaces rápidos">
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Enlaces rápidos</h3>
             <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/search"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Buscar canchas
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/host"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Ofrece tu espacio
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/about"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Sobre nosotros
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/como-funciona"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Cómo funciona
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/faq"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Preguntas frecuentes
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/ayuda"
-                  className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                >
-                  Ayuda
-                </Link>
-              </li>
+              {FOOTER_QUICK_LINKS.map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
@@ -129,19 +99,19 @@ const Footer: React.FC = () => {
                 <li className="flex items-center">
                   <Mail aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 sm:mr-3 flex-shrink-0" />
                   <a
-                    href="mailto:info@rogu.bo"
+                    href={CONTACT_LINKS.EMAIL}
                     className="text-neutral-300 text-sm sm:text-base hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
                   >
-                    info@rogu.bo
+                    {SUPPORT_EMAIL}
                   </a>
                 </li>
                 <li className="flex items-center">
                   <Phone aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 sm:mr-3 flex-shrink-0" />
                   <a
-                    href="tel:+591622728828"
+                    href={CONTACT_LINKS.PHONE}
                     className="text-neutral-300 text-sm sm:text-base hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
                   >
-                    +591 622728828
+                    {SUPPORT_PHONE_DISPLAY}
                   </a>
                 </li>
                 <li className="flex items-start">
@@ -161,30 +131,16 @@ const Footer: React.FC = () => {
             </div>
             <nav aria-label="Legal">
               <ul className="flex flex-wrap justify-center sm:justify-end gap-4 sm:gap-6 text-xs sm:text-sm">
-                <li>
-                  <Link
-                    to="/terminos"
-                    className="text-neutral-400 hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                  >
-                    Términos de servicio
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/privacidad"
-                    className="text-neutral-400 hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                  >
-                    Política de privacidad
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/cookies"
-                    className="text-neutral-400 hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                  >
-                    Cookies
-                  </Link>
-                </li>
+                {FOOTER_LEGAL_LINKS.map((link) => (
+                  <li key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="text-neutral-400 hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
           </div>

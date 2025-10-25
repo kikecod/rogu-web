@@ -1,6 +1,7 @@
 import React from 'react';
 import ProtectedRoute from '../../../features/auth/components/ProtectedRoute';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import { ROUTE_PATHS } from '../../../constants';
 import { ArrowLeft, Shield, Users, Settings, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,7 +24,7 @@ const TestRolesPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTE_PATHS.HOME)}
               className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -117,7 +118,7 @@ const TestRolesPage: React.FC = () => {
                   <li>Administrar precios y horarios</li>
                 </ul>
                 <button
-                  onClick={() => navigate('/admin-spaces')}
+                  onClick={() => navigate(ROUTE_PATHS.ADMIN_SPACES)}
                   className="w-full mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Ir al Panel de Administración
@@ -130,7 +131,7 @@ const TestRolesPage: React.FC = () => {
                   <span className="text-red-800">❌ No tienes rol de DUEÑO</span>
                 </div>
                 <button
-                  onClick={() => navigate('/host')}
+                  onClick={() => navigate(ROUTE_PATHS.HOST)}
                   className="w-full mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Convertirme en Dueño
@@ -227,3 +228,6 @@ const TestRolesPage: React.FC = () => {
 };
 
 export default TestRolesPage;
+
+
+

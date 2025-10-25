@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle, Shield, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../features/auth/context/AuthContext';
 import { httpClient } from '../../../lib/api/http-client';
+import { ROUTE_PATHS } from '../../../constants';
 
 const HostSpacePage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -33,7 +34,7 @@ const HostSpacePage: React.FC = () => {
     if (isDuenio()) {
       setErrorMessage('Ya eres dueño de espacios deportivos');
       setTimeout(() => {
-        navigate('/admin-spaces');
+        navigate(ROUTE_PATHS.ADMIN_SPACES);
       }, 2000);
       return;
     }
@@ -63,7 +64,7 @@ const HostSpacePage: React.FC = () => {
       
       // Redirigir después de 2 segundos
       setTimeout(() => {
-        navigate('/admin-spaces');
+        navigate(ROUTE_PATHS.ADMIN_SPACES);
       }, 2000);
       
     } catch (error) {
@@ -89,7 +90,7 @@ const HostSpacePage: React.FC = () => {
               Para ofrecer tu espacio deportivo, necesitas tener una cuenta en ROGU.
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTE_PATHS.HOME)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir al inicio e iniciar sesión
@@ -114,7 +115,7 @@ const HostSpacePage: React.FC = () => {
               Ya tienes permisos de dueño de espacios deportivos. Te llevaremos a tu panel de administración.
             </p>
             <button
-              onClick={() => navigate('/admin-spaces')}
+              onClick={() => navigate(ROUTE_PATHS.ADMIN_SPACES)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir al Panel de Administración
@@ -245,7 +246,7 @@ const HostSpacePage: React.FC = () => {
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(ROUTE_PATHS.HOME)}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancelar
@@ -273,3 +274,4 @@ const HostSpacePage: React.FC = () => {
 };
 
 export default HostSpacePage;
+

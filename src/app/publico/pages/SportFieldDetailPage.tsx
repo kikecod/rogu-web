@@ -10,6 +10,7 @@ import CustomCalendar from '../../../shared/components/widgets/CustomCalendar';
 import type { SportField } from '../../../domain';
 import { fetchCanchaById } from '../../../shared/utils/helpers';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import { ROUTE_PATHS } from '../../../constants';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const SportFieldDetailPage: React.FC = () => {
     }, 0);
     
     // Navegar al checkout con los detalles de la reserva
-    navigate('/checkout', {
+    navigate(ROUTE_PATHS.CHECKOUT, {
       state: {
         fieldId: id,
         fieldData: field,
@@ -171,7 +172,7 @@ const SportFieldDetailPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Cancha no encontrada</h2>
           <p className="text-gray-600 mb-6">{error || 'No se pudo cargar la información de esta cancha'}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Volver al inicio
@@ -189,7 +190,7 @@ const SportFieldDetailPage: React.FC = () => {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />

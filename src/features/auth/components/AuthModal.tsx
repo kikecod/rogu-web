@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Mail, Lock, Trophy, Users, Zap } from 'lucide-react';
 import { useAuth, type User } from '../context/AuthContext';
 import authService, { type RegisterData } from '../services/auth.service';
@@ -11,6 +11,32 @@ interface AuthModalProps {
   onSwitchMode: () => void;
   onLoginSuccess?: (userData: User) => void;
 }
+
+// utilidades pequeñitas
+const emailRegex =
+  /^(?:[a-zA-Z0-9_'^&+{}=!?$%#`~\-]+(?:\.[a-zA-Z0-9_'^&+{}=!?$%#`~\-]+)*|".+")@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+
+function getBackendMessage(err: unknown): string {
+  const e: any = err;
+  return (
+    e?.response?.data?.message ||
+    e?.response?.data?.error ||
+    e?.data?.message ||
+    e?.data?.error ||
+    e?.message ||
+    'Error desconocido'
+  );
+}
+
+function getPersonaId(data: any): number {
+  const raw = data?.id ?? data?.idPersona ?? data?.id_persona;
+  const n = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(n)) throw new Error(`ID de persona inválido: ${JSON.stringify(raw)}`);
+  return n;
+}
+
+type ToastType = 'success' | 'error' | 'info';
+interface ToastState { type: ToastType; message: string; }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMode, onLoginSuccess }) => {
   const [formData, setFormData] = useState({
@@ -30,105 +56,106 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null); // << reemplaza alerts
   const { login } = useAuth();
+
+  // autocierre del toast
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // limite de fecha hoy (no futuras) - NO es hook
+  const maxBirthDate = new Date().toISOString().slice(0, 10);
 
   if (!isOpen) return null;
 
+  const showToast = (type: ToastType, message: string) => setToast({ type, message });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
-    
+
     try {
       if (mode === 'signup') {
-        // Validar que las contraseñas coincidan
+        // validaciones
+        if (!emailRegex.test(formData.email)) {
+          showToast('error', 'Correo inválido');
+          setIsLoading(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          showToast('error', 'La contraseña debe tener al menos 6 caracteres');
+          setIsLoading(false);
+          return;
+        }
         if (formData.password !== formData.confirmPassword) {
-          alert('Las contraseñas no coinciden');
+          showToast('error', 'Las contraseñas no coinciden');
           setIsLoading(false);
           return;
         }
-
-        // Validar datos antes de enviar
         if (!formData.nombres || !formData.paterno || !formData.materno) {
-          alert('Por favor completa todos los campos de nombre');
+          showToast('error', 'Por favor completa todos los campos de nombre');
           setIsLoading(false);
           return;
         }
-        
-        if (!formData.telefono || !formData.fechaNacimiento) {
-          alert('Por favor completa el teléfono y fecha de nacimiento');
+        const phoneDigits = formData.telefono.replace(/\D+/g, '');
+        if (!phoneDigits || phoneDigits.length < 7) {
+          showToast('error', 'Teléfono inválido');
+          setIsLoading(false);
+          return;
+        }
+        if (!formData.fechaNacimiento) {
+          showToast('error', 'Por favor completa la fecha de nacimiento');
           setIsLoading(false);
           return;
         }
 
-        // Paso 1: Crear persona
+        // Paso 1: crear persona
         const personaData = {
           nombres: formData.nombres.trim(),
           paterno: formData.paterno.trim(),
           materno: formData.materno.trim(),
-          telefono: formData.telefono.trim(),
-          // El backend espera `fecha_nacimiento` en snake_case (ISO date string YYYY-MM-DD)
+          telefono: phoneDigits,
           fecha_nacimiento: formData.fechaNacimiento,
           genero: formData.genero
         };
 
         const personaResp = await httpClient.post<any>('/personas', personaData);
-        const personaResult = personaResp.data;
-        // El backend puede devolver distintas formas de id; normalizamos y aseguramos que sea number
-        const rawId = personaResult.id ?? personaResult.idPersona ?? personaResult.id_persona;
-        const id_personaNum = typeof rawId === 'number' ? rawId : Number(rawId);
+        const id_personaNum = getPersonaId(personaResp.data);
 
-        if (!id_personaNum || Number.isNaN(id_personaNum)) {
-          throw new Error(`ID de persona inválido recibido del backend: ${JSON.stringify(rawId)}`);
-        }
-
-        // Paso 2: Registrar usuario con rol CLIENTE automático usando el endpoint de auth
-        const registerData = {
-          // El backend espera `id_persona` en snake_case y ser un número
+        // Paso 2: registrar usuario con rol CLIENTE
+        const registerData: RegisterData = {
           id_persona: id_personaNum,
-          usuario: formData.usuario,
-          correo: formData.email,
+          usuario: formData.usuario.trim(),
+          correo: formData.email.trim(),
           contrasena: formData.password
-        };
+        } as RegisterData;
 
-        await authService.register(registerData as RegisterData);
+        await authService.register(registerData);
 
-        alert('Registro exitoso! Tu cuenta ha sido creada con rol de cliente. Ahora puedes iniciar sesión');
-        onSwitchMode(); // Cambiar a modo login
+        showToast('success', '¡Registro exitoso! Ahora puedes iniciar sesión.');
+        onSwitchMode();
       } else {
-        // Validar campos de login
-        if (!formData.email || !formData.password) {
-          alert('Por favor completa el correo y la contraseña');
+        // login
+        if (!emailRegex.test(formData.email) || !formData.password) {
+          showToast('error', 'Por favor completa un correo válido y la contraseña');
           setIsLoading(false);
           return;
         }
 
-        // Lógica de login
-        const loginData = {
-          correo: formData.email,
-          contrasena: formData.password
-        };
-
-        const loginResult = await authService.login(loginData.correo, loginData.contrasena);
-        
-        // Usar el hook de auth para manejar el login
+        const loginResult = await authService.login(formData.email.trim(), formData.password);
         login(loginResult.usuario, loginResult.token);
-        
-        alert(`¡Bienvenido ${loginResult.usuario.correo}!`);
-        
-        // Cerrar modal inmediatamente después del login exitoso
+
+        showToast('success', `¡Bienvenido ${loginResult.usuario.correo}!`);
         onClose();
-        
-        // Actualizar estado en App si hay callback
-        if (onLoginSuccess) {
-          onLoginSuccess(loginResult.usuario);
-        }
+        onLoginSuccess?.(loginResult.usuario);
       }
     } catch (error) {
       console.error('Error completo:', error);
-      const apiErr = error as any;
-      const backendMessage = apiErr?.data?.message || apiErr?.data?.error;
-      const errorMessage = backendMessage || (error instanceof Error ? error.message : 'Error desconocido');
-      alert(`Error en el proceso: ${errorMessage}`);
+      showToast('error', `Error en el proceso: ${getBackendMessage(error)}`);
     } finally {
       setIsLoading(false);
     }
@@ -141,31 +168,63 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
     });
   };
 
+  // estilos por tipo de toast
+  const toastClasses = !toast ? '' :
+    toast.type === 'success'
+      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+      : toast.type === 'error'
+      ? 'bg-red-50 text-red-800 border-red-200'
+      : 'bg-blue-50 text-blue-800 border-blue-200';
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto font-sans">
       <div className="flex items-center justify-center min-h-screen px-3 py-4 text-center sm:px-4 sm:py-8">
-        {/* Background overlay */}
+        {/* Overlay */}
         <div className="fixed inset-0 transition-opacity">
-          <div className="absolute inset-0 bg-neutral-900 bg-opacity-75 backdrop-blur-sm" onClick={onClose}></div>
+          <div
+            className="absolute inset-0 bg-neutral-900 bg-opacity-75 backdrop-blur-sm"
+            onClick={isLoading ? undefined : onClose}
+          />
         </div>
 
-        {/* Modal content */}
+        {/* Modal */}
         <div className="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all w-full max-w-sm sm:max-w-md mx-auto">
-          
-          {/* Hero Section */}
+          {/* Toast dentro del modal (arriba a la derecha) */}
+          {toast && (
+            <div className="pointer-events-none absolute top-3 right-3 z-10">
+              <div
+                className={`pointer-events-auto flex items-start gap-3 rounded-lg border px-3 py-2 text-sm shadow-lg ${toastClasses}`}
+                role="status"
+                aria-live="polite"
+              >
+                <span>{toast.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setToast(null)}
+                  className="ml-1 opacity-70 hover:opacity-100"
+                  aria-label="Cerrar notificación"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Hero */}
           <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 px-6 pt-8 pb-12">
             <button
-              onClick={onClose}
+              onClick={isLoading ? undefined : onClose}
               className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+              aria-label="Cerrar"
             >
               <X className="h-6 w-6" />
             </button>
-            
+
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-full mb-4 p-3 sm:p-4">
-                <img 
-                  src="/logo_rogu-blanco.png" 
-                  alt="ROGU" 
+                <img
+                  src="/img/logo_rogu-blanco.png"
+                  alt="ROGU"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -173,10 +232,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                 {mode === 'login' ? '¡Bienvenido de vuelta!' : '¡Únete a ROGU!'}
               </h2>
               <p className="text-blue-100 text-sm">
-                {mode === 'login' 
+                {mode === 'login'
                   ? 'Accede a tu cuenta y reserva tu cancha favorita'
-                  : 'Crea tu cuenta y descubre miles de espacios deportivos'
-                }
+                  : 'Crea tu cuenta y descubre miles de espacios deportivos'}
               </p>
             </div>
           </div>
@@ -207,7 +265,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {mode === 'signup' && (
                 <>
                   {/* Nombres */}
@@ -224,6 +282,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                       onChange={handleInputChange}
                       className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Ej: Juan Carlos"
+                      autoComplete="given-name"
                     />
                   </div>
 
@@ -242,6 +301,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                         onChange={handleInputChange}
                         className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         placeholder="Pérez"
+                        autoComplete="additional-name"
                       />
                     </div>
                     <div>
@@ -257,6 +317,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                         onChange={handleInputChange}
                         className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         placeholder="López"
+                        autoComplete="family-name"
                       />
                     </div>
                   </div>
@@ -275,6 +336,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                       onChange={handleInputChange}
                       className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="juan.perez"
+                      autoComplete="username"
                     />
                   </div>
 
@@ -293,6 +355,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                         onChange={handleInputChange}
                         className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         placeholder="5512345678"
+                        autoComplete="tel"
+                        inputMode="tel"
                       />
                     </div>
                     <div>
@@ -307,6 +371,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                         value={formData.fechaNacimiento}
                         onChange={handleInputChange}
                         className="block w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        max={maxBirthDate}
                       />
                     </div>
                   </div>
@@ -349,6 +414,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                     onChange={handleInputChange}
                     className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="tu@email.com"
+                    autoComplete={mode === 'signup' ? 'email' : 'username'}
                   />
                 </div>
               </div>
@@ -370,6 +436,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                     onChange={handleInputChange}
                     className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="••••••••"
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   />
                 </div>
               </div>
@@ -392,12 +459,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                       onChange={handleInputChange}
                       className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="••••••••"
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Submit button */}
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -409,7 +477,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
                   mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'
                 )}
               </button>
-          </form>
+            </form>
 
             {/* Switch mode */}
             <div className="mt-6 text-center">
@@ -436,7 +504,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
               </div>
             </div>
 
-            {/* Social login options */}
+            {/* Social (placeholder) */}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button className="w-full inline-flex justify-center items-center py-3 px-4 border border-neutral-300 rounded-xl shadow-sm bg-white text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
