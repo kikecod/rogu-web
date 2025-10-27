@@ -34,6 +34,7 @@ export const ROUTE_PATHS = {
   // Usuario (CLIENTE)
   USER_HOME: '/user',
   CHECKOUT: '/checkout',
+  CHECKOUT_SUCCESS: '/checkout/success',
   BOOKING_CONFIRMATION: '/booking-confirmation',
   BOOKINGS: '/bookings',
   BOOKING_QR: '/bookings/:id/qr',
@@ -42,7 +43,10 @@ export const ROUTE_PATHS = {
   // Dueño (DUENIO)
   OWNER_DASHBOARD: '/owner/dashboard',
   OWNER_VENUES: '/owner/venues',
+  OWNER_VENUE_CREATE: '/owner/venues/new',
+  OWNER_VENUE_DETAIL: '/owner/venues/:id',
   OWNER_COURTS: '/owner/courts',
+  OWNER_COURT_DETAIL: '/owner/courts/:id',
   OWNER_PRICING: '/owner/pricing',
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_RESERVATIONS: '/owner/reservations',
@@ -106,11 +110,11 @@ export const AUTH_ROUTE_KEYS: Readonly<RouteKey[]> = [
 ];
 
 export const CLIENTE_ROUTE_KEYS: Readonly<RouteKey[]> = [
-  'USER_HOME','CHECKOUT','BOOKING_CONFIRMATION','BOOKINGS','BOOKING_QR','PROFILE',
+  'USER_HOME','CHECKOUT','CHECKOUT_SUCCESS','BOOKING_CONFIRMATION','BOOKINGS','BOOKING_QR','PROFILE',
 ];
 
 export const DUENIO_ROUTE_KEYS: Readonly<RouteKey[]> = [
-  'OWNER_DASHBOARD','OWNER_VENUES','OWNER_COURTS','OWNER_PRICING',
+  'OWNER_DASHBOARD','OWNER_VENUES','OWNER_VENUE_CREATE','OWNER_COURTS','OWNER_PRICING',
   'OWNER_CALENDAR','OWNER_RESERVATIONS','OWNER_STAFF','OWNER_POSTULATIONS','HOST',
 ];
 

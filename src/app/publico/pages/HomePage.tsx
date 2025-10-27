@@ -4,7 +4,7 @@ import { Search, MapPin, Calendar, Clock } from 'lucide-react';
 import SportFieldCard from '../../../features/canchas/components/SportFieldCard';
 import Filters, { type FilterState } from '../../../shared/components/widgets/Filters';
 import Footer from '../../../shared/components/layout/Footer';
-import { fetchCanchas } from '../../../shared/utils/helpers';
+import { fetchCanchas } from '../../../shared/utils/canchas';
 import type { SportField } from '../../../domain';
 import { buildRoute } from '../../../constants';
 

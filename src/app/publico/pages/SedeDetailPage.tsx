@@ -7,7 +7,7 @@ import {
 import Footer from '../../../shared/components/layout/Footer';
 import { ROUTE_PATHS, buildRoute } from '../../../constants';
 import type { SportField, LegacySede } from '../../../domain';
-import { getSportFieldImages, generateAvatarUrl } from '../../../shared/utils/helpers';
+import { getSportFieldImages, generateAvatarUrl } from '../../../shared/utils/media';
 
 // Mock data de sede
 const mockSede: LegacySede = {

@@ -189,6 +189,8 @@ export interface Reserva {
   creado_en: ISODateTime;
   actualizado_en: ISODateTime;
   eliminado_en: ISODateTime | null;
+  transacciones?: Transaccion[];
+  pasesAcceso?: PasesAcceso[];
 }
 
 /** Calificaciones realizadas por clientes. PK compuesta. */
@@ -224,24 +226,17 @@ export interface Denuncia {
 export interface PasesAcceso {
   id_pase_acceso: number;
   id_reserva: number;
-  hash_code: string;
-  valido_desde: ISODateTime;
-  valido_hasta: ISODateTime;
-  estado: string;
-  creado_en: ISODateTime;
+  qr: string;
+  cantidad_personas: number;
 }
 
 /**
  * Bitacora de controles realizados por operadores.
- * PK compuesta: (id_persona_ope, id_reserva, id_pase_acceso)
+ * PK compuesta: (id_controlador, id_pase_acceso)
  */
 export interface Controla {
-  id_persona_ope: number;
-  id_reserva: number;
+  id_controlador: number;
   id_pase_acceso: number;
-  accion: string;
-  resultado: string;
-  fecha: ISODateTime;
 }
 
 /**
@@ -286,17 +281,20 @@ export interface Participa {
  */
 export interface Transaccion {
   id_transaccion: number;
-  id_reserva: number;
-  pasarela: string;
-  metodo: string;
-  monto: Decimal;
-  estado: string;
-  id_externo: string;
-  comision_pasarela: Decimal;
-  comision_plataforma: Decimal;
-  moneda_liquidada: string;
-  codigo_autorizacion: string;
-  creado_en: ISODateTime;
-  capturado_en: ISODateTime;
-  reembolsado_en: ISODateTime | null;
+  id_transaccion_libelula: string;
+  url_pasarela_pagos: string;
+  qr_simple_url: string | null;
+  estado_pago: string;
+  fecha_pago: ISODateTime | null;
+  monto_total: Decimal;
+  cliente_id: number;
+  reserva_id: number;
+  facturas?: TransaccionFactura[];
+}
+
+export interface TransaccionFactura {
+  id_factura: number;
+  transaccion_id: number;
+  invoice_id: string;
+  invoice_url: string;
 }

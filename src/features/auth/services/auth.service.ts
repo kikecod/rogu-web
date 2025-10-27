@@ -1,7 +1,8 @@
 import { httpClient } from '../../../lib/api/http-client';
 
+// Lo que expone nuestro servicio al resto de la app
 export interface LoginResult {
-  token: string;
+  token: string; // accessToken del backend
   usuario: any;
 }
 
@@ -15,8 +16,10 @@ export interface RegisterData {
 const API_PREFIX = '/auth';
 
 export async function login(correo: string, contrasena: string): Promise<LoginResult> {
-  const res = await httpClient.post<LoginResult>(`${API_PREFIX}/login`, { correo, contrasena });
-  return res.data;
+  // El backend responde { accessToken, usuario }
+  const res = await httpClient.post<any>(`${API_PREFIX}/login`, { correo, contrasena });
+  const data = res.data as { accessToken?: string; usuario?: any };
+  return { token: data.accessToken ?? '', usuario: data.usuario } as LoginResult;
 }
 
 export async function register(data: RegisterData): Promise<any> {
@@ -26,8 +29,11 @@ export async function register(data: RegisterData): Promise<any> {
 
 export async function refresh(): Promise<{ token: string } | null> {
   try {
+    // El backend responde { accessToken, usuario }
     const res = await httpClient.post<any>(`${API_PREFIX}/refresh`);
-    return res.data as { token: string };
+    const data = res.data as { accessToken?: string };
+    if (!data?.accessToken) return null;
+    return { token: data.accessToken };
   } catch (err) {
     return null;
   }

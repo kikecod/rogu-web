@@ -2,6 +2,8 @@
 // These types represent client-side view models and mock data structures
 // that do not mirror the backend schema one-to-one.
 
+import type { Disciplina } from './backend';
+
 export interface LegacySede {
   id: string;
   ownerId: string; // ID del dueno/propietario
@@ -28,6 +30,12 @@ export interface ApiFoto {
   idFoto: number;
   id_cancha: number;
   urlFoto: string;
+}
+
+export interface ApiParte {
+  id_cancha: number;
+  id_disciplina: number;
+  disciplina?: Disciplina | null;
 }
 
 export interface ApiSede {
@@ -79,7 +87,7 @@ export interface ApiCancha {
   creado_en: string;
   actualizado_en: string;
   eliminadoEn: string | null;
-  parte: any[];
+  parte?: ApiParte[];
   fotos: ApiFoto[];
   reservas?: any[];
   sede?: ApiSede;
@@ -112,6 +120,7 @@ export interface SportField {
     avatar: string;
   };
   // Campos adicionales para detalle
+  disciplines?: string[];
   surface?: string;
   size?: string;
   indoor?: boolean;

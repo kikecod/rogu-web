@@ -5,11 +5,14 @@ import {
   CheckCircle, XCircle, AlertCircle, ChevronRight, Star,
   Download, Share2, Filter, Search
 } from 'lucide-react';
-import Footer from '../../../shared/components/layout/Footer';
-import { ROUTE_PATHS } from '../../../constants';
-import { getSportFieldImages } from '../../../shared/utils/helpers';
-import reservaService from '../../../features/reservas/services/reserva.service';
-import { useAuth } from '../../../features/auth/context/AuthContext';
+import Footer from '../../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../../constants';
+import { getSportFieldImages } from '../../../../shared/utils/media';
+import { formatPrice } from '../../../../shared/utils/format';
+import reservaService, { cancelReserva } from '../../../../features/reservas/services/reserva.service';
+import type { GetReservasUsuarioResponse } from '../../../../features/reservas/services/reserva.service';
+import { registrarDeuda } from '../../../../features/pagos/services/pagos.service';
+import { useAuth } from '../../../../features/auth/context/AuthContext';
 
 interface Booking {
   id: string;
@@ -27,8 +30,14 @@ interface Booking {
   bookingCode: string;
   rating?: number;
   reviews?: number;
-  paymentMethod: 'card' | 'qr';
+  paymentMethod: string;
+  paymentStatus: string;
+  qrCode?: string | null;
+  pasarelaUrl?: string | null;
+  transaccionId?: string | null;
 }
+
+type RawReservaUsuario = GetReservasUsuarioResponse['reservas'][number];
 
 // No hay mocks: eliminados para evitar mostrar reservas de ejemplo en cualquier entorno
 
@@ -42,6 +51,15 @@ const MyBookingsPage: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+  const [summary, setSummary] = useState({
+    total: 0,
+    activas: 0,
+    completadas: 0,
+    canceladas: 0,
+  });
+
+  const formatBolivianos = (value: number) =>
+    formatPrice(Number.isFinite(value) ? value : 0);
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -50,10 +68,6 @@ const MyBookingsPage: React.FC = () => {
                          booking.bookingCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
-
-  const activeBookings = bookings.filter(b => b.status === 'active').length;
-  const completedBookings = bookings.filter(b => b.status === 'completed').length;
-  const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -83,6 +97,32 @@ const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const renderPaymentBadge = (status: string) => {
+    const normalized = status.toUpperCase();
+    if (normalized === 'PAGADO') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Pagado
+        </span>
+      );
+    }
+    if (normalized === 'PENDIENTE') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Pendiente
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+        <AlertCircle className="h-3.5 w-3.5" />
+        {normalized}
+      </span>
+    );
+  };
+
   const handleEditBooking = (booking: Booking) => {
     navigate(`/field/${booking.fieldId}`, {
       state: {
@@ -97,13 +137,19 @@ const MyBookingsPage: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (bookingToDelete) {
-      setBookings(bookings.map(b => 
+  const confirmDelete = async () => {
+    if (!bookingToDelete) return;
+    try {
+      await cancelReserva(Number(bookingToDelete));
+      setBookings(prev => prev.map(b => 
         b.id === bookingToDelete 
           ? { ...b, status: 'cancelled' as const }
           : b
       ));
+    } catch (err) {
+      console.error('Error al cancelar la reserva:', err);
+      alert('No se pudo cancelar la reserva. Intenta nuevamente.');
+    } finally {
       setShowDeleteModal(false);
       setBookingToDelete(null);
     }
@@ -113,8 +159,60 @@ const MyBookingsPage: React.FC = () => {
     setSelectedBooking(booking);
   };
 
+  const handlePayNow = async (booking: Booking) => {
+    try {
+      const descripcion = `${booking.fieldName} - ${booking.sedeName} - ${booking.date} ${booking.timeSlot}`;
+      const resp = await registrarDeuda({ reserva_id: Number(booking.id), descripcion });
+      const transaccion = resp?.transaccion;
+      const pasarelaUrl = transaccion?.url_pasarela_pagos;
+      const qrUrl = transaccion?.qr_simple_url;
+      const nuevoEstadoPago = transaccion?.estado_pago
+        ? String(transaccion.estado_pago).toUpperCase()
+        : booking.paymentStatus;
+
+      if (transaccion) {
+        setBookings(prev =>
+          prev.map(item =>
+            item.id === booking.id
+              ? {
+                  ...item,
+                  paymentStatus: nuevoEstadoPago,
+                  pasarelaUrl: pasarelaUrl ?? item.pasarelaUrl ?? null,
+                  transaccionId: transaccion.id_transaccion_libelula ?? item.transaccionId ?? null,
+                  qrCode: qrUrl ?? item.qrCode ?? null,
+                }
+              : item,
+          ),
+        );
+      }
+
+      if (pasarelaUrl) {
+        window.location.href = pasarelaUrl;
+        return;
+      }
+
+      if (qrUrl) {
+        window.open(qrUrl, '_blank', 'noopener');
+      } else {
+        alert('Se registro el pago, revisa el estado de tu reserva.');
+      }
+    } catch (err) {
+      console.error('No se pudo iniciar el pago:', err);
+      alert('No se pudo iniciar el pago. Intenta nuevamente.');
+    }
+  };
+
   const handleDownloadQR = (booking: Booking) => {
-    alert(`Descargando QR para: ${booking.bookingCode}`);
+    if (booking.qrCode) {
+      const link = document.createElement('a');
+      link.href = booking.qrCode;
+      link.download = `${booking.bookingCode || 'reserva'}-qr.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      alert('El QR estara disponible cuando el pago se confirme.');
+    }
   };
 
   const handleShareBooking = async (booking: Booking) => {
@@ -122,45 +220,90 @@ const MyBookingsPage: React.FC = () => {
       try {
         await navigator.share({
           title: `Reserva ROGU - ${booking.fieldName}`,
-          text: `Reserva confirmada: ${booking.fieldName}\nFecha: ${booking.date}\nCódigo: ${booking.bookingCode}`,
+          text: `Reserva confirmada: ${booking.fieldName}\nFecha: ${booking.date}\nCodigo: ${booking.bookingCode}`,
           url: window.location.href,
         });
       } catch (err) {
         console.log('Error sharing:', err);
       }
     } else {
-      alert('Función de compartir no disponible en este navegador');
+      alert('Funcion de compartir no disponible en este navegador');
     }
   };
 
   // Cargar reservas reales del backend (si hay token), si falla usar mocks
+  const personaId = user?.id_persona;
+
   React.useEffect(() => {
     const load = async () => {
-      if (!isLoggedIn || !user) { setLoading(false); return; }
+      if (!isLoggedIn || !personaId) { setLoading(false); return; }
 
       try {
-        const reservas = await reservaService.getReservasPorUsuario(user.id_usuario);
-        // Transformar reservas raw al shape de UI (simple mapping)
-        const mapped: Booking[] = reservas.map((r: any) => ({
-          id: String(r.id_reserva),
-          fieldId: String(r.id_cancha),
-          fieldName: r.cancha?.nombre || `Cancha ${r.id_cancha}`,
-          fieldImage: getSportFieldImages('football')[0],
-          sedeName: r.cancha?.sedeNombre || 'Sede desconocida',
-          address: r.cancha?.direccion || 'Dirección no disponible',
-          date: new Date(r.inicia_en).toLocaleDateString('es-ES'),
-          timeSlot: `${new Date(r.inicia_en).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} - ${new Date(r.termina_en).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`,
-          participants: r.cantidad_personas || 1,
-          price: Number(r.monto_base || 0),
-          totalPaid: Number(r.monto_total || 0),
-          status: 'active',
-          bookingCode: `R-${r.id_reserva}`,
-          rating: undefined,
-          reviews: undefined,
-          paymentMethod: 'card'
-        }));
+        const resp = await reservaService.getReservasPorUsuario(personaId);
+        const reservas = Array.isArray(resp?.reservas) ? resp.reservas : [];
+        // Transformar reservas al shape de UI (simple mapping)
+        const mapped: Booking[] = reservas.map((r: RawReservaUsuario) => {
+          const estadoReserva = String(r.estado || '').toUpperCase();
+          const estadoPago = String(r.estadoPago || r.pago?.estado || 'PENDIENTE').toUpperCase();
+          const ultimaTransaccion = Array.isArray(r.transacciones) && r.transacciones.length > 0
+            ? r.transacciones[0]
+            : null;
+          const qrFromPases = Array.isArray(r.pasesAcceso) && r.pasesAcceso.length > 0
+            ? r.pasesAcceso[0]?.qr ?? null
+            : null;
 
-        if (mapped.length > 0) setBookings(mapped);
+          let status: Booking['status'] = 'active';
+          if (estadoReserva === 'CANCELADA') {
+            status = 'cancelled';
+          } else if (estadoReserva === 'COMPLETADA') {
+            status = 'completed';
+          }
+
+          return {
+            id: String(r.id_reserva),
+            fieldId: String(r.id_cancha ?? r.cancha?.id_cancha ?? ''),
+            fieldName: r.cancha?.nombre || `Cancha ${r.id_cancha}`,
+            fieldImage:
+              r.cancha?.fotos?.[0]?.url_foto || getSportFieldImages('football')[0],
+            sedeName: r.cancha?.sede?.nombre || 'Sede desconocida',
+            address: r.cancha?.sede?.direccion || 'Direccion no disponible',
+            date: new Date(r.inicia_en).toLocaleDateString('es-ES'),
+            timeSlot: `${new Date(r.inicia_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(r.termina_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            participants: Number(r.cantidad_personas || 1),
+            price: Number(r.monto_base || 0),
+            totalPaid: Number(r.monto_total || 0),
+            status,
+            bookingCode: ultimaTransaccion?.id_transaccion_libelula || `R-${r.id_reserva}`,
+            rating: undefined,
+            reviews: undefined,
+            paymentMethod: r.metodoPago || 'LIBELULA',
+            paymentStatus: estadoPago,
+            qrCode: r.codigoQR || qrFromPases,
+            pasarelaUrl:
+              r.pago?.url_pasarela_pagos ||
+              ultimaTransaccion?.url_pasarela_pagos ||
+              null,
+            transaccionId: ultimaTransaccion?.id_transaccion_libelula || null,
+          };
+        });
+
+        setSummary({
+          total: Number(resp?.total ?? mapped.length),
+          activas:
+            resp?.activas !== undefined
+              ? Number(resp.activas)
+              : mapped.filter((b) => b.status === 'active').length,
+          completadas:
+            resp?.completadas !== undefined
+              ? Number(resp.completadas)
+              : mapped.filter((b) => b.status === 'completed').length,
+          canceladas:
+            resp?.canceladas !== undefined
+              ? Number(resp.canceladas)
+              : mapped.filter((b) => b.status === 'cancelled').length,
+        });
+
+        setBookings(mapped);
       } catch (err) {
         console.warn('No se pudieron cargar reservas reales:', err);
       } finally {
@@ -168,14 +311,14 @@ const MyBookingsPage: React.FC = () => {
       }
     };
     load();
-  }, [isLoggedIn, user?.id_usuario]);
+  }, [isLoggedIn, personaId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold mb-3">Mis Reservas 🏆</h1>
+          <h1 className="text-4xl font-extrabold mb-3">Mis Reservas </h1>
           <p className="text-xl text-blue-50">
             Gestiona todas tus reservas en un solo lugar
           </p>
@@ -189,7 +332,7 @@ const MyBookingsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Activas</p>
-                <p className="text-3xl font-extrabold text-green-600">{activeBookings}</p>
+                <p className="text-3xl font-extrabold text-green-600">{summary.activas}</p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -201,7 +344,7 @@ const MyBookingsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Completadas</p>
-                <p className="text-3xl font-extrabold text-blue-600">{completedBookings}</p>
+                <p className="text-3xl font-extrabold text-blue-600">{summary.completadas}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-full">
                 <CheckCircle className="h-8 w-8 text-blue-600" />
@@ -213,7 +356,7 @@ const MyBookingsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Canceladas</p>
-                <p className="text-3xl font-extrabold text-red-600">{cancelledBookings}</p>
+                <p className="text-3xl font-extrabold text-red-600">{summary.canceladas}</p>
               </div>
               <div className="bg-red-100 p-3 rounded-full">
                 <XCircle className="h-8 w-8 text-red-600" />
@@ -230,7 +373,7 @@ const MyBookingsPage: React.FC = () => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, sede o código..."
+                placeholder="Buscar por nombre, sede o codigo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -297,8 +440,8 @@ const MyBookingsPage: React.FC = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-2">No se encontraron reservas</h3>
             <p className="text-gray-600 mb-6">
               {searchTerm 
-                ? 'Intenta con otros términos de búsqueda'
-                : 'Aún no tienes reservas. ¡Haz tu primera reserva ahora!'}
+                ? 'Intenta con otros terminos de busqueda'
+                : 'Aun no tienes reservas. Haz tu primera reserva ahora!'}
             </p>
             <button
               onClick={() => navigate(ROUTE_PATHS.HOME)}
@@ -339,7 +482,7 @@ const MyBookingsPage: React.FC = () => {
                           <div className="flex items-center gap-2 mb-3">
                             <Star className="h-4 w-4 fill-blue-600 text-blue-600" />
                             <span className="font-bold text-sm">{booking.rating}</span>
-                            <span className="text-xs text-gray-600">({booking.reviews} reseñas)</span>
+                            <span className="text-xs text-gray-600">({booking.reviews} resenas)</span>
                           </div>
                         </div>
                       </div>
@@ -369,10 +512,14 @@ const MyBookingsPage: React.FC = () => {
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                        <div>
-                          <p className="text-sm text-gray-600">Total pagado</p>
-                          <p className="text-2xl font-extrabold text-blue-600">{booking.totalPaid} BS</p>
-                        </div>
+        <div>
+          <p className="text-sm text-gray-600">Total pagado</p>
+          <p className="text-2xl font-extrabold text-blue-600">{formatBolivianos(booking.totalPaid)}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Estado de pago:{' '}
+            {renderPaymentBadge(booking.paymentStatus)}
+          </p>
+        </div>
 
                         <div className="flex items-center gap-2">
                           <button
@@ -385,6 +532,15 @@ const MyBookingsPage: React.FC = () => {
 
                           {booking.status === 'active' && (
                             <>
+                              {booking.paymentStatus !== 'PAGADO' && (
+                                <button
+                                  onClick={() => handlePayNow(booking)}
+                                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold text-sm hover:bg-emerald-700 transition-all"
+                                  title="Pagar ahora"
+                                >
+                                  Pagar ahora
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleEditBooking(booking)}
                                 className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-all"
@@ -443,13 +599,13 @@ const MyBookingsPage: React.FC = () => {
               {selectedBooking.status === 'active' && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                    Código QR de acceso
+                    Codigo QR de acceso
                   </h3>
                   <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg w-full flex justify-center">
                     <QrCode className="h-48 w-48 text-gray-800" />
                   </div>
                   <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600 mb-2">Código de reserva</p>
+                    <p className="text-sm text-gray-600 mb-2">Codigo de reserva</p>
                     <p className="text-xl font-mono font-bold text-gray-900">{selectedBooking.bookingCode}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mt-4">
@@ -504,7 +660,7 @@ const MyBookingsPage: React.FC = () => {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       <MapPin className="h-4 w-4 text-blue-600" />
-                      <p className="text-xs text-gray-600">Ubicación</p>
+                      <p className="text-xs text-gray-600">Ubicacion</p>
                     </div>
                     <p className="font-bold text-gray-900 text-sm">{selectedBooking.address}</p>
                   </div>
@@ -513,23 +669,27 @@ const MyBookingsPage: React.FC = () => {
 
               {/* Payment Info */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200">
-                <h4 className="font-bold text-gray-900 mb-3">Información de pago</h4>
+                <h4 className="font-bold text-gray-900 mb-3">Informacion de pago</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-700">Estado</span>
+                  {renderPaymentBadge(selectedBooking.paymentStatus)}
+                </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-700">Costo de reserva</span>
-                    <span className="font-semibold">{selectedBooking.price} BS</span>
+                    <span className="font-semibold">{formatBolivianos(selectedBooking.price)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-700">Tarifa de servicio</span>
-                    <span className="font-semibold">{(selectedBooking.totalPaid - selectedBooking.price).toFixed(2)} BS</span>
+                    <span className="font-semibold">{formatBolivianos(Math.max(selectedBooking.totalPaid - selectedBooking.price, 0))}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-green-200">
                     <span className="font-bold text-gray-900">Total</span>
-                    <span className="font-extrabold text-green-600 text-lg">{selectedBooking.totalPaid} BS</span>
+                    <span className="font-extrabold text-green-600 text-lg">{formatBolivianos(selectedBooking.totalPaid)}</span>
                   </div>
                   <p className="text-xs text-green-700 flex items-center gap-1 mt-2">
                     <CheckCircle className="h-3 w-3" />
-                    Pagado vía {selectedBooking.paymentMethod === 'card' ? 'Tarjeta' : 'QR'}
+                    Pagado via {selectedBooking.paymentMethod === 'card' ? 'Tarjeta' : 'QR'}
                   </p>
                 </div>
               </div>
@@ -572,10 +732,10 @@ const MyBookingsPage: React.FC = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">¿Cancelar reserva?</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Cancelar reserva?</h3>
               <p className="text-gray-600">
-                Esta acción cancelará tu reserva. De acuerdo a la política de cancelación, 
-                {' '}si cancelas con menos de 24 horas de anticipación, se aplicará un cargo del 50%.
+                Esta accion cancelara tu reserva. De acuerdo a la politica de cancelacion, 
+                {' '}si cancelas con menos de 24 horas de anticipacion, se aplicara un cargo del 50%.
               </p>
             </div>
 
@@ -590,7 +750,7 @@ const MyBookingsPage: React.FC = () => {
                 onClick={confirmDelete}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-all"
               >
-                Sí, cancelar
+                Si, cancelar
               </button>
             </div>
           </div>
@@ -603,5 +763,8 @@ const MyBookingsPage: React.FC = () => {
 };
 
 export default MyBookingsPage;
+
+
+
 
 

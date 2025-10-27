@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Shield, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../features/auth/context/AuthContext';
-import { httpClient } from '../../../lib/api/http-client';
-import { ROUTE_PATHS } from '../../../constants';
+import { useAuth } from '../../../../features/auth/context/AuthContext';
+import { httpClient } from '../../../../lib/api/http-client';
+import { ROUTE_PATHS } from '../../../../constants';
 
 const HostSpacePage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);

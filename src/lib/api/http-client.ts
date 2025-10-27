@@ -144,6 +144,30 @@ export class HttpClient {
       credentials: this.shouldIncludeCredentials(url) ? 'include' : options.credentials,
     };
 
+    // Si estamos enviando FormData, no debemos establecer Content-Type manualmente
+    try {
+      if (config.body && typeof FormData !== 'undefined' && config.body instanceof FormData) {
+        const headers = (config.headers as Record<string, string>) || {};
+        if ('Content-Type' in headers) {
+          delete headers['Content-Type'];
+          config.headers = headers;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // Debug no invasivo: ayuda a rastrear problemas de autenticación en dev
+    try {
+      const authHeader = (config.headers as Record<string, string>)?.['Authorization'];
+      if (!this.shouldIncludeCredentials(url) && !authHeader) {
+        // eslint-disable-next-line no-console
+        console.debug(`[http] No Authorization header for ${url}. Is user logged in?`);
+      }
+    } catch {
+      // ignore
+    }
+
     // Timeout de la petición
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -182,6 +206,14 @@ export class HttpClient {
             data = await response.json();
           } else {
             data = await response.text();
+          }
+        } else {
+          // Refresh falló (probablemente cookie no presente). Limpiar sesión local para evitar bucles.
+          try {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          } catch {
+            // ignore
           }
         }
       }

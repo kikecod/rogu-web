@@ -1,4 +1,3 @@
-// Legacy barrel file. Prefer importing from specific util modules (media, format, canchas, reservas).
 export * from './media';
 export * from './format';
 export * from './canchas';

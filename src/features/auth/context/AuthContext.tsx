@@ -15,7 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   isLoggedIn: boolean;
   login: (userData: User, token: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (userData: User) => void;
   hasRole: (role: string) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
@@ -74,14 +74,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.setItem('token', refreshed.token);
             try {
               const currentUser = await authService.profile();
-              // Asegurar forma User según nuestro contexto
+              // Backend profile devuelve { persona, usuario: { correo, usuario, id_persona, id_usuario, roles, ... } }
+              const u = (currentUser && (currentUser.usuario || currentUser)) as any;
               const normalizedUser: User = {
-                correo: currentUser?.correo,
-                usuario: currentUser?.usuario,
-                id_persona: currentUser?.id_persona,
-                id_usuario: currentUser?.id_usuario,
-                roles: currentUser?.roles || [],
-                avatar: currentUser?.avatar,
+                correo: u?.correo ?? '',
+                usuario: u?.usuario ?? '',
+                id_persona: u?.id_persona ?? 0,
+                id_usuario: u?.id_usuario ?? 0,
+                roles: Array.isArray(u?.roles) ? u.roles : [],
+                avatar: u?.avatar,
               };
               localStorage.setItem('user', JSON.stringify(normalizedUser));
               setUser(normalizedUser);
@@ -120,11 +121,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoggedIn(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsLoggedIn(false);
+  const logout = async () => {
+    try {
+      // Invalida la cookie httpOnly de refresh en el backend
+      await authService.logout();
+    } catch {
+      // ignorar errores de red al cerrar sesión
+    } finally {
+      // Siempre limpiar estado local
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch {
+        // ignore
+      }
+      setUser(null);
+      setIsLoggedIn(false);
+    }
   };
 
   const updateUser = (userData: User) => {

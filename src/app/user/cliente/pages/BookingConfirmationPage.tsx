@@ -5,8 +5,8 @@ import {
   Clock, Users, MapPin, AlertCircle, Home, Trophy,
   Star, Copy, Check
 } from 'lucide-react';
-import Footer from '../../../shared/components/layout/Footer';
-import { ROUTE_PATHS } from '../../../constants';
+import Footer from '../../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../../constants';
 
 interface BookingDetails {
   fieldName: string;

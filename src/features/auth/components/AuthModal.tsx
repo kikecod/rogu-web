@@ -147,7 +147,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
         }
 
         const loginResult = await authService.login(formData.email.trim(), formData.password);
-        login(loginResult.usuario, loginResult.token);
+        // Asegurar que tenemos roles completos y shape consistente usando /auth/profile
+        // Guardamos temporalmente el token para que httpClient lo use en la llamada de perfil
+        try {
+          localStorage.setItem('token', loginResult.token);
+          const currentUser = await authService.profile();
+          const u = (currentUser && (currentUser.usuario || currentUser)) as any;
+          const normalizedUser: User = {
+            correo: u?.correo ?? loginResult.usuario?.correo ?? '',
+            usuario: u?.usuario ?? loginResult.usuario?.usuario ?? '',
+            id_persona: u?.id_persona ?? loginResult.usuario?.id_persona ?? 0,
+            id_usuario: u?.id_usuario ?? loginResult.usuario?.id_usuario ?? 0,
+            roles: Array.isArray(u?.roles) ? u.roles : (loginResult.usuario?.roles || []),
+            avatar: u?.avatar ?? loginResult.usuario?.avatar,
+          };
+          login(normalizedUser, loginResult.token);
+        } catch {
+          // Si por alguna razón falla profile, seguimos con el usuario retornado por login
+          login(loginResult.usuario as User, loginResult.token);
+        }
 
         showToast('success', `¡Bienvenido ${loginResult.usuario.correo}!`);
         onClose();

@@ -8,7 +8,7 @@ import {
 import Footer from '../../../shared/components/layout/Footer';
 import CustomCalendar from '../../../shared/components/widgets/CustomCalendar';
 import type { SportField } from '../../../domain';
-import { fetchCanchaById } from '../../../shared/utils/helpers';
+import { fetchCanchaById } from '../../../shared/utils/canchas';
 import { useAuth } from '../../../features/auth/context/AuthContext';
 import { ROUTE_PATHS } from '../../../constants';
 

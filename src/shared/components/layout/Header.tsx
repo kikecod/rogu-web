@@ -25,9 +25,14 @@ const hasAll = (roles: Role[] | undefined, needed: Role[]) => needed.every(n => 
 
 const pickVariant = (roles: Role[] | undefined) => {
   if (has(roles, 'ADMIN')) return 'ADMIN';
+  // todas las combinaciones ricas primero
   if (hasAll(roles, ['CLIENTE', 'DUENIO', 'CONTROLADOR'])) return 'CLIENTE_DUENIO_CONTROLADOR';
+  if (hasAll(roles, ['DUENIO', 'CONTROLADOR'])) return 'CLIENTE_DUENIO_CONTROLADOR'; // sin CLIENTE igual mostramos ese menú combinado
   if (hasAll(roles, ['CLIENTE', 'DUENIO'])) return 'CLIENTE_DUENIO';
   if (hasAll(roles, ['CLIENTE', 'CONTROLADOR'])) return 'CLIENTE_CONTROLADOR';
+  // roles individuales
+  if (has(roles, 'DUENIO')) return 'CLIENTE_DUENIO';
+  if (has(roles, 'CONTROLADOR')) return 'CLIENTE_CONTROLADOR';
   if (has(roles, 'CLIENTE')) return 'CLIENTE';
   // fallback visual para anónimos (usa menú de login)
   return 'ANON';
@@ -38,6 +43,14 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
   const { user, isLoggedIn, isDuenio } = useAuth();
   const allowedPaths = getPathsForRoles((user?.roles || []) as Role[], { includePublic: true, includeAuth: false });
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const getUserInitial = (): string => {
+    const primary = typeof user?.correo === 'string' ? user?.correo : undefined;
+    const secondary = typeof user?.usuario === 'string' ? user?.usuario : undefined;
+    const label = (primary ?? secondary ?? '').trim();
+    const ch = label ? label.charAt(0) : '';
+    return ch ? ch.toUpperCase() : '';
+  };
 
   const closeMenu = () => setIsMenuOpen(false);
   const variant = pickVariant((user?.roles || []) as Role[]);
@@ -97,11 +110,18 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-600" />
                 {isLoggedIn && user ? (
                   user.avatar ? (
-                    <img src={user.avatar} alt={user.correo} className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" />
+                    <img src={user.avatar} alt={(typeof user.correo === 'string' && user.correo) || (typeof user.usuario === 'string' && user.usuario) || 'Usuario'} className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" />
                   ) : (
-                    <div className="h-5 w-5 sm:h-6 sm:w-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {user.correo.charAt(0).toUpperCase()}
-                    </div>
+                    (() => {
+                      const initial = getUserInitial();
+                      return initial ? (
+                        <div className="h-5 w-5 sm:h-6 sm:w-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                          {initial}
+                        </div>
+                      ) : (
+                        <User className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-500" />
+                      );
+                    })()
                   )
                 ) : (
                   <User className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-500" />
@@ -111,10 +131,10 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
               {/* Dropdown */}
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-white rounded-lg shadow-xl py-2 z-50 border border-neutral-200">
-                  {isLoggedIn ? (
+                  {isLoggedIn && user && variant !== 'ANON' ? (
                     <>
                       <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900 truncate">{user?.correo}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{(typeof user?.correo === 'string' && user.correo) || (typeof user?.usuario === 'string' && user.usuario) || 'Usuario'}</p>
                         {user?.roles?.length ? (
                           <p className="text-xs text-blue-600 mt-1">Roles: {user.roles.join(', ')}</p>
                         ) : null}
@@ -151,7 +171,6 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                         Iniciar sesión
                       </button>
                       <hr className="my-1" />
-                      
                     </>
                   )}
                 </div>

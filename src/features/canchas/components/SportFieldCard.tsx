@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Star, MapPin, Clock } from 'lucide-react';
 import type { SportField } from '../../../domain';
+import { getSportFieldImages, generatePlaceholderImage } from '../../../shared/utils/media';
 
 interface SportFieldCardProps {
   field: SportField;
@@ -32,6 +33,17 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
     return labels[sport] || sport.charAt(0).toUpperCase() + sport.slice(1);
   };
 
+  const fallbackImage = useMemo(() => {
+    const sportImages = getSportFieldImages(field.sport);
+    return sportImages[0] || generatePlaceholderImage(400, 300, field.name);
+  }, [field.name, field.sport]);
+
+  const primaryImage = useMemo(() => {
+    if (!Array.isArray(field.images)) return fallbackImage;
+    const firstValid = field.images.find((img) => typeof img === 'string' && img.trim().length > 0);
+    return firstValid ?? fallbackImage;
+  }, [field.images, fallbackImage]);
+
   return (
     <div
       className="bg-white rounded-xl border border-neutral-200 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden group w-full h-full"
@@ -40,13 +52,14 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
       {/* Image carousel */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={field.images[0] || '/api/placeholder/400/300'}
+          src={primaryImage}
           alt={field.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             // Si la imagen falla al cargar, usar un placeholder
-            console.error('❌ Error al cargar imagen:', field.images[0]);
-            e.currentTarget.src = 'https://via.placeholder.com/400x300/22c55e/ffffff?text=Cancha';
+            console.error('❌ Error al cargar imagen:', primaryImage);
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = fallbackImage || generatePlaceholderImage(400, 300, field.name);
           }}
         />
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm">

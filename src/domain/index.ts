@@ -2,6 +2,7 @@ export * from './backend';
 export type {
   LegacySede,
   ApiFoto,
+  ApiParte,
   ApiSede,
   ApiReserva,
   ApiUsuario,

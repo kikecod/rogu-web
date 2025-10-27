@@ -4,10 +4,13 @@ import {
   ChevronLeft, CreditCard, QrCode, Star, MapPin, 
   Calendar, Users, Clock, Shield, AlertCircle
 } from 'lucide-react';
-import Footer from '../../../shared/components/layout/Footer';
-import { createReserva } from '../../../shared/utils/helpers';
-import { useAuth } from '../../../features/auth/context/AuthContext';
-import type { CreateReservaRequest } from '../../../domain';
+import Footer from '../../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../../constants';
+import { createReserva } from '../../../../shared/utils/reservas';
+import { formatPrice } from '../../../../shared/utils/format';
+import { useAuth } from '../../../../features/auth/context/AuthContext';
+import type { CreateReservaRequest } from '../../../../domain';
+import { registrarDeuda } from '../../../../features/pagos/services/pagos.service';
 
 interface BookingDetails {
   fieldName: string;
@@ -22,23 +25,44 @@ interface BookingDetails {
   reviews: number;
 }
 
+interface CheckoutLocationState {
+  bookingDetails?: BookingDetails;
+  fieldId?: string;
+  fieldData?: unknown;
+  selectedDate?: Date;
+  selectedTimeSlots?: string[];
+  participants?: number;
+  totalPrice?: number;
+}
+
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  
-  const bookingDetails = location.state?.bookingDetails as BookingDetails;
-  const fieldId = location.state?.fieldId;
-  const selectedDate = location.state?.selectedDate as Date;
-  const selectedTimeSlots = location.state?.selectedTimeSlots as string[];
-  const participants = location.state?.participants;
-  const totalPrice = location.state?.totalPrice;
 
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'qr' | null>(null);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardName, setCardName] = useState('');
+  const {
+    bookingDetails,
+    fieldId,
+    selectedDate: rawSelectedDate,
+    selectedTimeSlots = [],
+    participants = 1,
+    totalPrice,
+  } = (location.state ?? {}) as CheckoutLocationState;
+
+  const normalizedSelectedDate =
+    rawSelectedDate instanceof Date
+      ? rawSelectedDate
+      : rawSelectedDate
+        ? new Date(rawSelectedDate)
+        : undefined;
+
+  const bookingPrice = Number(bookingDetails?.price ?? 0);
+  const totalPriceValue = Number(totalPrice ?? bookingPrice);
+  const formattedBookingPrice = formatPrice(bookingPrice);
+  const formattedTotalPrice = formatPrice(totalPriceValue);
+  const selectedSlotsLabel = selectedTimeSlots.join(', ');
+
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'qr' | null>('card');
   const [showErrors, setShowErrors] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -47,7 +71,7 @@ const CheckoutPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No hay información de reserva</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No hay informacion de reserva</h2>
           <button
             onClick={() => navigate(ROUTE_PATHS.HOME)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -59,13 +83,7 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const validateCardForm = () => {
-    if (paymentMethod !== 'card') return true;
-    return cardNumber.length === 16 && 
-           expiryDate.length === 5 && 
-           cvv.length === 3 && 
-           cardName.trim().length > 0;
-  };
+  const validateCardForm = () => true;
 
   const handlePayment = async () => {
     if (paymentMethod === 'card' && !validateCardForm()) {
@@ -79,7 +97,7 @@ const CheckoutPage: React.FC = () => {
     }
 
     // Validar que tengamos todos los datos necesarios
-    if (!user || !fieldId || !selectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
+    if (!user || !fieldId || !normalizedSelectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
       alert('Faltan datos para completar la reserva');
       return;
     }
@@ -90,83 +108,101 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Usar id_persona como id_cliente (el backend lo asocia así)
+    // Usar id_persona como id_cliente (el backend lo asocia asi)
     const id_cliente = user.id_persona;
 
     if (!id_cliente) {
-      alert('No se encontró la información de persona del usuario');
+      alert('No se encontro la informacion de persona del usuario');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Construir datos de la reserva para cada slot seleccionado
-      // Por ahora tomamos solo el primer slot (puedes mejorar esto para múltiples slots)
-      const firstSlot = selectedTimeSlots[0]; // "09:00 - 10:00"
+      const toIsoLocalFromParts = (dateObj: Date, timeHHmm: string) => {
+        // Construye un Date con componentes locales y devuelve ISO (UTC) valido para el backend
+        const [hh, mm] = timeHHmm.split(':').map((t) => parseInt(t, 10));
+        if (Number.isNaN(hh) || Number.isNaN(mm)) return '';
+        const d = new Date(
+          dateObj.getFullYear(),
+          dateObj.getMonth(),
+          dateObj.getDate(),
+          hh,
+          mm,
+          0,
+          0
+        );
+        return d.toISOString();
+      };
+      const firstSlot = selectedTimeSlots[0];
       const [startTime, endTime] = firstSlot.split(' - ');
-      
-      // Crear timestamps ISO
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      
-      const inicia_en = `${year}-${month}-${day}T${startTime}:00`;
-      const termina_en = `${year}-${month}-${day}T${endTime}:00`;
+
+      const year = normalizedSelectedDate.getFullYear();
+      const month = String(normalizedSelectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(normalizedSelectedDate.getDate()).padStart(2, '0');
+
+      const inicia_en = toIsoLocalFromParts(normalizedSelectedDate, startTime);
+      const termina_en = toIsoLocalFromParts(normalizedSelectedDate, endTime);
+      if (!inicia_en || !termina_en) {
+        throw new Error('No se pudo construir la fecha/hora de la reserva.');
+      }
 
       const reservaData: CreateReservaRequest = {
-        id_cliente: id_cliente,
-        id_cancha: parseInt(fieldId),
-        inicia_en: inicia_en,
-        termina_en: termina_en,
-        cantidad_personas: participants || 1,
+        id_cliente: Number(id_cliente),
+        id_cancha: parseInt(fieldId, 10),
+        inicia_en,
+        termina_en,
+        cantidad_personas: Number(participants),
         requiere_aprobacion: false,
-        monto_base: totalPrice || 0,
-        monto_extra: 0,
-        monto_total: totalPrice || 0
+        monto_base: bookingPrice,
+        monto_extra: montoExtra,
+        monto_total: totalPriceValue,
       };
 
-      console.log('📝 Enviando reserva:', reservaData);
+      const reservaResponse = await createReserva(reservaData);
+      const reservaId = reservaResponse?.reserva?.id_reserva;
 
-      // Crear la reserva en el backend
-      const response = await createReserva(reservaData);
-      
-      console.log('✅ Reserva creada exitosamente:', response);
+      if (!reservaId) {
+        throw new Error('No se pudo obtener el identificador de la reserva.');
+      }
 
-      // Navegar a la página de confirmación con QR
-      navigate(ROUTE_PATHS.BOOKING_CONFIRMATION, {
-        state: {
-          bookingDetails,
-          paymentMethod,
-          reservaId: response.reserva.id_reserva,
-          reserva: response.reserva
-        }
+      const descripcion = bookingDetails
+        ? `${bookingDetails.fieldName} - ${bookingDetails.sedeName} - ${year}-${month}-${day} ${startTime}-${endTime}`
+        : `Reserva ${reservaId}`;
+
+      const deudaResponse = await registrarDeuda({
+        reserva_id: reservaId,
+        descripcion,
+      });
+
+      const pasarelaUrl = deudaResponse?.transaccion?.url_pasarela_pagos;
+      const qrUrl = deudaResponse?.transaccion?.qr_simple_url;
+
+      if (paymentMethod === 'qr' && qrUrl) {
+        window.open(qrUrl, '_blank', 'noopener');
+      } else if (pasarelaUrl) {
+        window.location.href = pasarelaUrl;
+        return;
+      } else if (qrUrl) {
+        window.open(qrUrl, '_blank', 'noopener');
+      }
+
+      navigate(ROUTE_PATHS.CHECKOUT_SUCCESS, {
+        state: { reservaId, fromCheckout: true },
       });
     } catch (error) {
-      console.error('❌ Error al crear reserva:', error);
-      alert(error instanceof Error ? error.message : 'Error al crear la reserva. Por favor intenta de nuevo.');
+      console.error('Error al procesar el pago:', error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo iniciar el proceso de pago. Intenta nuevamente.',
+      );
+    } finally {
       setIsProcessing(false);
     }
   };
 
-  const formatCardNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCardNumber(numbers.slice(0, 16));
-  };
-
-  const formatExpiryDate = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length >= 2) {
-      setExpiryDate(`${numbers.slice(0, 2)}/${numbers.slice(2, 4)}`);
-    } else {
-      setExpiryDate(numbers);
-    }
-  };
-
-  const formatCVV = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCvv(numbers.slice(0, 3));
-  };
+  // Sin formato de tarjeta: Libelula maneja el ingreso de datos de pago
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -191,9 +227,9 @@ const CheckoutPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Step 1: Payment Method */}
             <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">1. Agrega un método de pago</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">1. Elige como pagar</h2>
 
-              {/* Card Payment Option */}
+              {/* Libelula Payment Option (recommended) */}
               <div 
                 className={`border-2 rounded-xl p-4 mb-4 cursor-pointer transition-all ${
                   paymentMethod === 'card' 
@@ -205,7 +241,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-6 w-6 text-gray-700" />
-                    <span className="font-semibold text-gray-900">Tarjeta de crédito o débito</span>
+                    <span className="font-semibold text-gray-900">Pasarela Libelula (recomendado)</span>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     paymentMethod === 'card' ? 'border-blue-600' : 'border-gray-300'
@@ -215,84 +251,10 @@ const CheckoutPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-
                 {paymentMethod === 'card' && (
-                  <div className="mt-4 space-y-4 animate-fadeIn">
-                    {/* Card Number */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número de tarjeta *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => formatCardNumber(e.target.value)}
-                        placeholder="1234 5678 9012 3456"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && cardNumber.length !== 16 ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && cardNumber.length !== 16 && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa un número de tarjeta válido (16 dígitos)</p>
-                      )}
-                    </div>
-
-                    {/* Expiry and CVV */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Fecha de vencimiento *
-                        </label>
-                        <input
-                          type="text"
-                          value={expiryDate}
-                          onChange={(e) => formatExpiryDate(e.target.value)}
-                          placeholder="MM/AA"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && expiryDate.length !== 5 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && expiryDate.length !== 5 && (
-                          <p className="text-xs text-red-500 mt-1">Formato: MM/AA</p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV *
-                        </label>
-                        <input
-                          type="text"
-                          value={cvv}
-                          onChange={(e) => formatCVV(e.target.value)}
-                          placeholder="123"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && cvv.length !== 3 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && cvv.length !== 3 && (
-                          <p className="text-xs text-red-500 mt-1">3 dígitos</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Cardholder Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del titular *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Como aparece en la tarjeta"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && !cardName.trim() ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && !cardName.trim() && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa el nombre del titular</p>
-                      )}
-                    </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    Seras redirigido a la pasarela de pagos Libelula para completar tu pago de{' '}
+                    <span className="font-semibold text-gray-900">{formattedTotalPrice}</span>.
                   </div>
                 )}
               </div>
@@ -329,10 +291,10 @@ const CheckoutPage: React.FC = () => {
                       <div className="text-center">
                         <QrCode className="h-48 w-48 text-gray-700 mx-auto mb-3" />
                         <p className="text-sm text-gray-600">
-                          Escanea este código QR con tu app de banco
+                          Escanea este codigo QR con tu app de banco
                         </p>
                         <p className="text-lg font-bold text-blue-600 mt-2">
-                          ${bookingDetails.price.toFixed(2)} MXN
+                          {formattedTotalPrice} BOB
                         </p>
                       </div>
                     </div>
@@ -343,16 +305,16 @@ const CheckoutPage: React.FC = () => {
               {showErrors && !paymentMethod && (
                 <p className="text-sm text-red-500 mt-2 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
-                  Selecciona un método de pago
+                  Selecciona un metodo de pago
                 </p>
               )}
             </div>
 
             {/* Step 2: Message to Host */}
             <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">2. Mensaje al anfitrión</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">2. Mensaje al anfitrion</h2>
               <textarea
-                placeholder="Cuéntale al anfitrión sobre tu equipo, nivel de juego, o cualquier solicitud especial..."
+                placeholder="Cuentale al anfitrion sobre tu equipo, nivel de juego, o cualquier solicitud especial..."
                 rows={4}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
@@ -366,10 +328,10 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-blue-600 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-900">Política de cancelación</p>
+                    <p className="font-semibold text-gray-900">Politica de cancelacion</p>
                     <p className="text-sm text-gray-600 mt-1">
-                      Cancelación gratuita hasta 24 horas antes de tu reserva. 
-                      Si cancelas dentro de las 24 horas, se aplicará un cargo del 50%.
+                      Cancelacion gratuita hasta 24 horas antes de tu reserva. 
+                      Si cancelas dentro de las 24 horas, se aplicara un cargo del 50%.
                     </p>
                   </div>
                 </div>
@@ -379,9 +341,9 @@ const CheckoutPage: React.FC = () => {
                   <div>
                     <p className="font-semibold text-gray-900">Reglas importantes</p>
                     <ul className="text-sm text-gray-600 mt-1 space-y-1 ml-4">
-                      <li>• Llega 10 minutos antes del horario reservado</li>
-                      <li>• Uso de calzado deportivo obligatorio</li>
-                      <li>• Respeta los horarios de inicio y fin</li>
+                      <li> Llega 10 minutos antes del horario reservado</li>
+                      <li> Uso de calzado deportivo obligatorio</li>
+                      <li> Respeta los horarios de inicio y fin</li>
                     </ul>
                   </div>
                 </div>
@@ -427,7 +389,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <Star className="h-4 w-4 fill-blue-600 text-blue-600" />
                   <span className="font-bold text-sm">{bookingDetails.rating}</span>
-                  <span className="text-xs text-gray-600">({bookingDetails.reviews} reseñas)</span>
+                  <span className="text-xs text-gray-600">({bookingDetails.reviews} resenas)</span>
                 </div>
 
                 <div className="flex items-start gap-2 text-sm text-gray-600">
@@ -450,7 +412,7 @@ const CheckoutPage: React.FC = () => {
                   <Clock className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-600">Horario</p>
-                    <p className="font-semibold text-sm">{bookingDetails.timeSlot}</p>
+                    <p className="font-semibold text-sm">{bookingDetails.timeSlot || selectedSlotsLabel}</p>
                   </div>
                 </div>
 
@@ -458,29 +420,25 @@ const CheckoutPage: React.FC = () => {
                   <Users className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-600">Participantes</p>
-                    <p className="font-semibold text-sm">{bookingDetails.participants} personas</p>
+                    <p className="font-semibold text-sm">{participants} personas</p>
                   </div>
                 </div>
               </div>
 
               {/* Price Breakdown */}
               <div className="space-y-3 mb-5 pb-5 border-b border-gray-200">
-                <h4 className="font-bold text-gray-900">Información del precio</h4>
+                <h4 className="font-bold text-gray-900">Informacion del precio</h4>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Costo por hora</span>
-                  <span className="font-semibold">${bookingDetails.price.toFixed(2)} MXN</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Tarifa de servicio</span>
-                  <span className="font-semibold">${(bookingDetails.price * 0.1).toFixed(2)} MXN</span>
+                  <span className="font-semibold">{formattedBookingPrice}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-bold text-gray-900">Total (MXN)</span>
+                <span className="text-lg font-bold text-gray-900">Total (BOB)</span>
                 <span className="text-2xl font-extrabold text-blue-600">
-                  ${(bookingDetails.price * 1.1).toFixed(2)}
+                  {formattedTotalPrice}
                 </span>
               </div>
 
@@ -488,7 +446,7 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-green-600" />
                 <p className="text-xs text-green-800">
-                  <span className="font-bold">Pago seguro</span> - Tu información está protegida
+                  <span className="font-bold">Pago seguro</span> - Tu informacion esta protegida
                 </p>
               </div>
             </div>
@@ -502,6 +460,12 @@ const CheckoutPage: React.FC = () => {
 };
 
 export default CheckoutPage;
+
+
+
+
+
+
 
 
 

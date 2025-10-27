@@ -14,10 +14,16 @@ export interface Reserva {
   monto_extra: number;
   monto_total: number;
   estado: EstadoReserva;
+  estadoPago?: string;
+  metodoPago?: string | null;
+  codigoQR?: string | null;
   creado_en: string;
   actualizado_en: string;
   cliente?: any;
   cancha?: any;
+  transacciones?: any[];
+  pasesAcceso?: any[];
+  pago?: any;
 }
 
 export interface ReservaFormData {
@@ -34,7 +40,9 @@ export interface ReservaFormData {
 
 export interface CreateReservaRequest extends ReservaFormData {}
 
-export interface UpdateReservaRequest extends Partial<ReservaFormData> {}
+export interface UpdateReservaRequest extends Partial<ReservaFormData> {
+  estado?: EstadoReserva;
+}
 
 export type EstadoReserva = 'Confirmada' | 'Pendiente' | 'Cancelada';
 
