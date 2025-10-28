@@ -19,7 +19,9 @@ import type {
   TimeSlot,
   Review,
   CreateReservaRequest,
-  CreateReservaResponse
+  CreateReservaResponse,
+  UpdateReservaRequest,
+  UpdateReservaResponse
 } from '../types';
 import { getApiUrl, getImageUrl } from '../config/api';
 
@@ -517,6 +519,59 @@ export const fetchReservasByUserId = async (userId: number): Promise<ApiReservaU
     return data;
   } catch (error) {
     console.error('❌ Error al obtener reservas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza una reserva existente
+ * @param idReserva - ID de la reserva a modificar
+ * @param reservaData - Nuevos datos de la reserva
+ * @returns Promise con la respuesta del servidor
+ */
+export const updateReserva = async (
+  idReserva: number,
+  reservaData: UpdateReservaRequest
+): Promise<UpdateReservaResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para modificar una reserva');
+    }
+
+    console.log(`✏️ Actualizando reserva ${idReserva}:`, reservaData);
+
+    const response = await fetch(getApiUrl(`/reservas/${idReserva}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(reservaData),
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+      } catch (e) {
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: UpdateReservaResponse = await response.json();
+    console.log('✅ Reserva actualizada exitosamente:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al actualizar reserva:', error);
     throw error;
   }
 };

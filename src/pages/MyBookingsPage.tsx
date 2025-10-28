@@ -6,6 +6,7 @@ import {
   Download, Share2, Filter, Search
 } from 'lucide-react';
 import Footer from '../components/Footer';
+import EditBookingModal from '../components/EditBookingModal';
 import { fetchReservasByUserId, fetchCanchaImage } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import type { ApiReservaUsuario } from '../types';
@@ -39,7 +40,9 @@ const MyBookingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+  const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
 
   // Cargar reservas del usuario
   useEffect(() => {
@@ -157,12 +160,67 @@ const MyBookingsPage: React.FC = () => {
   };
 
   const handleEditBooking = (booking: Booking) => {
-    navigate(`/field/${booking.fieldId}`, {
-      state: {
-        editMode: true,
-        bookingData: booking
+    setBookingToEdit(booking);
+    setShowEditModal(true);
+  };
+
+  const handleEditSuccess = async () => {
+    setShowEditModal(false);
+    setBookingToEdit(null);
+    // Recargar las reservas
+    if (user?.idUsuario) {
+      setLoading(true);
+      try {
+        const reservasData = await fetchReservasByUserId(user.idUsuario);
+        
+        // Cargar las imágenes de todas las canchas en paralelo
+        const imagePromises = reservasData.map(reserva => 
+          fetchCanchaImage(reserva.cancha.idCancha)
+        );
+        const images = await Promise.all(imagePromises);
+        
+        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
+          let status: 'active' | 'completed' | 'cancelled' = 'active';
+          const fechaReserva = new Date(reserva.fecha);
+          const hoy = new Date();
+          
+          if (reserva.estado === 'Cancelada') {
+            status = 'cancelled';
+          } else if (fechaReserva < hoy) {
+            status = 'completed';
+          } else {
+            status = 'active';
+          }
+
+          return {
+            id: reserva.idReserva.toString(),
+            fieldId: reserva.cancha.idCancha.toString(),
+            fieldName: reserva.cancha.nombre,
+            fieldImage: images[index],
+            sedeName: reserva.cancha.sede.nombre,
+            address: '',
+            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
+            participants: reserva.cantidadPersonas,
+            price: reserva.montoTotal,
+            totalPaid: reserva.montoTotal,
+            status,
+            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
+            paymentMethod: 'card' as const
+          };
+        });
+        
+        setBookings(bookingsConverted);
+      } catch (err) {
+        console.error('Error recargando reservas:', err);
+      } finally {
+        setLoading(false);
       }
-    });
+    }
   };
 
   const handleDeleteBooking = (bookingId: string) => {
@@ -657,6 +715,19 @@ const MyBookingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de edición */}
+      {showEditModal && bookingToEdit && user?.idUsuario && (
+        <EditBookingModal
+          booking={bookingToEdit}
+          onClose={() => {
+            setShowEditModal(false);
+            setBookingToEdit(null);
+          }}
+          onSuccess={handleEditSuccess}
+          userId={user.idUsuario}
+        />
       )}
 
       <Footer />

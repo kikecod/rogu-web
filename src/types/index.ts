@@ -211,3 +211,33 @@ export interface CreateReservaResponse {
     actualizadoEn: string;
   };
 }
+
+// Interfaces para actualizar reservas
+export interface UpdateReservaRequest {
+  idCliente: number;
+  idCancha: number;
+  iniciaEn: string;           // "YYYY-MM-DDTHH:mm:ss.000Z"
+  terminaEn: string;          // "YYYY-MM-DDTHH:mm:ss.000Z"
+  cantidadPersonas: number;
+  requiereAprobacion: boolean;
+  montoBase: number;
+  montoExtra: number;
+  montoTotal: number;
+}
+
+export interface UpdateReservaResponse {
+  message: string;
+  reserva: {
+    idReserva: number;
+    idCliente: number;
+    idCancha: number;
+    iniciaEn: string;
+    terminaEn: string;
+    cantidadPersonas: number;
+    montoBase: string;
+    montoExtra: string;
+    montoTotal: string;
+    estado: string;
+    actualizadoEn: string;
+  };
+}
