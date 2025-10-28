@@ -258,3 +258,68 @@ export interface CancelReservaResponse {
     canal: string;
   };
 }
+
+// ============ TIPOS PARA EL SISTEMA DE PERFILES ============
+
+export type AppRole = 'CLIENTE' | 'DUENIO' | 'CONTROLADOR' | 'ADMIN';
+
+// Perfil de Persona
+export interface PersonaProfile {
+  idPersona: number;
+  nombres: string;
+  paterno: string | null;
+  materno: string | null;
+  telefono: string | null;
+  telefonoVerificado: boolean;
+  fechaNacimiento: string | Date | null;
+  genero: string | null;
+  documentoTipo: string | null;
+  documentoNumero: string | null;
+  url_foto: string | null;
+  creadoEn: string | Date | null;
+  actualizadoEn: string | Date | null;
+}
+
+// Perfil de Usuario
+export interface UsuarioProfile {
+  idUsuario: number;
+  id_usuario: number;
+  correo: string;
+  usuario: string;
+  id_persona: number;
+  correoVerificado: boolean;
+  roles: AppRole[];
+  avatar?: string | null;
+}
+
+// Perfil de Cliente
+export interface ClienteProfile {
+  idCliente: number;
+  apodo: string | null;
+  nivel: number | null;
+  observaciones: string | null;
+}
+
+// Perfil de Dueño
+export interface DuenioProfile {
+  idDuenio: number;
+  verificado: boolean;
+  verificado_en: string | Date | null;
+}
+
+// Perfil de Controlador
+export interface ControladorProfile {
+  idControlador: number;
+  codigoEmpleado: string | null;
+  turno: string | null;
+  activo: boolean;
+}
+
+// Datos completos del perfil de usuario
+export interface UserProfileData {
+  persona: PersonaProfile | null;
+  usuario: UsuarioProfile;
+  cliente: ClienteProfile | null;
+  duenio: DuenioProfile | null;
+  controlador: ControladorProfile | null;
+}

@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import HostSpacePage from './pages/HostSpacePage';
 import AdminSpacesPage from './pages/AdminSpacesPage';
 import TestRolesPage from './pages/TestRolesPage';
+import ProfilePage from './profile/pages/ProfilePage';
 import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import AboutUsPage from './pages/AboutUsPage';
 import SportFieldDetailPage from './pages/SportFieldDetailPage';
@@ -76,7 +77,7 @@ const AppContent = () => {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
-          <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>
