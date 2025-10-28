@@ -1,6 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import authService from '../services/auth.service';
 
+interface JwtPayload {
+  exp?: number;
+  [key: string]: unknown;
+}
+
+const TOKEN_REFRESH_BUFFER_MS = 30_000; // Usado solo para planificar logout automático (sin refresh)
+
+const decodeJwt = (token: string): JwtPayload | null => {
+  try {
+    const segments = token.split('.');
+    if (segments.length < 2) return null;
+    const payloadBase64 = segments[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = atob(payloadBase64);
+    return JSON.parse(jsonPayload) as JwtPayload;
+  } catch {
+    return null;
+  }
+};
+
+const getTokenExpiry = (token: string): number | null => {
+  const payload = decodeJwt(token);
+  if (!payload || typeof payload.exp !== 'number') return null;
+  return payload.exp * 1000;
+};
+
 export interface User {
   correo: string;
   usuario: string;
@@ -9,6 +34,43 @@ export interface User {
   roles: string[]; // Array de roles como 'CLIENTE', 'DUENIO', 'ADMIN', etc.
   avatar?: string;
 }
+
+const normalizeUser = (raw: any): User => ({
+  correo: raw?.correo ?? '',
+  usuario: raw?.usuario ?? '',
+  id_persona: raw?.id_persona ?? 0,
+  id_usuario: raw?.id_usuario ?? 0,
+  roles: Array.isArray(raw?.roles) ? raw.roles : [],
+  avatar: raw?.avatar ?? undefined,
+});
+
+const loadStoredUser = (): User | null => {
+  try {
+    const data = localStorage.getItem('user');
+    if (!data) return null;
+    const parsed = JSON.parse(data);
+    return normalizeUser(parsed);
+  } catch {
+    return null;
+  }
+};
+
+const storeUser = (userData: User) => {
+  try {
+    localStorage.setItem('user', JSON.stringify(userData));
+  } catch {
+    // ignore storage errors
+  }
+};
+
+const clearStoredAuth = () => {
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  } catch {
+    // ignore storage errors
+  }
+};
 
 interface AuthContextType {
   user: User | null;
@@ -46,66 +108,137 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const initializedRef = useRef(false);
+  const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTokenRefreshRef = useRef<(() => Promise<void>) | null>(null);
+
+  const clearLogoutTimer = () => {
+    if (logoutTimerRef.current !== null) {
+      clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+  };
+
+  const performLocalLogout = () => {
+    clearLogoutTimer();
+    clearStoredAuth();
+    setUser(null);
+    setIsLoggedIn(false);
+  };
+
+  const hydrateUserProfile = async (): Promise<User | null> => {
+    // Ya no llamamos /auth/profile. Si no hay user en storage,
+    // intentamos reconstruirlo desde el token JWT (payload).
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const payload = decodeJwt(token) || {};
+      const candidate: User = normalizeUser({
+        correo: (payload as any)?.correo,
+        usuario: (payload as any)?.usuario,
+        id_persona: (payload as any)?.id_persona,
+        id_usuario: (payload as any)?.id_usuario ?? (payload as any)?.sub,
+        roles: Array.isArray((payload as any)?.roles) ? (payload as any).roles : [],
+      });
+      storeUser(candidate);
+      setUser(candidate);
+      setIsLoggedIn(true);
+      return candidate;
+    } catch (error) {
+      console.warn('No se pudo hidratar usuario desde token:', error);
+      performLocalLogout();
+      return null;
+    }
+  };
+
+  const scheduleTokenCheck = (token: string) => {
+    const expiry = getTokenExpiry(token);
+    if (!expiry) return;
+    const msUntilCheck = Math.max(expiry - Date.now() - TOKEN_REFRESH_BUFFER_MS, 0);
+    clearLogoutTimer();
+    if (msUntilCheck <= 0) {
+      const handler = handleTokenRefreshRef.current;
+      if (handler) void handler();
+      return;
+    }
+    logoutTimerRef.current = setTimeout(() => {
+      const handler = handleTokenRefreshRef.current;
+      if (handler) void handler();
+    }, msUntilCheck);
+  };
+
+  const handleTokenRefresh = async () => {
+    clearLogoutTimer();
+    let currentToken: string | null = null;
+    try {
+      currentToken = localStorage.getItem('token');
+    } catch {
+      currentToken = null;
+    }
+
+    if (!currentToken) {
+      performLocalLogout();
+      return;
+    }
+
+    const expiry = getTokenExpiry(currentToken);
+    if (expiry && expiry - Date.now() > TOKEN_REFRESH_BUFFER_MS) {
+      scheduleTokenCheck(currentToken);
+      return;
+    }
+    // Refresh deshabilitado: al llegar aquí, el token está por expirar o expiró -> cerrar sesión
+    performLocalLogout();
+  };
+
+  handleTokenRefreshRef.current = handleTokenRefresh;
+
+  useEffect(() => {
+    return () => {
+      clearLogoutTimer();
+    };
+  }, []);
 
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+
     const initAuth = async () => {
+      let token: string | null = null;
       try {
-        const token = localStorage.getItem('token');
-        const userData = localStorage.getItem('user');
-        
-        if (token && userData) {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-          setIsLoggedIn(true);
-        } else if (!token) {
-          const refreshOnStart = import.meta.env.VITE_AUTH_REFRESH_ON_START !== 'false';
-          if (!refreshOnStart) {
-            setUser(null);
-            setIsLoggedIn(false);
-            setIsLoading(false);
+        token = localStorage.getItem('token');
+      } catch {
+        token = null;
+      }
+
+      let storedUser = loadStoredUser();
+
+      try {
+        if (token) {
+          const expiry = getTokenExpiry(token);
+          if (expiry && expiry <= Date.now()) {
+            clearStoredAuth();
+            performLocalLogout();
             return;
           }
-          // Intentar refrescar sesión si existe refresh cookie httpOnly
-          const refreshed = await authService.refresh();
-          if (refreshed?.token) {
-            // Guardar nuevo access token y obtener perfil del usuario
-            localStorage.setItem('token', refreshed.token);
-            try {
-              const currentUser = await authService.profile();
-              // Backend profile devuelve { persona, usuario: { correo, usuario, id_persona, id_usuario, roles, ... } }
-              const u = (currentUser && (currentUser.usuario || currentUser)) as any;
-              const normalizedUser: User = {
-                correo: u?.correo ?? '',
-                usuario: u?.usuario ?? '',
-                id_persona: u?.id_persona ?? 0,
-                id_usuario: u?.id_usuario ?? 0,
-                roles: Array.isArray(u?.roles) ? u.roles : [],
-                avatar: u?.avatar,
-              };
-              localStorage.setItem('user', JSON.stringify(normalizedUser));
-              setUser(normalizedUser);
-              setIsLoggedIn(true);
-            } catch {
-              // Si falla obtener perfil, limpiar estado
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setUser(null);
-              setIsLoggedIn(false);
-            }
+
+          if (storedUser) {
+            setUser(storedUser);
+            setIsLoggedIn(true);
           } else {
-            setUser(null);
-            setIsLoggedIn(false);
+            storedUser = await hydrateUserProfile();
+            if (!storedUser) {
+              return;
+            }
           }
-        } else {
-          setUser(null);
-          setIsLoggedIn(false);
+
+          scheduleTokenCheck(token);
+          return;
         }
+
+        // Sin token y sin refresh: mantener deslogueado
+        performLocalLogout();
       } catch (error) {
-        console.error('Error al inicializar autenticación:', error);
-        setUser(null);
-        setIsLoggedIn(false);
+        console.error('Error al inicializar autenticacion:', error);
+        performLocalLogout();
       } finally {
         setIsLoading(false);
       }
@@ -115,10 +248,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (userData: User, token: string) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    try {
+      localStorage.setItem('token', token);
+    } catch {
+      // ignore
+    }
+    storeUser(userData);
     setUser(userData);
     setIsLoggedIn(true);
+    scheduleTokenCheck(token);
   };
 
   const logout = async () => {
@@ -129,19 +267,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // ignorar errores de red al cerrar sesión
     } finally {
       // Siempre limpiar estado local
-      try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      } catch {
-        // ignore
-      }
-      setUser(null);
-      setIsLoggedIn(false);
+      performLocalLogout();
     }
   };
 
   const updateUser = (userData: User) => {
-    localStorage.setItem('user', JSON.stringify(userData));
+    storeUser(userData);
     setUser(userData);
   };
 

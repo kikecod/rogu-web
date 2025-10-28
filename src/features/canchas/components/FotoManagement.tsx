@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle } from 'lucide-react';
+import { getImageUrl } from '../../../lib/config/api';
 
 interface Foto {
-  idFoto: number;
-  urlFoto: string;
+  id_foto: number;
+  url_foto: string;
 }
 
 interface FotoManagementProps {
@@ -38,12 +39,22 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
       if (response.ok) {
         const canchaFotos = await response.json();
         // Convertir URLs relativas a URLs completas
-        const fotosWithFullUrls = canchaFotos.map((foto: any) => ({
-          ...foto,
-          urlFoto: foto.urlFoto.startsWith('http') 
-            ? foto.urlFoto 
-            : `http://localhost:3000${foto.urlFoto}`
-        }));
+        const fotosWithFullUrls = canchaFotos.map((foto: any) => {
+          const rawUrl =
+            (typeof foto.url_foto === 'string' && foto.url_foto.trim().length > 0
+              ? foto.url_foto
+              : undefined) ??
+            (typeof foto.url_foto === 'string' && foto.url_foto.trim().length > 0
+              ? foto.url_foto
+              : undefined) ??
+            '';
+          const absoluteUrl = rawUrl ? getImageUrl(rawUrl) : '';
+          return {
+            ...foto,
+            id_foto: foto.id_foto ?? foto.id_foto,
+            url_foto: absoluteUrl || rawUrl,
+          };
+        });
         setFotos(fotosWithFullUrls);
       }
     } catch (error) {
@@ -135,8 +146,8 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
   };
 
   // Mostrar confirmación de eliminación
-  const showDeleteConfirm = (idFoto: number) => {
-    setDeleteConfirm({ show: true, fotoId: idFoto });
+  const showDeleteConfirm = (id_foto: number) => {
+    setDeleteConfirm({ show: true, fotoId: id_foto });
   };
 
   // Cancelar eliminación
@@ -158,7 +169,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
 
       if (response.ok) {
         // Actualizar la lista local inmediatamente para mejor UX
-        setFotos(prevFotos => prevFotos.filter(foto => foto.idFoto !== deleteConfirm.fotoId));
+        setFotos(prevFotos => prevFotos.filter(foto => foto.id_foto !== deleteConfirm.fotoId));
         // También recargar desde el servidor para asegurar consistencia
         await loadFotos();
         // Cerrar modal
@@ -266,9 +277,9 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {fotos.map((foto) => (
-                <div key={foto.idFoto} className="relative group">
+                <div key={foto.id_foto} className="relative group">
                   <img
-                    src={foto.urlFoto}
+                    src={foto.url_foto}
                     alt="Foto de la cancha"
                     className="w-full h-32 object-cover rounded-lg border border-gray-200"
                     onError={(e) => {
@@ -278,7 +289,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
                     <button
-                      onClick={() => showDeleteConfirm(foto.idFoto)}
+                      onClick={() => showDeleteConfirm(foto.id_foto)}
                       className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
                     >
                       <Trash2 className="h-4 w-4" />

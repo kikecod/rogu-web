@@ -4,13 +4,13 @@ import {
   ChevronLeft, CreditCard, QrCode, Star, MapPin, 
   Calendar, Users, Clock, Shield, AlertCircle
 } from 'lucide-react';
-import Footer from '../../../../shared/components/layout/Footer';
-import { ROUTE_PATHS } from '../../../../constants';
-import { createReserva } from '../../../../shared/utils/reservas';
-import { formatPrice } from '../../../../shared/utils/format';
-import { useAuth } from '../../../../features/auth/context/AuthContext';
-import type { CreateReservaRequest } from '../../../../domain';
-import { registrarDeuda } from '../../../../features/pagos/services/pagos.service';
+import Footer from '../../../../../shared/components/layout/Footer';
+import { ROUTE_PATHS } from '../../../../../constants';
+import { createReserva } from '../../../../../shared/utils/reservas';
+import { formatPrice } from '../../../../../shared/utils/format';
+import { useAuth } from '../../../../../features/auth/context/AuthContext';
+import type { CreateReservaRequest } from '../../../../../domain';
+import { registrarDeuda } from '../../../../../features/pagos/services/pagos.service';
 
 interface BookingDetails {
   fieldName: string;
@@ -155,7 +155,8 @@ const CheckoutPage: React.FC = () => {
         cantidad_personas: Number(participants),
         requiere_aprobacion: false,
         monto_base: bookingPrice,
-        monto_extra: montoExtra,
+        // Si el total difiere del precio base (ej: multiples horas o extras), calcular diferencia como extra
+        monto_extra: Math.max(Number(totalPriceValue) - Number(bookingPrice), 0),
         monto_total: totalPriceValue,
       };
 
@@ -170,13 +171,18 @@ const CheckoutPage: React.FC = () => {
         ? `${bookingDetails.fieldName} - ${bookingDetails.sedeName} - ${year}-${month}-${day} ${startTime}-${endTime}`
         : `Reserva ${reservaId}`;
 
-      const deudaResponse = await registrarDeuda({
-        reserva_id: reservaId,
-        descripcion,
-      });
-
-      const pasarelaUrl = deudaResponse?.transaccion?.url_pasarela_pagos;
-      const qrUrl = deudaResponse?.transaccion?.qr_simple_url;
+      let pasarelaUrl: string | null = null;
+      let qrUrl: string | null = null;
+      try {
+        const deudaResponse = await registrarDeuda({
+          reserva_id: reservaId,
+          descripcion,
+        });
+        pasarelaUrl = deudaResponse?.transaccion?.url_pasarela_pagos ?? null;
+        qrUrl = deudaResponse?.transaccion?.qr_simple_url ?? null;
+      } catch (err) {
+        console.warn('No se pudo registrar la deuda/libelula, continuando con reserva manual:', err);
+      }
 
       if (paymentMethod === 'qr' && qrUrl) {
         window.open(qrUrl, '_blank', 'noopener');

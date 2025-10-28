@@ -57,7 +57,7 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             // Si la imagen falla al cargar, usar un placeholder
-            console.error('❌ Error al cargar imagen:', primaryImage);
+            console.error('Error al cargar imagen:', primaryImage);
             e.currentTarget.onerror = null;
             e.currentTarget.src = fallbackImage || generatePlaceholderImage(400, 300, field.name);
           }}

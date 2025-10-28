@@ -2,17 +2,27 @@ import { BadgeDollarSign, Layers, Users, Ruler, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTE_PATHS } from '../../../../constants';
 import type { OwnerCourtSummary } from '../types/owner.types';
+import FixedAspectImage from '../../../../shared/components/media/FixedAspectImage';
 
 interface OwnerCourtCardProps {
   court: OwnerCourtSummary;
+  coverImage?: string | null;
 }
 
-const OwnerCourtCard: React.FC<OwnerCourtCardProps> = ({ court }) => {
+const OwnerCourtCard: React.FC<OwnerCourtCardProps> = ({ court, coverImage }) => {
   const priceLabel =
     typeof court.precio === 'number' ? `Bs. ${court.precio.toFixed(2)}` : 'Sin precio';
 
   return (
     <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg">
+      {coverImage ? (
+        <FixedAspectImage
+          src={coverImage}
+          alt={`Vista de ${court.nombre}`}
+          ratio={4 / 3}
+          className="mb-4"
+        />
+      ) : null}
       <header className="space-y-1">
         <h3 className="text-lg font-semibold text-slate-900">{court.nombre}</h3>
         <p className="text-xs uppercase tracking-wide text-indigo-500">ID #{court.id_cancha}</p>

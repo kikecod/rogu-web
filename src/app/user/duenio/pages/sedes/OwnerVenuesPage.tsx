@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, type Location } from 'react-router-dom';
 import { Filter, PlusCircle, Search } from 'lucide-react';
-import { ROUTE_PATHS } from '../../../../constants';
-import { useOwnerSedes } from '../hooks/useOwnerSedes';
-import OwnerVenueCard from '../components/OwnerVenueCard';
+import { ROUTE_PATHS } from '../../../../../constants';
+import { useOwnerSedes } from '../../hooks/useOwnerSedes';
+import OwnerVenueCard from '../../components/OwnerVenueCard';
 
 interface LocationState {
   justCreated?: boolean;

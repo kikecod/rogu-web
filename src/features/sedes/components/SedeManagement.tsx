@@ -32,11 +32,11 @@ interface SedeFormData {
 }
 
 interface SedeManagementProps {
-  id_personaD: number;
+  id_persona_d: number;
   onSedeSelect: (sede: Sede) => void;
 }
 
-const SedeManagement: React.FC<SedeManagementProps> = ({ id_personaD, onSedeSelect }) => {
+const SedeManagement: React.FC<SedeManagementProps> = ({ id_persona_d, onSedeSelect }) => {
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -69,7 +69,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_personaD, onSedeSele
       if (response.ok) {
         const allSedes = await response.json();
         // Filtrar solo las sedes del dueño actual
-        const mySedes = allSedes.filter((sede: any) => sede.id_personaD === id_personaD);
+        const mySedes = allSedes.filter((sede: any) => sede.id_persona_d === id_persona_d);
         setSedes(mySedes);
       }
     } catch (error) {
@@ -81,7 +81,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_personaD, onSedeSele
 
   useEffect(() => {
     loadSedes();
-  }, [id_personaD]);
+  }, [id_persona_d]);
 
   const resetForm = () => {
     setFormData({
@@ -114,7 +114,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_personaD, onSedeSele
       
       const payload = editingSede 
         ? formData 
-        : { ...formData, id_personaD };
+        : { ...formData, id_persona_d };
 
       const response = await fetch(url, {
         method,

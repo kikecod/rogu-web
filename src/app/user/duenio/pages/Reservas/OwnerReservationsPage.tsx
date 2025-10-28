@@ -1,12 +1,14 @@
 import React from 'react';
-import { useAuth } from '../../../../features/auth/context/AuthContext';
+import { useAuth } from '../../../../../features/auth/context/AuthContext';
 // import { ROUTE_PATHS } from '../../../../constants';
-import { getReservasPorDuenio } from '../../../../features/reservas/services/reserva.service';
-import { canchaService } from '../../../../features/canchas/services/cancha.service';
+import { getReservasPorDuenio } from '../../../../../features/reservas/services/reserva.service';
 import { Calendar, Clock, MapPin, Users, CheckCircle, XCircle } from 'lucide-react';
+import { getImageUrl } from '../../../../../lib/config/api';
+import { getSportFieldImages } from '../../../../../shared/utils/media';
 
 interface OwnerReservaItem {
   id: number;
+  fieldImage: string;
   fecha: string;
   horaInicio: string;
   horaFin: string;
@@ -20,6 +22,36 @@ interface OwnerReservaItem {
   participantes?: string[];
 }
 
+const resolveCanchaImage = (cancha: unknown): string => {
+  const fallback = getSportFieldImages('football')[0];
+  if (!cancha || typeof cancha !== 'object') {
+    return fallback;
+  }
+  const record = cancha as Record<string, unknown>;
+  const fotos = Array.isArray(record.fotos) ? record.fotos : [];
+  for (const foto of fotos) {
+    if (!foto || typeof foto !== 'object') continue;
+    const fotoRecord = foto as Record<string, unknown>;
+    const rawUrl =
+      (typeof fotoRecord.url_foto === 'string' && fotoRecord.url_foto.trim().length > 0
+        ? fotoRecord.url_foto
+        : undefined) ??
+      (typeof fotoRecord.url_foto === 'string' && fotoRecord.url_foto.trim().length > 0
+        ? fotoRecord.url_foto
+        : undefined) ??
+      (typeof fotoRecord.url === 'string' && fotoRecord.url.trim().length > 0
+        ? fotoRecord.url
+        : undefined);
+    if (rawUrl) {
+      const resolved = getImageUrl(rawUrl);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+  return fallback;
+};
+
 const OwnerReservationsPage: React.FC = () => {
   const { user, isLoggedIn, isDuenio } = useAuth();
   const [loading, setLoading] = React.useState(true);
@@ -32,51 +64,81 @@ const OwnerReservationsPage: React.FC = () => {
 
   React.useEffect(() => {
     const load = async () => {
-      if (!isLoggedIn || !isDuenio() || !user) { setLoading(false); return; }
+      if (!isLoggedIn || !isDuenio() || !user) {
+        setLoading(false);
+        return;
+      }
       try {
-        // 1) Traer reservas del dueño
-  const resp = await getReservasPorDuenio(user.id_persona);
+        const resp = await getReservasPorDuenio(user.id_persona);
         const reservas = Array.isArray(resp?.reservas) ? resp.reservas : [];
-  setSummary({ total: Number(resp?.total || 0), activas: Number(resp?.activas || 0), completadas: Number(resp?.completadas || 0), canceladas: Number(resp?.canceladas || 0) });
+        setSummary({
+          total: Number(resp?.total || 0),
+          activas: Number(resp?.activas || 0),
+          completadas: Number(resp?.completadas || 0),
+          canceladas: Number(resp?.canceladas || 0),
+        });
 
-        // 2) Construir un cache de canchas para evitar múltiples requests
-        const uniqueCanchaIds = Array.from(new Set(reservas.map(r => r.id_cancha)));
-        const canchaMap = new Map<number, { nombre: string; sedeNombre: string; direccion: string }>();
-        for (const id of uniqueCanchaIds) {
-          try {
-            const c = await canchaService.getById(id);
-            const sedeNombre = (c as any).sede?.nombre || 'Sede';
-            const direccion = (c as any).sede?.direccion || '';
-            canchaMap.set(id, { nombre: (c as any).nombre || `Cancha ${id}`, sedeNombre, direccion });
-          } catch {
-            canchaMap.set(id, { nombre: `Cancha ${id}`, sedeNombre: 'Sede', direccion: '' });
-          }
-        }
-
-        // 3) Mapear a items UI
         const mapped: OwnerReservaItem[] = reservas.map((r: any) => {
-          const canchaInfo = canchaMap.get(r.id_cancha) || { nombre: `Cancha ${r.id_cancha}`, sedeNombre: 'Sede', direccion: '' };
+          const canchaRaw = r.cancha ?? null;
+          const canchaRecord =
+            canchaRaw && typeof canchaRaw === 'object'
+              ? (canchaRaw as Record<string, unknown>)
+              : {};
+          const sedeRecord =
+            typeof canchaRecord['sede'] === 'object' && canchaRecord['sede'] !== null
+              ? (canchaRecord['sede'] as Record<string, unknown>)
+              : {};
           const inicio = new Date(r.inicia_en);
           const fin = new Date(r.termina_en);
           const clienteNombre = r.cliente?.persona
             ? `${r.cliente.persona.nombres ?? ''} ${r.cliente.persona.paterno ?? ''}`.trim()
             : `Cliente ${r.id_cliente}`;
           const participantes: string[] = Array.isArray(r.participantes)
-            ? r.participantes.map((p: any) => p?.persona ? `${p.persona.nombres ?? ''} ${p.persona.paterno ?? ''}`.trim() : `Cliente ${p.id_cliente}`)
+            ? r.participantes.map((p: any) =>
+                p?.persona
+                  ? `${p.persona.nombres ?? ''} ${p.persona.paterno ?? ''}`.trim()
+                  : `Cliente ${p.id_cliente}`,
+              )
             : [];
+
+          const canchaNombre =
+            typeof canchaRecord['nombre'] === 'string' &&
+            (canchaRecord['nombre'] as string).trim().length > 0
+              ? (canchaRecord['nombre'] as string)
+              : `Cancha ${r.id_cancha}`;
+          const canchaIdRaw =
+            r.id_cancha ?? canchaRecord['id_cancha'] ?? canchaRecord['idCancha'] ?? 0;
+          const canchaIdNumber = Number(canchaIdRaw);
+          const sedeNombre =
+            typeof sedeRecord['nombre'] === 'string' &&
+            (sedeRecord['nombre'] as string).trim().length > 0
+              ? (sedeRecord['nombre'] as string)
+              : 'Sede';
+          const direccion =
+            typeof sedeRecord['direccion'] === 'string'
+              ? (sedeRecord['direccion'] as string)
+              : '';
+
           return {
-            id: r.id_reserva,
-            fecha: inicio.toLocaleDateString('es-ES'),
-            horaInicio: inicio.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            horaFin: fin.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            id: Number(r.id_reserva),
+            fieldImage: resolveCanchaImage(canchaRecord),
+            fecha: Number.isNaN(inicio.getTime())
+              ? 'Fecha no disponible'
+              : inicio.toLocaleDateString('es-ES'),
+            horaInicio: Number.isNaN(inicio.getTime())
+              ? '--:--'
+              : inicio.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            horaFin: Number.isNaN(fin.getTime())
+              ? '--:--'
+              : fin.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             estado: r.estado,
-            canchaNombre: canchaInfo.nombre,
-            canchaId: Number(r.id_cancha),
-            sedeNombre: canchaInfo.sedeNombre,
-            direccion: canchaInfo.direccion,
+            canchaNombre,
+            canchaId: Number.isFinite(canchaIdNumber) ? canchaIdNumber : Number(r.id_cancha),
+            sedeNombre,
+            direccion,
             clienteNombre,
             cantidadPersonas: Number(r.cantidad_personas || 1),
-            participantes
+            participantes,
           };
         });
 
@@ -87,8 +149,8 @@ const OwnerReservationsPage: React.FC = () => {
         setLoading(false);
       }
     };
-    load();
-  }, [isLoggedIn, user?.id_persona]);
+    void load();
+  }, [isLoggedIn, isDuenio, user?.id_persona]);
 
   const uniqueCanchas = React.useMemo(() => {
     const set = new Set<string>();
@@ -193,10 +255,17 @@ const OwnerReservationsPage: React.FC = () => {
             <div className="space-y-4">
               {filteredItems.map((it) => (
                 <div key={it.id} className="bg-white rounded-xl shadow border p-5">
+                  <div className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                    <img
+                      src={it.fieldImage}
+                      alt={`Cancha ${it.canchaNombre}`}
+                      className="h-32 w-full object-cover"
+                    />
+                  </div>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                       <div className="text-lg font-bold">{it.canchaNombre}</div>
-                      <div className="text-sm text-gray-600 flex items-center gap-2"><MapPin className="h-4 w-4" /> {it.sedeNombre} · {it.direccion}</div>
+                      <div className="text-sm text-gray-600 flex items-center gap-2"><MapPin className="h-4 w-4" /> {it.sedeNombre} - {it.direccion || 'Sin direccion'}</div>
                       <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-700">
                         <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {it.fecha}</div>
                         <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> {it.horaInicio} - {it.horaFin}</div>
@@ -246,9 +315,16 @@ const OwnerReservationsPage: React.FC = () => {
                   <div className="space-y-4">
                     {items.map((it) => (
                       <div key={it.id} className="bg-white rounded-xl shadow border p-5">
+                        <div className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                          <img
+                            src={it.fieldImage}
+                            alt={`Cancha ${it.canchaNombre}`}
+                            className="h-32 w-full object-cover"
+                          />
+                        </div>
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div>
-                            <div className="text-sm text-gray-600 flex items-center gap-2"><MapPin className="h-4 w-4" /> {it.sedeNombre} · {it.direccion}</div>
+                            <div className="text-sm text-gray-600 flex items-center gap-2"><MapPin className="h-4 w-4" /> {it.sedeNombre} - {it.direccion || 'Sin direccion'}</div>
                             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-700">
                               <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {it.fecha}</div>
                               <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> {it.horaInicio} - {it.horaFin}</div>
@@ -293,3 +369,11 @@ const OwnerReservationsPage: React.FC = () => {
 };
 
 export default OwnerReservationsPage;
+
+
+
+
+
+
+
+

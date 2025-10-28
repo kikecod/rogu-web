@@ -86,7 +86,7 @@ const AdminSpacesPage: React.FC = () => {
               />
             ) : (
               <SedeManagement 
-                id_personaD={user.id_persona} 
+                id_persona_d={user.id_persona} 
                 onSedeSelect={handleSedeSelect}
               />
             )

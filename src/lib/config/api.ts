@@ -1,15 +1,25 @@
 // Configuracion de la API
-// En desarrollo se usa baseURL relativo "/api" para aprovechar el proxy de Vite
-// y mantener mismo origen (necesario para cookies httpOnly del refresh).
+// En desarrollo usamos baseURL relativo "/api" para aprovechar el proxy de Vite
+// y mantener mismo origen. No dependemos de un puerto específico (5173/5174/...):
+// cualquier puerto de Vite en modo DEV funcionará.
 const inferDevBaseURL = () => {
   try {
+    // Vite expone import.meta.env.DEV en modo desarrollo
+    // Esto evita atarnos a un puerto específico (5173) cuando Vite elige otro.
+    // Además, si estamos en el navegador, preferimos usar el proxy "/api".
+    // En otros entornos (SSR/tests) caemos al backend local por defecto.
+    // eslint-disable-next-line no-undef
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV) {
+      return '/api';
+    }
     if (typeof window !== 'undefined') {
-      const isViteDev = window.location.port === '5173';
-      if (isViteDev) return '/api';
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhost) return '/api';
     }
   } catch {
     // ignore
   }
+  // Fallback: backend local por defecto
   return 'http://localhost:3000/api';
 };
 

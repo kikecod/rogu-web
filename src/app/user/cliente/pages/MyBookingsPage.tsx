@@ -9,6 +9,7 @@ import Footer from '../../../../shared/components/layout/Footer';
 import { ROUTE_PATHS } from '../../../../constants';
 import { getSportFieldImages } from '../../../../shared/utils/media';
 import { formatPrice } from '../../../../shared/utils/format';
+import { getImageUrl } from '../../../../lib/config/api';
 import reservaService, { cancelReserva } from '../../../../features/reservas/services/reserva.service';
 import type { GetReservasUsuarioResponse } from '../../../../features/reservas/services/reserva.service';
 import { registrarDeuda } from '../../../../features/pagos/services/pagos.service';
@@ -60,6 +61,33 @@ const MyBookingsPage: React.FC = () => {
 
   const formatBolivianos = (value: number) =>
     formatPrice(Number.isFinite(value) ? value : 0);
+
+  const resolveCanchaImage = (cancha: unknown): string | null => {
+    if (!cancha || typeof cancha !== 'object') {
+      return null;
+    }
+    const record = cancha as Record<string, unknown>;
+    const fotosRaw = Array.isArray(record.fotos) ? record.fotos : [];
+    for (const foto of fotosRaw) {
+      if (!foto || typeof foto !== 'object') continue;
+      const fotoRecord = foto as Record<string, unknown>;
+      const rawUrl =
+        (typeof fotoRecord.url_foto === 'string' && fotoRecord.url_foto.trim().length > 0
+          ? fotoRecord.url_foto
+          : undefined) ??
+        (typeof fotoRecord.url_foto === 'string' && fotoRecord.url_foto.trim().length > 0
+          ? fotoRecord.url_foto
+          : undefined) ??
+        (typeof fotoRecord.url === 'string' && fotoRecord.url.trim().length > 0
+          ? fotoRecord.url
+          : undefined);
+      if (rawUrl) {
+        const resolved = getImageUrl(rawUrl);
+        if (resolved) return resolved;
+      }
+    }
+    return null;
+  };
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -259,24 +287,78 @@ const MyBookingsPage: React.FC = () => {
             status = 'completed';
           }
 
+          const canchaRecord = r.cancha ?? null;
+          const canchaObj =
+            canchaRecord && typeof canchaRecord === 'object'
+              ? (canchaRecord as Record<string, unknown>)
+              : {};
+          const rawFieldId =
+            r.id_cancha ??
+            canchaObj['id_cancha'] ??
+            canchaObj['idCancha'] ??
+            canchaObj['id'];
+          const fieldId =
+            rawFieldId !== undefined && rawFieldId !== null && String(rawFieldId).trim() !== ''
+              ? String(rawFieldId)
+              : '';
+          const nombreCancha =
+            typeof canchaObj['nombre'] === 'string'
+              ? (canchaObj['nombre'] as string)
+              : '';
+          const fieldName =
+            nombreCancha.trim().length > 0
+              ? nombreCancha
+              : fieldId
+                ? `Cancha ${fieldId}`
+                : `Cancha ${r.id_reserva}`;
+
+          const resolvedImage = resolveCanchaImage(canchaRecord);
+          const fieldImage = resolvedImage ?? getSportFieldImages('football')[0];
+
+          const sedeObj =
+            typeof canchaObj['sede'] === 'object' && canchaObj['sede'] !== null
+              ? (canchaObj['sede'] as Record<string, unknown>)
+              : {};
+          const sedeNombre =
+            typeof sedeObj['nombre'] === 'string'
+              ? (sedeObj['nombre'] as string)
+              : '';
+          const sedeDireccion =
+            typeof sedeObj['direccion'] === 'string'
+              ? (sedeObj['direccion'] as string)
+              : '';
+          const sedeName =
+            sedeNombre.trim().length > 0 ? sedeNombre : 'Sede desconocida';
+          const address =
+            sedeDireccion.trim().length > 0
+              ? sedeDireccion
+              : 'Direccion no disponible';
+
+          const inicioDate = new Date(r.inicia_en);
+          const finDate = new Date(r.termina_en);
+          const isInicioValid = !Number.isNaN(inicioDate.getTime());
+          const isFinValid = !Number.isNaN(finDate.getTime());
+
           return {
             id: String(r.id_reserva),
-            fieldId: String(r.id_cancha ?? r.cancha?.id_cancha ?? ''),
-            fieldName: r.cancha?.nombre || `Cancha ${r.id_cancha}`,
-            fieldImage:
-              r.cancha?.fotos?.[0]?.url_foto || getSportFieldImages('football')[0],
-            sedeName: r.cancha?.sede?.nombre || 'Sede desconocida',
-            address: r.cancha?.sede?.direccion || 'Direccion no disponible',
-            date: new Date(r.inicia_en).toLocaleDateString('es-ES'),
-            timeSlot: `${new Date(r.inicia_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(r.termina_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            fieldId,
+            fieldName,
+            fieldImage,
+            sedeName,
+            address,
+            date: isInicioValid ? inicioDate.toLocaleDateString('es-ES') : 'Fecha no disponible',
+            timeSlot:
+              isInicioValid && isFinValid
+                ? `${inicioDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${finDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                : 'Horario no disponible',
             participants: Number(r.cantidad_personas || 1),
-            price: Number(r.monto_base || 0),
-            totalPaid: Number(r.monto_total || 0),
+            price: Number(r.monto_base ?? r.monto_total ?? 0),
+            totalPaid: Number(r.monto_total ?? r.monto_base ?? 0),
             status,
             bookingCode: ultimaTransaccion?.id_transaccion_libelula || `R-${r.id_reserva}`,
             rating: undefined,
             reviews: undefined,
-            paymentMethod: r.metodoPago || 'LIBELULA',
+            paymentMethod: r.metodoPago || (ultimaTransaccion ? 'LIBELULA' : 'Manual'),
             paymentStatus: estadoPago,
             qrCode: r.codigoQR || qrFromPases,
             pasarelaUrl:

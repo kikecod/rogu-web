@@ -12,17 +12,18 @@ import { AuthProvider, useAuth, type User } from './features/auth/context/AuthCo
 import AboutUsPage from './app/publico/pages/AboutUsPage';
 import SportFieldDetailPage from './app/publico/pages/SportFieldDetailPage';
 import SedeDetailPage from './app/publico/pages/SedeDetailPage';
-import CheckoutPage from './app/user/cliente/pages/CheckoutPage';
-import CheckoutSuccessPage from './app/user/cliente/pages/CheckoutSuccessPage';
-import BookingConfirmationPage from './app/user/cliente/pages/BookingConfirmationPage';
+import CheckoutPage from './app/user/cliente/pages/Reservas/CheckoutPage';
+import CheckoutSuccessPage from './app/user/cliente/pages/Reservas/CheckoutSuccessPage';
+import BookingConfirmationPage from './app/user/cliente/pages/Reservas/BookingConfirmationPage';
 import MyBookingsPage from './app/user/cliente/pages/MyBookingsPage';
 import { ROUTE_PATHS, type AppRole } from './constants';
-import OwnerDashboardPage from './app/user/duenio/pages/OwnerDashboardPage';
-import OwnerVenueDetailPage from './app/user/duenio/pages/OwnerVenueDetailPage';
-import OwnerCourtDetailPage from './app/user/duenio/pages/OwnerCourtDetailPage';
-import OwnerVenuesPage from './app/user/duenio/pages/OwnerVenuesPage';
-import OwnerVenueCreatePage from './app/user/duenio/pages/OwnerVenueCreatePage';
-import OwnerReservationsPage from './app/user/duenio/pages/OwnerReservationsPage';
+import OwnerDashboardPage from './app/user/duenio/pages/Dashboard/OwnerDashboardPage';
+import OwnerVenueDetailPage from './app/user/duenio/pages/sedes/OwnerVenueDetailPage';
+import OwnerCourtDetailPage from './app/user/duenio/pages/canchas/OwnerCourtDetailPage';
+import OwnerVenuesPage from './app/user/duenio/pages/sedes/OwnerVenuesPage';
+import OwnerVenueCreatePage from './app/user/cliente/pages/OwnerVenueCreatePage';
+import OwnerReservationsPage from './app/user/duenio/pages/Reservas/OwnerReservationsPage';
+import ProfilePage from './app/user/profile/pages/ProfilePage';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -84,8 +85,8 @@ const AppContent = () => {
     { path: ROUTE_PATHS.BOOKINGS, element: <MyBookingsPage />, roles: ['CLIENTE'] },
     {
       path: ROUTE_PATHS.PROFILE,
-      element: <div className="p-8 text-center">Perfil de usuario - Proximamente</div>,
-      roles: ['CLIENTE'],
+      element: <ProfilePage />,
+      roles: ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'],
     },
   ];
 

@@ -15,6 +15,50 @@ import type {
   Foto
 } from '../types/cancha.types';
 
+const normalizeFotoResponse = (
+  raw: unknown,
+  fallbackIdCancha?: number,
+): Foto | null => {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+
+  const parseNumber = (value: unknown): number | undefined => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  };
+
+  const id_foto = parseNumber(record.id_foto ?? record.id_foto);
+  if (typeof id_foto === 'undefined') return null;
+
+  const idCancha =
+    parseNumber(record.id_cancha ?? record.idCancha) ?? fallbackIdCancha;
+
+  const urlRaw =
+    (typeof record.url_foto === 'string' && record.url_foto.trim().length > 0
+      ? record.url_foto
+      : undefined) ??
+    (typeof record.url_foto === 'string' && record.url_foto.trim().length > 0
+      ? record.url_foto
+      : undefined) ??
+    (typeof record.url === 'string' && record.url.trim().length > 0
+      ? record.url
+      : undefined);
+
+  if (!urlRaw) return null;
+
+  return {
+    id_foto,
+    id_cancha: idCancha ?? 0,
+    url_foto: urlRaw,
+  };
+};
+
 export class CanchaService {
   private readonly endpoint = API_CONFIG.endpoints.canchas;
 
@@ -146,8 +190,13 @@ export class CanchaService {
    */
   async getFotos(id_cancha: number): Promise<Foto[]> {
     try {
-      const response = await httpClient.get<Foto[]>('/fotos');
-      return response.data.filter((foto: Foto) => foto.id_cancha === id_cancha);
+      const response = await httpClient.get<unknown[]>(
+        `${API_CONFIG.endpoints.fotos}/cancha/${id_cancha}`,
+      );
+      const rawList = Array.isArray(response.data) ? response.data : [];
+      return rawList
+        .map((item) => normalizeFotoResponse(item, id_cancha))
+        .filter((foto): foto is Foto => foto !== null);
     } catch (error) {
       console.error('Error loading fotos:', error);
       return [];
@@ -170,8 +219,8 @@ export class CanchaService {
   /**
    * Elimina una foto
    */
-  async deleteFoto(idFoto: number): Promise<void> {
-    await httpClient.delete(`/fotos/${idFoto}`);
+  async deleteFoto(id_foto: number): Promise<void> {
+    await httpClient.delete(`/fotos/${id_foto}`);
   }
 }
 

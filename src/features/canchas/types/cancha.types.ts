@@ -40,9 +40,9 @@ export interface CreateCanchaRequest extends CanchaFormData {
 export interface UpdateCanchaRequest extends Partial<CanchaFormData> {}
 
 export interface Foto {
-  idFoto: number;
+  id_foto: number;
   id_cancha: number;
-  urlFoto: string;
+  url_foto: string;
 }
 
 export interface Parte {

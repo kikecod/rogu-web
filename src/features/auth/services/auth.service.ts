@@ -28,15 +28,8 @@ export async function register(data: RegisterData): Promise<any> {
 }
 
 export async function refresh(): Promise<{ token: string } | null> {
-  try {
-    // El backend responde { accessToken, usuario }
-    const res = await httpClient.post<any>(`${API_PREFIX}/refresh`);
-    const data = res.data as { accessToken?: string };
-    if (!data?.accessToken) return null;
-    return { token: data.accessToken };
-  } catch (err) {
-    return null;
-  }
+  // Refresh deshabilitado por decisión de producto
+  return null;
 }
 
 export async function logout(): Promise<void> {

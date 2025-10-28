@@ -27,9 +27,9 @@ export interface LegacySede {
 }
 
 export interface ApiFoto {
-  idFoto: number;
+  id_foto: number;
   id_cancha: number;
-  urlFoto: string;
+  url_foto: string;
 }
 
 export interface ApiParte {

@@ -4,7 +4,8 @@ import { Search, Menu, User, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '../../../assets/img/rogu_logo.png';
 import { useAuth } from '../../../features/auth/context/AuthContext';
-import { ROUTE_PATHS, getPathsForRoles } from '../../../constants';
+import { ROUTE_PATHS, getPathsForRoles, type AppRole } from '../../../constants';
+import { resolveRoleVariant } from '../../utils/roles';
 
 import HeaderAdminMenu from './Header.Admin';
 import HeaderClienteMenu from './Header.Cliente';
@@ -12,36 +13,16 @@ import HeaderClienteDuenioMenu from './Header.ClienteDuenio';
 import HeaderClienteControladorMenu from './Header.ClienteControlador';
 import HeaderClienteDuenioControladorMenu from './Header.ClienteDuenioControlador';
 
-type Role = 'CLIENTE' | 'DUENIO' | 'CONTROLADOR' | 'ADMIN';
-
 interface HeaderProps {
   onLoginClick: () => void;
   onSignupClick: () => void;
   onLogout: () => void;
 }
 
-const has = (roles: Role[] | undefined, r: Role) => !!roles?.includes(r);
-const hasAll = (roles: Role[] | undefined, needed: Role[]) => needed.every(n => has(roles, n));
-
-const pickVariant = (roles: Role[] | undefined) => {
-  if (has(roles, 'ADMIN')) return 'ADMIN';
-  // todas las combinaciones ricas primero
-  if (hasAll(roles, ['CLIENTE', 'DUENIO', 'CONTROLADOR'])) return 'CLIENTE_DUENIO_CONTROLADOR';
-  if (hasAll(roles, ['DUENIO', 'CONTROLADOR'])) return 'CLIENTE_DUENIO_CONTROLADOR'; // sin CLIENTE igual mostramos ese menú combinado
-  if (hasAll(roles, ['CLIENTE', 'DUENIO'])) return 'CLIENTE_DUENIO';
-  if (hasAll(roles, ['CLIENTE', 'CONTROLADOR'])) return 'CLIENTE_CONTROLADOR';
-  // roles individuales
-  if (has(roles, 'DUENIO')) return 'CLIENTE_DUENIO';
-  if (has(roles, 'CONTROLADOR')) return 'CLIENTE_CONTROLADOR';
-  if (has(roles, 'CLIENTE')) return 'CLIENTE';
-  // fallback visual para anónimos (usa menú de login)
-  return 'ANON';
-};
-
 const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isLoggedIn, isDuenio } = useAuth();
-  const allowedPaths = getPathsForRoles((user?.roles || []) as Role[], { includePublic: true, includeAuth: false });
+  const allowedPaths = getPathsForRoles((user?.roles || []) as AppRole[], { includePublic: true, includeAuth: false });
   const [searchQuery, setSearchQuery] = useState('');
   
   const getUserInitial = (): string => {
@@ -53,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
   };
 
   const closeMenu = () => setIsMenuOpen(false);
-  const variant = pickVariant((user?.roles || []) as Role[]);
+  const variant = resolveRoleVariant((user?.roles || []) as AppRole[]);
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">

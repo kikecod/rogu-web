@@ -40,7 +40,8 @@ export const generateAvailabilitySlots = (
     const isReserved = reservas.some((reserva) => {
       if (reserva.estado === 'Cancelada') return false;
 
-      const reservaRecord = reserva as Record<string, unknown>;
+      // Allow checking multiple possible backend shapes without violating TS strictness
+      const reservaRecord = (reserva as unknown) as Record<string, unknown>;
       const startHora =
         normalizeHora(
           (reservaRecord.horaInicio as string | undefined) ??

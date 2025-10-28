@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { BarChart3, Building2, PlusCircle, RefreshCw } from 'lucide-react';
-import { useAuth } from '../../../../features/auth/context/AuthContext';
-import { ROUTE_PATHS } from '../../../../constants';
-import OwnerVenueCard from '../components/OwnerVenueCard';
-import { useOwnerSedes } from '../hooks/useOwnerSedes';
+import { useAuth } from '../../../../../features/auth/context/AuthContext';
+import { ROUTE_PATHS } from '../../../../../constants';
+import OwnerVenueCard from '../../components/OwnerVenueCard';
+import { useOwnerSedes } from '../../hooks/useOwnerSedes';
 
 const StatCard = ({
   label,

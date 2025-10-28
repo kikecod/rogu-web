@@ -71,8 +71,8 @@ const resolveFotoUrl = (
   foto: ApiFoto | Record<string, unknown> | null | undefined,
 ): string | null => {
   if (!foto) return null;
-  if (typeof (foto as ApiFoto).urlFoto === 'string') {
-    return getImageUrl((foto as ApiFoto).urlFoto);
+  if (typeof (foto as ApiFoto).url_foto === 'string') {
+    return getImageUrl((foto as ApiFoto).url_foto);
   }
   const fotoRecord = foto as Record<string, unknown>;
   if (typeof fotoRecord.url_foto === 'string') {
@@ -167,7 +167,7 @@ export const convertApiCanchaToSportField = (apiCancha: ApiCancha): SportField =
     price,
   );
 
-  const canchaRecord = apiCancha as Record<string, unknown>;
+  const canchaRecord = (apiCancha as unknown) as Record<string, unknown>;
   const disciplineNames = extractDisciplineNames(
     apiCancha.parte ??
       (Array.isArray(canchaRecord.parte) ? (canchaRecord.parte as ApiParte[]) : undefined),
@@ -272,7 +272,7 @@ export const convertApiCanchaDetalleToSportField = (
     price,
   );
 
-  const canchaRecord = cancha as Record<string, unknown>;
+  const canchaRecord = (cancha as unknown) as Record<string, unknown>;
   const disciplineNames = extractDisciplineNames(
     cancha.parte ??
       (Array.isArray(canchaRecord.parte) ? (canchaRecord.parte as ApiParte[]) : undefined),

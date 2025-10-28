@@ -127,9 +127,9 @@ El endpoint `/api/cancha` debe devolver un array de objetos con esta estructura:
     "parte": [],
     "fotos": [
       {
-        "idFoto": 5,
+        "id_foto": 5,
         "id_cancha": 1,
-        "urlFoto": "/uploads/img_1759843074551.jpg"
+        "url_foto": "/uploads/img_1759843074551.jpg"
       }
     ],
     "reservas": []

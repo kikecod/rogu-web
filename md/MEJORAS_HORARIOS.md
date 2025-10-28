@@ -30,7 +30,7 @@ p-2.5    /* Padding interno en cada botón */
 **Ejemplo:**
 - Seleccionas 2 horarios: `06:00-08:00 ($120)` + `08:00-10:00 ($120)` = **$240 total**
 - Comisión 10%: $24
-- **Total a pagar: $264 MXN**
+- **Total a pagar: $264 BS**
 
 ### 4. **Mejoras Visuales**
 
@@ -50,7 +50,7 @@ p-2.5    /* Padding interno en cada botón */
 ```tsx
 // Cambia dinámicamente según selección:
 {selectedTimeSlots.length > 0 ? `$${totalPrice}` : `$${mockField.price}`}
-{selectedTimeSlots.length > 0 ? 'MXN total' : 'MXN / hora'}
+{selectedTimeSlots.length > 0 ? 'BS total' : 'BS / hora'}
 ```
 
 ### 5. **Resumen Mejorado**

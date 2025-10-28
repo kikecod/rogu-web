@@ -3,9 +3,9 @@ const PARAM_TOKEN = /:([A-Za-z0-9_]+)/g;
 
 export const ROUTE_PATHS = {
   // Público / Marketing / Info
-  HOME: '/',
-  TERMS: '/terminos',
-  PRIVACY: '/privacidad',
+  HOME: '/', // página de inicio
+  TERMS: '/terminos', // términos y condiciones
+  PRIVACY: '/privacidad', // 
   COOKIES: '/cookies',
   ABOUT: '/about',
   ABOUT_VISION: '/about/vision',
@@ -21,60 +21,59 @@ export const ROUTE_PATHS = {
   PRIVACY_EN: '/privacy',
 
   // Auth (visitables sin sesión)
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  RESET_PASSWORD: '/auth/reset-password',
-  NEW_PASSWORD: '/auth/new-password',
+  LOGIN: '/auth/login',  // implementado
+  REGISTER: '/auth/register',  // implementado
+  RESET_PASSWORD: '/auth/reset-password',  // no implementado
+  NEW_PASSWORD: '/auth/new-password',  // no implementado
 
   // Paramétricas públicas (detalle)
-  COURT_DETAIL: '/court/:id',
-  SPORT_FIELD_DETAIL: '/field/:id',
-  SEDE_DETAIL: '/sede/:id',
+  COURT_DETAIL: '/court/:id',  // no implementado
+  SPORT_FIELD_DETAIL: '/field/:id', 
+  SEDE_DETAIL: '/sede/:id', // DATOS MUERTOS Q NO SON DE LA BASE DE DATOS PERO TIENE UNA IDEA
 
   // Usuario (CLIENTE)
-  USER_HOME: '/user',
-  CHECKOUT: '/checkout',
-  CHECKOUT_SUCCESS: '/checkout/success',
-  BOOKING_CONFIRMATION: '/booking-confirmation',
-  BOOKINGS: '/bookings',
-  BOOKING_QR: '/bookings/:id/qr',
-  PROFILE: '/profile',
+  USER_HOME: '/user', // no implementado
+  CHECKOUT: '/checkout', // q es checkout ? es para pagar ?  no implementado
+  CHECKOUT_SUCCESS: '/checkout/success', // no implementado
+  BOOKING_CONFIRMATION: '/booking-confirmation', // no implementado
+  BOOKINGS: '/bookings',  // listado de reservas implementado
+  BOOKING_QR: '/bookings/:id/qr', // no implementado
+  PROFILE: '/profile',  // perfil de usuario no implementado IMPORTANTE POR AHORA
 
   // Dueño (DUENIO)
-  OWNER_DASHBOARD: '/owner/dashboard',
-  OWNER_VENUES: '/owner/venues',
-  OWNER_VENUE_CREATE: '/owner/venues/new',
-  OWNER_VENUE_DETAIL: '/owner/venues/:id',
-  OWNER_COURTS: '/owner/courts',
-  OWNER_COURT_DETAIL: '/owner/courts/:id',
-  OWNER_PRICING: '/owner/pricing',
-  OWNER_CALENDAR: '/owner/calendar',
-  OWNER_RESERVATIONS: '/owner/reservations',
-  OWNER_STAFF: '/owner/staff',
-  OWNER_POSTULATIONS: '/owner/postulations',
-  HOST: '/host',
+  OWNER_DASHBOARD: '/owner/dashboard',  // panel de control implementado
+  OWNER_VENUES: '/owner/venues',  // listado de sedes implementado
+  OWNER_VENUE_CREATE: '/owner/venues/new',  // crear nueva sede implementado
+  OWNER_VENUE_DETAIL: '/owner/venues/:id',  // detalle sede de una sede específica implementado
+  OWNER_COURTS: '/owner/courts',  // listado canchas no implementado
+  OWNER_COURT_DETAIL: '/owner/courts/:id',  // detalle cancha implementado
+  OWNER_PRICING: '/owner/pricing',  // configuracion de precios no implementado
+  OWNER_CALENDAR: '/owner/calendar',  // calendario de reservas no implementado
+  OWNER_RESERVATIONS: '/owner/reservations',  // listado de reservas implementado
+  OWNER_STAFF: '/owner/staff',  // personal y permisos no implementado
+  OWNER_POSTULATIONS: '/owner/postulations',  // postulaciones para dueños no implementado
+  HOST: '/host',  // cuando la postulacion es aceptada, devuelve esta pagina por unica vez
 
   // Controlador (CONTROLADOR)
-  CONTROL_SCAN: '/control/scan',
-  CONTROL_HISTORY: '/control/history',
-  CONTROLLER_SCAN: '/controller/scan',
-  CONTROLLER_HISTORY: '/controller/history',
+  CONTROL_SCAN: '/control/scan', // NO IMPLEMENTADO
+  CONTROL_HISTORY: '/control/history', // NO IMPLEMENTADO
+  CONTROLLER_SCAN: '/controller/scan',  // NO IMPLEMENTADO
+  CONTROLLER_HISTORY: '/controller/history',  // NO IMPLEMENTADO
 
   // Admin (ADMIN)
-  ADMIN_HOME: '/admin',
-  PROFILE_ADMIN: '/admin/profile',
-  ADMIN_APPLICATIONS: '/admin/applications',
-  ADMIN_USERS: '/admin/users',
-  ADMIN_ROLES: '/admin/roles',
-  ADMIN_VENUES: '/admin/venues',
-  ADMIN_COURTS: '/admin/courts',
-  ADMIN_RESERVATIONS: '/admin/reservations',
-  ADMIN_PAYMENTS: '/admin/payments',
-  ADMIN_CMS: '/admin/cms',
-  ADMIN_SPACES: '/admin-spaces',
+  ADMIN_HOME: '/admin', // panel de admin no implementado
+  ADMIN_APPLICATIONS: '/admin/applications', // postulaciones no implementado
+  ADMIN_USERS: '/admin/users',  // gestion de usuarios no implementado
+  ADMIN_ROLES: '/admin/roles',  // gestion de roles no implementado
+  ADMIN_VENUES: '/admin/venues',  // gestion de sedes no implementado
+  ADMIN_COURTS: '/admin/courts',  // gestion de canchas no implementado
+  ADMIN_RESERVATIONS: '/admin/reservations',  // gestion de reservas no implementado
+  ADMIN_PAYMENTS: '/admin/payments',  // gestion de pagos no implementado 
+  ADMIN_CMS: '/admin/cms',  // gestion de contenido no implementado
+  ADMIN_SPACES: '/admin-spaces',  // Página de administración de espacios (no implementado)
 
   // Misceláneo / pruebas
-  TEST_ROLES: '/test-roles',
+  TEST_ROLES: '/test-roles',  // página de prueba de roles no implementado
 } as const;
 
 export type RouteKey = keyof typeof ROUTE_PATHS;
@@ -123,7 +122,7 @@ export const CONTROLADOR_ROUTE_KEYS: Readonly<RouteKey[]> = [
 ];
 
 export const ADMIN_ROUTE_KEYS: Readonly<RouteKey[]> = [
-  'ADMIN_HOME','PROFILE_ADMIN','ADMIN_APPLICATIONS','ADMIN_USERS','ADMIN_ROLES',
+  'ADMIN_HOME','PROFILE','ADMIN_APPLICATIONS','ADMIN_USERS','ADMIN_ROLES',
   'ADMIN_VENUES','ADMIN_COURTS','ADMIN_RESERVATIONS','ADMIN_PAYMENTS',
   'ADMIN_CMS','ADMIN_SPACES',
 ];

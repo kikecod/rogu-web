@@ -305,7 +305,7 @@ const SportFieldDetailPage: React.FC = () => {
                     {selectedTimeSlots.length > 0 ? `$${totalPrice}` : `$${field.price}`}
                   </span>
                   <span className="text-base text-gray-600">
-                    {selectedTimeSlots.length > 0 ? 'MXN total' : 'MXN / hora'}
+                    {selectedTimeSlots.length > 0 ? 'BS total' : 'BS / hora'}
                   </span>
                 </div>
                 {selectedTimeSlots.length > 0 && (
@@ -669,7 +669,7 @@ const SportFieldDetailPage: React.FC = () => {
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-xl text-white">
                 <p className="text-sm text-blue-100">Total a pagar</p>
                 <p className="font-extrabold text-3xl">
-                  ${totalPrice + Math.round(totalPrice * 0.1)} MXN
+                  ${totalPrice + Math.round(totalPrice * 0.1)} BS
                 </p>
                 <p className="text-xs text-blue-200 mt-1">
                   Incluye comisión de servicio (10%)

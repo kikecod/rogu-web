@@ -9,13 +9,14 @@ import {
   UploadCloud,
   Users,
 } from 'lucide-react';
-import { canchaService } from '../../../../features/canchas/services/cancha.service';
-import type { Cancha, Foto } from '../../../../features/canchas/types/cancha.types';
-import { getReservasPorCancha, type ReservaRaw } from '../../../../features/reservas/services/reserva.service';
-import { ROUTE_PATHS } from '../../../../constants';
-import { getImageUrl } from '../../../../lib/config/api';
-import { useAuth } from '../../../../features/auth/context/AuthContext';
-import { bloqueosService, type BloqueoCancha } from '../../../../features/bloqueos/services/bloqueos.service';
+import { canchaService } from '../../../../../features/canchas/services/cancha.service';
+import type { Cancha, Foto } from '../../../../../features/canchas/types/cancha.types';
+import { getReservasPorCancha, type ReservaRaw } from '../../../../../features/reservas/services/reserva.service';
+import { ROUTE_PATHS } from '../../../../../constants';
+import { getImageUrl } from '../../../../../lib/config/api';
+import { useAuth } from '../../../../../features/auth/context/AuthContext';
+import { bloqueosService, type BloqueoCancha } from '../../../../../features/bloqueos/services/bloqueos.service';
+import FixedAspectImage from '../../../../../shared/components/media/FixedAspectImage';
 
 type CanchaRecord = {
   id_cancha: number;
@@ -65,10 +66,25 @@ const mapReserva = (raw: ReservaRaw): ReservaRecord => ({
   monto_total: raw.monto_total,
 });
 
-const mapFoto = (raw: Foto): FotoRecord => ({
-  id_foto: raw.idFoto,
-  url_foto: raw.urlFoto,
-});
+const mapFoto = (raw: Foto): FotoRecord => {
+  const record = (raw as unknown) as Record<string, unknown>;
+  const id_foto =
+    typeof raw.id_foto === 'number' && Number.isFinite(raw.id_foto)
+      ? raw.id_foto
+      : typeof record.id_foto === 'number' && Number.isFinite(record.id_foto as number)
+        ? (record.id_foto as number)
+        : 0;
+  const url_foto =
+    typeof raw.url_foto === 'string' && raw.url_foto.trim().length > 0
+      ? raw.url_foto
+      : typeof record.url_foto === 'string' && (record.url_foto as string).trim().length > 0
+        ? (record.url_foto as string)
+        : '';
+  return {
+    id_foto: id_foto,
+    url_foto: url_foto,
+  };
+};
 
 const OwnerCourtDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -413,21 +429,18 @@ const OwnerCourtDetailPage: React.FC = () => {
           {fotos.length ? (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {fotos.map((foto, idx) => {
-                const rawUrl = (foto as any).url_foto || (foto as any).urlFoto || '';
+                const rawUrl = (foto as any).url_foto || (foto as any).url_foto || '';
                 const src = getImageUrl(rawUrl);
                 if (!src) return null;
                 const key = foto.id_foto ?? `${idx}-${rawUrl}`;
                 return (
-                  <figure
+                  <FixedAspectImage
                     key={key}
-                    className="overflow-hidden rounded-xl border border-slate-200 shadow-sm"
-                  >
-                    <img
-                      src={src}
-                      alt="Foto de la cancha"
-                      className="h-48 w-full object-cover"
-                    />
-                  </figure>
+                    src={src}
+                    alt="Foto de la cancha"
+                    ratio={4 / 3}
+                    className="shadow-sm"
+                  />
                 );
               })}
             </div>

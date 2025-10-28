@@ -14,10 +14,10 @@ const HostSpacePage: React.FC = () => {
 
   const createDuenio = async (id_persona: number) => {
     const duenioData = {
-      id_personaD: id_persona,
+      id_persona_d: id_persona,
       verificado: false,
-      imagenCI: 'pending_upload', // Placeholder hasta que implementes la subida
-      imagenFacial: 'pending_upload', // Placeholder hasta que implementes la subida
+      imagen_ci: 'pending_upload', // Placeholder hasta que implementes la subida
+      imagen_facial: 'pending_upload', // Placeholder hasta que implementes la subida
     };
 
     const res = await httpClient.post('/duenio', duenioData);

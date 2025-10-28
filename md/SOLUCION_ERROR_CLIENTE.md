@@ -208,7 +208,7 @@ router.post('/login', async (req, res) => {
     // Buscar idDuenio si tiene rol DUENIO
     if (usuarioResponse.roles.includes('DUENIO')) {
       const duenio = await Duenio.findOne({
-        where: { id_personaD: usuario.id_persona }
+        where: { id_persona_d: usuario.id_persona }
       });
       
       if (duenio) {

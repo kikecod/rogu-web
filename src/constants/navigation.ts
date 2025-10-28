@@ -18,7 +18,7 @@ export interface HeaderMenuLink {
 
 export const HEADER_MENU_LINKS = {
   ADMIN: [
-    { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE_ADMIN, className: HEADER_MENU_LINK_CLASSES.neutral },
+    { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE, className: HEADER_MENU_LINK_CLASSES.neutral },
     { label: 'Administrar reservas', to: ROUTE_PATHS.ADMIN_RESERVATIONS, className: HEADER_MENU_LINK_CLASSES.neutral },
     { label: 'Panel de Administracion', to: ROUTE_PATHS.ADMIN_SPACES, className: HEADER_MENU_LINK_CLASSES.success },
     { label: 'Prueba de Roles (Admin)', to: ROUTE_PATHS.TEST_ROLES, className: HEADER_MENU_LINK_CLASSES.purple },
