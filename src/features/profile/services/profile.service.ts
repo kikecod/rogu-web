@@ -12,6 +12,16 @@ const toPersona = (value: any): PersonaProfile | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
+  const fechaNacimientoRaw =
+    value?.fechaNacimiento ?? value?.fecha_nacimiento ?? value?.fechaNac ?? null;
+  const telefonoVerificadoRaw =
+    typeof value?.telefonoVerificado === 'boolean'
+      ? value.telefonoVerificado
+      : typeof value?.telefono_verificado === 'boolean'
+      ? value.telefono_verificado
+      : null;
+  const creadoRaw = value?.creadoEn ?? value?.creado_en ?? null;
+  const actualizadoRaw = value?.actualizadoEn ?? value?.actualizado_en ?? null;
   const urlFoto =
     typeof value.url_foto === 'string'
       ? value.url_foto
@@ -38,9 +48,13 @@ const toPersona = (value: any): PersonaProfile | null => {
         ? value.documento_numero
         : null,
     telefono: typeof value.telefono === 'string' ? value.telefono : null,
-    fechaNacimiento: value?.fechaNacimiento ?? null,
+    telefonoVerificado:
+      typeof telefonoVerificadoRaw === 'boolean' ? telefonoVerificadoRaw : null,
+    fechaNacimiento: fechaNacimientoRaw ?? null,
     genero: typeof value.genero === 'string' ? value.genero : null,
     url_foto: urlFoto,
+    creadoEn: creadoRaw ?? null,
+    actualizadoEn: actualizadoRaw ?? null,
   };
 };
 
@@ -86,7 +100,7 @@ const toControlador = (value: any): ControladorProfile | null => {
 
 // Construye el perfil sin depender de /auth/profile
 const fetchProfile = async (): Promise<UserProfileData> => {
-  // Recuperar usuario básico desde localStorage o token
+  // Recuperar usuario basico desde localStorage o token
   let storedUser: any = null;
   try {
     const raw = localStorage.getItem('user');
@@ -98,13 +112,29 @@ const fetchProfile = async (): Promise<UserProfileData> => {
   const idPersona = Number(storedUser?.id_persona);
   const idUsuario = Number(storedUser?.id_usuario);
   const roles: string[] = Array.isArray(storedUser?.roles) ? storedUser.roles : [];
+  const hasRole = (role: string): boolean => roles.includes(role);
 
-  // Peticiones paralelas según roles
-  const personaReq = httpClient.get<any>('/personas/self').then(r => r.data).catch(() => null);
-  const usuarioReq = httpClient.get<any>(`/usuarios/self`).then(r => r.data).catch(() => null);
-  const clienteReq = httpClient.get<any>(`/clientes/self`).then(r => r.data).catch(() => null);
-  const duenioReq = httpClient.get<any>('/duenio/self').then(r => r.data).catch(() => null);
-  const controladorReq = httpClient.get<any>(`/controlador/self`).then(r => r.data).catch(() => null);
+  const fetchWithFallback = <T>(request: () => Promise<T>): Promise<T | null> =>
+    request()
+      .then((response) => response)
+      .catch(() => null);
+
+  // Peticiones paralelas solo para los segmentos necesarios segun roles
+  const personaReq = fetchWithFallback(() =>
+    httpClient.get<any>('/personas/self').then((r) => r.data),
+  );
+  const usuarioReq = fetchWithFallback(() =>
+    httpClient.get<any>('/usuarios/self').then((r) => r.data),
+  );
+  const clienteReq = hasRole('CLIENTE')
+    ? fetchWithFallback(() => httpClient.get<any>('/clientes/self').then((r) => r.data))
+    : Promise.resolve(null);
+  const duenioReq = hasRole('DUENIO')
+    ? fetchWithFallback(() => httpClient.get<any>('/duenio/self').then((r) => r.data))
+    : Promise.resolve(null);
+  const controladorReq = hasRole('CONTROLADOR')
+    ? fetchWithFallback(() => httpClient.get<any>('/controlador/self').then((r) => r.data))
+    : Promise.resolve(null);
 
   const [personaRaw, usuarioRaw, clienteRaw, duenioRaw, controladorRaw] = await Promise.all([
     personaReq,
@@ -127,11 +157,13 @@ const fetchProfile = async (): Promise<UserProfileData> => {
   };
 
   const persona: PersonaProfile | null = toPersona(personaRaw);
-  const cliente: ClienteProfile | null = clienteRaw ? toCliente({
-    apodo: clienteRaw?.apodo,
-    nivel: clienteRaw?.nivel,
-    observaciones: clienteRaw?.observaciones,
-  }) : null;
+  const cliente: ClienteProfile | null = clienteRaw
+    ? toCliente({
+        apodo: clienteRaw?.apodo,
+        nivel: clienteRaw?.nivel,
+        observaciones: clienteRaw?.observaciones,
+      })
+    : null;
   const duenio: DuenioProfile | null = duenioRaw ? toDuenio(duenioRaw) : null;
   const controlador: ControladorProfile | null = controladorRaw ? toControlador(controladorRaw) : null;
 

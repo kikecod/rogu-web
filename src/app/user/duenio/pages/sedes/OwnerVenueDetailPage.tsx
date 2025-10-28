@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,33 +13,9 @@ import { ROUTE_PATHS } from "../../../../../constants";
 import { useOwnerVenue } from "../../hooks/useOwnerVenue";
 import OwnerCourtCard from "../../components/OwnerCourtCard";
 import { canchaService } from "../../../../../features/canchas/services/cancha.service";
-import type { CreateCanchaRequest } from "../../../../../features/canchas/types/cancha.types";
 import { formatPrice } from "../../../../../shared/utils/format";
 import { getImageUrl } from "../../../../../lib/config/api";
 
-type CourtFormState = {
-  nombre: string;
-  superficie: string;
-  cubierta: boolean;
-  aforoMax: number;
-  dimensiones: string;
-  reglasUso: string;
-  iluminacion: string;
-  estado: string;
-  precio: number;
-};
-
-const defaultCourtForm: CourtFormState = {
-  nombre: "",
-  superficie: "Cesped sintetico",
-  cubierta: false,
-  aforoMax: 10,
-  dimensiones: "40x20 metros",
-  reglasUso: "Respetar horarios y normas",
-  iluminacion: "LED",
-  estado: "Disponible",
-  precio: 100,
-};
 const OwnerVenueDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const sedeId = Number(id);
@@ -47,10 +23,6 @@ const OwnerVenueDetailPage: React.FC = () => {
     Number.isFinite(sedeId) ? sedeId : null,
   );
 
-  const [form, setForm] = useState<CourtFormState>(defaultCourtForm);
-  const [creating, setCreating] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [galleryItems, setGalleryItems] = useState<
     Array<{ id: string; url: string; courtId: number; courtName: string }>
   >([]);
@@ -116,12 +88,6 @@ const OwnerVenueDetailPage: React.FC = () => {
     ];
   }, [venue, loading]);
 
-  const handleFormChange = <K extends keyof CourtFormState>(
-    key: K,
-    value: CourtFormState[K],
-  ) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
   useEffect(() => {
     let cancelled = false;
 
@@ -220,40 +186,6 @@ const OwnerVenueDetailPage: React.FC = () => {
     });
     return map;
   }, [galleryItems]);
-  const handleCreateCourt = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!sedeId) return;
-
-    setCreating(true);
-    setFormError(null);
-    setFormSuccess(null);
-
-    try {
-      const payload: CreateCanchaRequest & { id_sede: number } = {
-        idSede: sedeId,
-        id_sede: sedeId,
-        nombre: form.nombre,
-        superficie: form.superficie,
-        cubierta: form.cubierta,
-        aforoMax: form.aforoMax,
-        dimensiones: form.dimensiones,
-        reglasUso: form.reglasUso,
-        iluminacion: form.iluminacion,
-        estado: form.estado,
-        precio: form.precio,
-      };
-
-      await canchaService.create(payload);
-      setForm(defaultCourtForm);
-      setFormSuccess(`La cancha "${form.nombre}" se registro correctamente.`);
-      await refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudo crear la cancha.";
-      setFormError(message);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const contactCards = useMemo(
     () => [
@@ -384,139 +316,23 @@ const OwnerVenueDetailPage: React.FC = () => {
             <section className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
               <header className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">Agregar nueva cancha</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">Gestionar canchas</h2>
                   <p className="text-sm text-slate-500">
-                    Completa los datos principales para sumar una cancha a esta sede. Luego podras gestionar fotos, bloqueos y reservas desde su detalle.
+                    Registra nuevas canchas desde la vista dedicada y continua administrando fotos, bloqueos y reservas desde aqui.
                   </p>
                 </div>
+                <Link
+                  to={
+                    sedeId
+                      ? ROUTE_PATHS.OWNER_COURT_CREATE.replace(":sedeId?", String(sedeId))
+                      : ROUTE_PATHS.OWNER_COURT_CREATE.replace("/:sedeId?", "")
+                  }
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Agregar cancha
+                </Link>
               </header>
-
-              <form className="mt-6 space-y-6" onSubmit={handleCreateCourt}>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Nombre de la cancha
-                    <input
-                      required
-                      value={form.nombre}
-                      onChange={(event) => handleFormChange("nombre", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. Cancha principal"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Superficie
-                    <input
-                      required
-                      value={form.superficie}
-                      onChange={(event) => handleFormChange("superficie", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. Cesped sintetico"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Dimensiones
-                    <input
-                      required
-                      value={form.dimensiones}
-                      onChange={(event) => handleFormChange("dimensiones", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. 40x20 metros"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Reglas de uso
-                    <input
-                      required
-                      value={form.reglasUso}
-                      onChange={(event) => handleFormChange("reglasUso", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. Uso obligatorio de calzado adecuado"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Iluminacion
-                    <input
-                      required
-                      value={form.iluminacion}
-                      onChange={(event) => handleFormChange("iluminacion", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Estado
-                    <input
-                      required
-                      value={form.estado}
-                      onChange={(event) => handleFormChange("estado", event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. Disponible"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Aforo maximo
-                    <input
-                      required
-                      type="number"
-                      min={1}
-                      value={form.aforoMax}
-                      onChange={(event) => handleFormChange("aforoMax", Number(event.target.value))}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm text-slate-600">
-                    Precio base
-                    <input
-                      required
-                      type="number"
-                      min={0}
-                      step="0.5"
-                      value={form.precio}
-                      onChange={(event) => handleFormChange("precio", Number(event.target.value))}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-                      placeholder="Ej. 120"
-                    />
-                  </label>
-                </div>
-
-                <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={form.cubierta}
-                    onChange={(event) => handleFormChange("cubierta", event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  Cancha cubierta
-                </label>
-
-                {formError ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {formError}
-                  </div>
-                ) : null}
-                {formSuccess ? (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                    {formSuccess}
-                  </div>
-                ) : null}
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
-                    disabled={creating}
-                  >
-                    <PlusCircle className={`h-4 w-4 ${creating ? "animate-spin" : ""}`} />
-                    {creating ? "Guardando..." : "Agregar cancha"}
-                  </button>
-                </div>
-              </form>
             </section>
 
             <section className="space-y-4">
@@ -541,7 +357,7 @@ const OwnerVenueDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
-                  Esta sede todavia no tiene canchas registradas. Utiliza el formulario anterior para crear la primera.
+                  Esta sede todavia no tiene canchas registradas. Usa el boton "Agregar cancha" para registrar la primera.
                 </div>
               )}
             </section>
@@ -553,4 +369,6 @@ const OwnerVenueDetailPage: React.FC = () => {
 };
 
 export default OwnerVenueDetailPage;
+
+
 

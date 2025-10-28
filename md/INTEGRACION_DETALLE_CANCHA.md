@@ -26,7 +26,7 @@ Se ha conectado exitosamente la página de detalles de canchas (`SportFieldDetai
   "precio": "45.00",
   "fotos": [...],
   "sede": {
-    "idSede": 1,
+    "id_sede": 1,
     "nombre": "Complejo Deportivo Central",
     "direccion": "Av. Principal 123",
     "ciudad": "Lima",

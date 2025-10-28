@@ -46,6 +46,7 @@ export const ROUTE_PATHS = {
   OWNER_VENUE_CREATE: '/owner/venues/new',  // crear nueva sede implementado
   OWNER_VENUE_DETAIL: '/owner/venues/:id',  // detalle sede de una sede específica implementado
   OWNER_COURTS: '/owner/courts',  // listado canchas no implementado
+  OWNER_COURT_CREATE: '/owner/courts/new/:sedeId?',  // crear cancha para una sede
   OWNER_COURT_DETAIL: '/owner/courts/:id',  // detalle cancha implementado
   OWNER_PRICING: '/owner/pricing',  // configuracion de precios no implementado
   OWNER_CALENDAR: '/owner/calendar',  // calendario de reservas no implementado
@@ -113,7 +114,7 @@ export const CLIENTE_ROUTE_KEYS: Readonly<RouteKey[]> = [
 ];
 
 export const DUENIO_ROUTE_KEYS: Readonly<RouteKey[]> = [
-  'OWNER_DASHBOARD','OWNER_VENUES','OWNER_VENUE_CREATE','OWNER_COURTS','OWNER_PRICING',
+  'OWNER_DASHBOARD','OWNER_VENUES','OWNER_VENUE_CREATE','OWNER_COURTS','OWNER_COURT_CREATE','OWNER_PRICING',
   'OWNER_CALENDAR','OWNER_RESERVATIONS','OWNER_STAFF','OWNER_POSTULATIONS','HOST',
 ];
 

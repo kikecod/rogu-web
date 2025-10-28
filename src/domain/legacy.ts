@@ -39,7 +39,7 @@ export interface ApiParte {
 }
 
 export interface ApiSede {
-  idSede: number;
+  id_sede: number;
   nombre: string;
   direccion: string;
   ciudad: string;
@@ -55,6 +55,8 @@ export interface ApiReserva {
   fecha: string;
   horaInicio: string;
   horaFin: string;
+  hora_inicio?: string;
+  hora_fin?: string;
   estado: string; // "Confirmada" | "Pendiente" | "Cancelada"
 }
 
@@ -132,6 +134,7 @@ export interface SportField {
     close: string;
   };
   reviewsList?: Review[];
+  reservations?: ApiReserva[];
 }
 
 export interface TimeSlot {

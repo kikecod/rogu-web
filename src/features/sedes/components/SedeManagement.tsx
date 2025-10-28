@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail } from 'lucide-react';
 
 interface Sede {
-  idSede: number;
+  id_sede: number;
   nombre: string;
   descripcion: string;
   direccion: string;
@@ -107,7 +107,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_persona_d, onSedeSel
 
     try {
       const url = editingSede 
-        ? `http://localhost:3000/api/sede/${editingSede.idSede}`
+        ? `http://localhost:3000/api/sede/${editingSede.id_sede}`
         : 'http://localhost:3000/api/sede';
       
       const method = editingSede ? 'PATCH' : 'POST';
@@ -158,11 +158,11 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_persona_d, onSedeSel
     setShowForm(true);
   };
 
-  const handleDelete = async (idSede: number) => {
+  const handleDelete = async (id_sede: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta sede?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/sede/${idSede}`, {
+      const response = await fetch(`http://localhost:3000/api/sede/${id_sede}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -232,7 +232,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_persona_d, onSedeSel
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sedes.map((sede) => (
-            <div key={sede.idSede} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <div key={sede.id_sede} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">{sede.nombre}</h3>
                 <div className="flex space-x-2">
@@ -243,7 +243,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ id_persona_d, onSedeSel
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(sede.idSede)}
+                    onClick={() => handleDelete(sede.id_sede)}
                     className="text-red-600 hover:text-red-800"
                   >
                     <Trash2 className="h-4 w-4" />

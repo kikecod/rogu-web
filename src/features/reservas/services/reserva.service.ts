@@ -21,13 +21,34 @@ export interface ReservaRaw {
   monto_total: number;
   creado_en: string;
   actualizado_en: string;
+  estado?: string;
+  estado_pago?: string | null;
+  metodo_pago?: string | null;
+  codigo_qr?: string | null;
+  // Compatibilidad legacy
+  estadoPago?: string | null;
+  metodoPago?: string | null;
+  codigoQR?: string | null;
+  hora_inicio?: string;
+  hora_fin?: string;
+  horaInicio?: string;
+  horaFin?: string;
 }
 
 export interface GetReservasUsuarioResponse {
   reservas: (ReservaTipo & {
     cancha?: any;
-    metodoPago?: string;
-    codigoQR?: string;
+    metodo_pago?: string | null;
+    estado_pago?: string | null;
+    codigo_qr?: string | null;
+    metodoPago?: string | null;
+    estadoPago?: string | null;
+    codigoQR?: string | null;
+    pases_acceso?: Array<{
+      id_pase_acceso: number;
+      qr: string | null;
+      cantidad_personas: number;
+    }>;
   })[];
   total: number;
   activas: number;
@@ -38,8 +59,17 @@ export interface GetReservasUsuarioResponse {
 export interface GetReservasDuenioResponse {
   reservas: (ReservaTipo & {
     cancha?: any;
-    metodoPago?: string;
-    codigoQR?: string;
+    metodo_pago?: string | null;
+    estado_pago?: string | null;
+    codigo_qr?: string | null;
+    metodoPago?: string | null;
+    estadoPago?: string | null;
+    codigoQR?: string | null;
+    pases_acceso?: Array<{
+      id_pase_acceso: number;
+      qr: string | null;
+      cantidad_personas: number;
+    }>;
     cliente?:
       | {
           id_cliente: number;
@@ -177,18 +207,11 @@ export class ReservaService {
 
 export const reservaService = new ReservaService();
 
-export async function cancelReserva(id: number): Promise<void> {
-  try {
-    await reservaService.update(id, { estado: 'Cancelada' });
-    return;
-  } catch (err) {
-    try {
-      await reservaService.delete(id);
-      return;
-    } catch (err2) {
-      throw err2 ?? err;
-    }
-  }
+export async function cancelReserva(id: number, motivo?: string): Promise<void> {
+  await httpClient.patch(
+    `${RESERVAS_ENDPOINT}/${id}/cancelar`,
+    motivo ? { motivo } : {},
+  );
 }
 
 export const legacyReservasApi = {

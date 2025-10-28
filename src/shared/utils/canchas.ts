@@ -22,7 +22,7 @@ const toStringId = (raw: unknown, fallback = '0'): string => {
 };
 
 const createDefaultSede = (): ApiSede => ({
-  idSede: 0,
+  id_sede: 0,
   nombre: 'Sede sin nombre',
   direccion: '',
   ciudad: '',
@@ -181,10 +181,10 @@ export const convertApiCanchaToSportField = (apiCancha: ApiCancha): SportField =
       (typeof canchaRecord.id_sede === 'number' || typeof canchaRecord.id_sede === 'string'
         ? canchaRecord.id_sede
         : undefined) ??
-      (typeof canchaRecord.idSede === 'number' || typeof canchaRecord.idSede === 'string'
-        ? canchaRecord.idSede
+      (typeof canchaRecord.id_sede === 'number' || typeof canchaRecord.id_sede === 'string'
+        ? canchaRecord.id_sede
         : undefined) ??
-      apiCancha.sede?.idSede,
+      apiCancha.sede?.id_sede,
   );
 
   return {
@@ -291,10 +291,10 @@ export const convertApiCanchaDetalleToSportField = (
       (typeof canchaRecord.id_sede === 'number' || typeof canchaRecord.id_sede === 'string'
         ? canchaRecord.id_sede
         : undefined) ??
-      (typeof canchaRecord.idSede === 'number' || typeof canchaRecord.idSede === 'string'
-        ? canchaRecord.idSede
+      (typeof canchaRecord.id_sede === 'number' || typeof canchaRecord.id_sede === 'string'
+        ? canchaRecord.id_sede
         : undefined) ??
-      sedeInfo.idSede,
+      sedeInfo.id_sede,
   );
 
   return {
@@ -337,6 +337,7 @@ export const convertApiCanchaDetalleToSportField = (
       close: sedeInfo.horarioCierre || '22:00',
     },
     reviewsList: resenas.map(mapResenaToReview),
+    reservations: reservas,
   };
 };
 
@@ -393,7 +394,6 @@ export const fetchCanchaById = async (id: string): Promise<SportField> => {
 
   return convertApiCanchaDetalleToSportField(canchaData, reservasData, resenasData);
 };
-
 
 
 

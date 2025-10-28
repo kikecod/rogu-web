@@ -12,17 +12,21 @@ import {
 // Eliminado: no mostramos loading en pantalla para el perfil
 
 const renderError = (message: string, onRetry: () => void) => (
-  <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4">
-    <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-sm p-8 text-center">
+  <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4 py-8 sm:py-12">
+    <div
+      className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-sm p-6 sm:p-8 text-center transition-shadow duration-200 hover:shadow-md"
+      role="alert"
+      aria-live="assertive"
+    >
       <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-50 mx-auto mb-4">
         <AlertTriangle className="h-6 w-6 text-red-500" />
       </div>
-      <h2 className="text-xl font-semibold text-neutral-900 mb-2">No se pudo cargar el perfil</h2>
-      <p className="text-neutral-600 text-sm mb-6">{message}</p>
+      <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">No se pudo cargar el perfil</h2>
+      <p className="text-neutral-600 text-sm leading-relaxed mb-6 break-words">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors"
+        className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium shadow-sm hover:bg-blue-600/90 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 transition disabled:opacity-70"
       >
         <RefreshCcw className="h-4 w-4" />
         Reintentar

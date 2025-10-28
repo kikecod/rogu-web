@@ -20,6 +20,7 @@ import { ROUTE_PATHS, type AppRole } from './constants';
 import OwnerDashboardPage from './app/user/duenio/pages/Dashboard/OwnerDashboardPage';
 import OwnerVenueDetailPage from './app/user/duenio/pages/sedes/OwnerVenueDetailPage';
 import OwnerCourtDetailPage from './app/user/duenio/pages/canchas/OwnerCourtDetailPage';
+import OwnerCourtCreatePage from './app/user/duenio/pages/canchas/OwnerCourtCreatePage';
 import OwnerVenuesPage from './app/user/duenio/pages/sedes/OwnerVenuesPage';
 import OwnerVenueCreatePage from './app/user/cliente/pages/OwnerVenueCreatePage';
 import OwnerReservationsPage from './app/user/duenio/pages/Reservas/OwnerReservationsPage';
@@ -77,6 +78,7 @@ const AppContent = () => {
     { path: ROUTE_PATHS.OWNER_VENUE_CREATE, element: <OwnerVenueCreatePage />, roles: ['DUENIO'] },
     { path: ROUTE_PATHS.OWNER_VENUE_DETAIL, element: <OwnerVenueDetailPage />, roles: ['DUENIO'] },
     { path: ROUTE_PATHS.OWNER_COURT_DETAIL, element: <OwnerCourtDetailPage />, roles: ['DUENIO'] },
+    { path: ROUTE_PATHS.OWNER_COURT_CREATE, element: <OwnerCourtCreatePage />, roles: ['DUENIO'] },
   { path: ROUTE_PATHS.OWNER_RESERVATIONS, element: <OwnerReservationsPage />, roles: ['DUENIO'] },
     { path: ROUTE_PATHS.ADMIN_SPACES, element: <AdminSpacesPage />, roles: ['ADMIN'] },
     { path: ROUTE_PATHS.CHECKOUT, element: <CheckoutPage />, roles: ['CLIENTE'] },

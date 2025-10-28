@@ -81,15 +81,11 @@ export class CanchaService {
   /**
    * Obtiene canchas por sede
    */
-  async getBySede(idSede: number): Promise<Cancha[]> {
-    const allCanchas = await this.getAll();
-    // Mapear id_Sede a idSede para mantener compatibilidad
-    return allCanchas.filter(cancha => 
-      (cancha as any).id_Sede === idSede || cancha.idSede === idSede
-    ).map(cancha => ({
-      ...cancha,
-      idSede: (cancha as any).id_Sede || cancha.idSede
-    }));
+  async getBySede(id_sede: number): Promise<Cancha[]> {
+    const response = await httpClient.get<Cancha[]>(
+      `${this.endpoint}/sede/${id_sede}`,
+    );
+    return response.data;
   }
 
   /**
@@ -208,10 +204,9 @@ export class CanchaService {
    */
   async uploadFoto(id_cancha: number, file: File): Promise<Foto> {
     const response = await httpClient.uploadFile<Foto>(
-      '/fotos',
+      `${API_CONFIG.endpoints.fotos}/upload/${id_cancha}`,
       file,
-      'imagen',
-      { id_cancha: id_cancha.toString() }
+      'image'
     );
     return response.data;
   }

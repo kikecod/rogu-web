@@ -5,9 +5,12 @@ export interface PersonaProfile {
   documentoTipo: string | null;
   documentoNumero: string | null;
   telefono: string | null;
+  telefonoVerificado: boolean | null;
   fechaNacimiento: string | Date | null;
   genero: string | null;
   url_foto: string | null;
+  creadoEn: string | Date | null;
+  actualizadoEn: string | Date | null;
 }
 
 export interface UsuarioProfile {
@@ -45,4 +48,3 @@ export interface UserProfileData {
   duenio?: DuenioProfile | null;
   controlador?: ControladorProfile | null;
 }
-

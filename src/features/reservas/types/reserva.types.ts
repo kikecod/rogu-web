@@ -14,6 +14,10 @@ export interface Reserva {
   monto_extra: number;
   monto_total: number;
   estado: EstadoReserva;
+  estado_pago?: string;
+  metodo_pago?: string | null;
+  codigo_qr?: string | null;
+  // Compatibilidad legacy (pendiente de depurar en FE)
   estadoPago?: string;
   metodoPago?: string | null;
   codigoQR?: string | null;
@@ -22,6 +26,7 @@ export interface Reserva {
   cliente?: any;
   cancha?: any;
   transacciones?: any[];
+  pases_acceso?: any[];
   pasesAcceso?: any[];
   pago?: any;
 }

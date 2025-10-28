@@ -8,7 +8,7 @@ import { useAuth } from '../../../features/auth/context/AuthContext';
 import { ROUTE_PATHS } from '../../../constants';
 
 interface Sede {
-  idSede: number;
+  id_sede: number;
   nombre: string;
   descripcion: string;
   direccion: string;

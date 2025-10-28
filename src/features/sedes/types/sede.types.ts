@@ -3,7 +3,7 @@
  */
 
 export interface Sede {
-  idSede: number;
+  id_sede: number;
   nombre: string;
   direccion?: string;
   ciudad?: string;

@@ -272,13 +272,23 @@ const MyBookingsPage: React.FC = () => {
         // Transformar reservas al shape de UI (simple mapping)
         const mapped: Booking[] = reservas.map((r: RawReservaUsuario) => {
           const estadoReserva = String(r.estado || '').toUpperCase();
-          const estadoPago = String(r.estadoPago || r.pago?.estado || 'PENDIENTE').toUpperCase();
-          const ultimaTransaccion = Array.isArray(r.transacciones) && r.transacciones.length > 0
-            ? r.transacciones[0]
-            : null;
-          const qrFromPases = Array.isArray(r.pasesAcceso) && r.pasesAcceso.length > 0
-            ? r.pasesAcceso[0]?.qr ?? null
-            : null;
+          const estadoPago = String(
+            r.estado_pago ??
+              r.estadoPago ??
+              r.pago?.estado ??
+              'PENDIENTE',
+          ).toUpperCase();
+          const ultimaTransaccion =
+            Array.isArray(r.transacciones) && r.transacciones.length > 0
+              ? r.transacciones[0]
+              : null;
+          const pasesAccesoList = Array.isArray(r.pases_acceso)
+            ? r.pases_acceso
+            : Array.isArray(r.pasesAcceso)
+            ? r.pasesAcceso
+            : [];
+          const qrFromPases =
+            pasesAccesoList.length > 0 ? pasesAccesoList[0]?.qr ?? null : null;
 
           let status: Booking['status'] = 'active';
           if (estadoReserva === 'CANCELADA') {
@@ -339,6 +349,12 @@ const MyBookingsPage: React.FC = () => {
           const isInicioValid = !Number.isNaN(inicioDate.getTime());
           const isFinValid = !Number.isNaN(finDate.getTime());
 
+          const metodoPagoRaw =
+            r.metodo_pago ??
+            r.metodoPago ??
+            (ultimaTransaccion ? 'LIBELULA' : 'Manual');
+          const codigoQrRaw = r.codigo_qr ?? r.codigoQR ?? null;
+
           return {
             id: String(r.id_reserva),
             fieldId,
@@ -358,9 +374,9 @@ const MyBookingsPage: React.FC = () => {
             bookingCode: ultimaTransaccion?.id_transaccion_libelula || `R-${r.id_reserva}`,
             rating: undefined,
             reviews: undefined,
-            paymentMethod: r.metodoPago || (ultimaTransaccion ? 'LIBELULA' : 'Manual'),
+            paymentMethod: metodoPagoRaw || 'Manual',
             paymentStatus: estadoPago,
-            qrCode: r.codigoQR || qrFromPases,
+            qrCode: codigoQrRaw || qrFromPases,
             pasarelaUrl:
               r.pago?.url_pasarela_pagos ||
               ultimaTransaccion?.url_pasarela_pagos ||

@@ -125,6 +125,7 @@ export interface Cancha {
   aforoMax: number;
   dimensiones: string;
   reglas_uso: string;
+  reglasUso?: string;
   iluminacion: string;
   estado: string;
   precio: Decimal;

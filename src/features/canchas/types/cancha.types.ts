@@ -14,7 +14,7 @@ export interface Cancha {
   iluminacion: string;
   estado: string;
   precio: number;
-  idSede?: number;
+  id_sede?: number;
   fotos?: Foto[];
   parte?: Parte[];
   reservas?: any[];
@@ -30,11 +30,11 @@ export interface CanchaFormData {
   iluminacion: string;
   estado: string;
   precio: number;
-  idSede?: number;
+  id_sede?: number;
 }
 
 export interface CreateCanchaRequest extends CanchaFormData {
-  idSede: number;
+  id_sede: number;
 }
 
 export interface UpdateCanchaRequest extends Partial<CanchaFormData> {}

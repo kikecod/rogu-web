@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Star, MapPin, Share2, Heart, ChevronLeft, ChevronRight,
@@ -7,10 +7,82 @@ import {
 } from 'lucide-react';
 import Footer from '../../../shared/components/layout/Footer';
 import CustomCalendar from '../../../shared/components/widgets/CustomCalendar';
-import type { SportField } from '../../../domain';
+import type { SportField, ApiReserva } from '../../../domain';
 import { fetchCanchaById } from '../../../shared/utils/canchas';
 import { useAuth } from '../../../features/auth/context/AuthContext';
 import { ROUTE_PATHS } from '../../../constants';
+
+type ReservaLike = Partial<ApiReserva> & Record<string, unknown>;
+
+const toDateKey = (date: Date): string => date.toISOString().split('T')[0];
+
+const normalizeTimeValue = (value: unknown): string | null => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes('T')) {
+      const parsed = new Date(trimmed.replace(' ', 'T'));
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toTimeString().slice(0, 5);
+      }
+      const [, timePart] = trimmed.split('T');
+      if (timePart && timePart.length >= 5) {
+        return timePart.slice(0, 5);
+      }
+    }
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(trimmed)) {
+      const [, timePart] = trimmed.split(/\s+/);
+      return timePart ? timePart.slice(0, 5) : null;
+    }
+    if (/^\d{2}:\d{2}/.test(trimmed)) {
+      return trimmed.slice(0, 5);
+    }
+    return null;
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toTimeString().slice(0, 5);
+  }
+  return null;
+};
+
+const getReservationDateKey = (reserva: ReservaLike): string | null => {
+  const candidates = [
+    reserva.fecha,
+    reserva.inicia_en as string | undefined,
+    reserva.termina_en as string | undefined,
+    reserva.fecha_inicio as string | undefined,
+    reserva.fecha_fin as string | undefined,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const trimmed = candidate.trim();
+    if (!trimmed) continue;
+    const normalized = trimmed.includes('T')
+      ? trimmed.split('T')[0]
+      : trimmed.split(' ')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+      return normalized;
+    }
+  }
+
+  return null;
+};
+
+const getReservationTimeRange = (reserva: ReservaLike) => {
+  const start =
+    normalizeTimeValue(reserva.horaInicio) ??
+    normalizeTimeValue(reserva.hora_inicio) ??
+    normalizeTimeValue(reserva.inicia_en) ??
+    normalizeTimeValue(reserva.fecha_inicio);
+  const end =
+    normalizeTimeValue(reserva.horaFin) ??
+    normalizeTimeValue(reserva.hora_fin) ??
+    normalizeTimeValue(reserva.termina_en) ??
+    normalizeTimeValue(reserva.fecha_fin);
+  return { start, end };
+};
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +101,61 @@ const SportFieldDetailPage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [participants, setParticipants] = useState(1);
+
+  const slotsForSelectedDate = useMemo(() => {
+    if (!field) return [];
+    const dateKey = toDateKey(selectedDate);
+    const reservas: ReservaLike[] = (field.reservations ?? []) as ReservaLike[];
+    const reservasDelDia = reservas.filter(
+      (reserva) => getReservationDateKey(reserva) === dateKey,
+    );
+
+    return field.availability.map((slot) => {
+      const slotStart = normalizeTimeValue(slot.startTime) ?? slot.startTime;
+      const isReserved = reservasDelDia.some((reserva) => {
+        const { start, end } = getReservationTimeRange(reserva);
+        if (!start || !end || !slotStart) return false;
+        return slotStart >= start && slotStart < end;
+      });
+
+      return {
+        ...slot,
+        available: !isReserved,
+      };
+    });
+  }, [field, selectedDate]);
+
+  useEffect(() => {
+    setSelectedTimeSlots([]);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    setSelectedTimeSlots((prev) =>
+      prev.filter((timeSlot) =>
+        slotsForSelectedDate.some(
+          (slot) => slot.available && `${slot.startTime} - ${slot.endTime}` === timeSlot,
+        ),
+      ),
+    );
+  }, [slotsForSelectedDate]);
+
+  const slotPriceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!field) return map;
+    slotsForSelectedDate.forEach((slot) => {
+      const key = `${slot.startTime} - ${slot.endTime}`;
+      map.set(key, slot.price ?? field.price);
+    });
+    return map;
+  }, [slotsForSelectedDate, field]);
+
+  const totalPrice = useMemo(() => {
+    if (!field) return 0;
+    return selectedTimeSlots.reduce((sum, timeSlot) => {
+      const slotPrice = slotPriceMap.get(timeSlot) ?? field.price;
+      return sum + slotPrice;
+    }, 0);
+  }, [field, selectedTimeSlots, slotPriceMap]);
 
   // Cargar datos de la cancha
   useEffect(() => {
@@ -91,20 +218,14 @@ const SportFieldDetailPage: React.FC = () => {
 
   const confirmBooking = () => {
     if (!selectedDate || selectedTimeSlots.length === 0 || !field) return;
-    
-    // Verificar autenticación
+
     if (!isLoggedIn || !user) {
-      alert('Debes iniciar sesión para hacer una reserva');
+      alert('Debes iniciar sesion para hacer una reserva');
       return;
     }
-    
-    // Calcular precio total sumando todos los horarios seleccionados
-    const totalPrice = selectedTimeSlots.reduce((sum, timeSlot) => {
-      const slot = field.availability.find(s => `${s.startTime} - ${s.endTime}` === timeSlot);
-      return sum + (slot?.price || field.price);
-    }, 0);
-    
-    // Navegar al checkout con los detalles de la reserva
+
+    const bookingTotal = totalPrice;
+
     navigate(ROUTE_PATHS.CHECKOUT, {
       state: {
         fieldId: id,
@@ -112,25 +233,25 @@ const SportFieldDetailPage: React.FC = () => {
         selectedDate: selectedDate,
         selectedTimeSlots: selectedTimeSlots,
         participants: participants,
-        totalPrice: totalPrice,
+        totalPrice: bookingTotal,
         bookingDetails: {
           fieldName: field.name,
           fieldImage: field.images[0],
           sedeName: field.owner?.name || 'Sede',
           address: `${field.location?.address || ''}, ${field.location?.city || ''}`,
-          date: selectedDate.toLocaleDateString('es-MX', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          date: selectedDate.toLocaleDateString('es-MX', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
           }),
           participants: participants,
           timeSlot: selectedTimeSlots.join(', '),
-          price: totalPrice,
+          price: bookingTotal,
           rating: field.rating,
-          reviews: field.reviews
-        }
-      }
+          reviews: field.reviews,
+        },
+      },
     });
   };
 
@@ -147,11 +268,6 @@ const SportFieldDetailPage: React.FC = () => {
   };
 
   // Calcular precio total de todos los horarios seleccionados
-  const totalPrice = field ? selectedTimeSlots.reduce((sum, timeSlot) => {
-    const slot = field.availability.find(s => `${s.startTime} - ${s.endTime}` === timeSlot);
-    return sum + (slot?.price || field.price);
-  }, 0) : 0;
-
   // Estados de carga y error
   if (loading) {
     return (
@@ -518,10 +634,12 @@ const SportFieldDetailPage: React.FC = () => {
                   Horarios (puedes seleccionar múltiples)
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 scrollbar-hide">
-                  {field.availability.length > 0 ? (
-                    field.availability.map((slot) => {
+                  {slotsForSelectedDate.length > 0 ? (
+                    slotsForSelectedDate.map((slot) => {
                       const timeSlot = `${slot.startTime} - ${slot.endTime}`;
                       const isSelected = selectedTimeSlots.includes(timeSlot);
+                      const priceLabel =
+                        slot.price ?? field.price;
                       return (
                         <button
                           key={timeSlot}
@@ -545,9 +663,9 @@ const SportFieldDetailPage: React.FC = () => {
                           <div className={`font-bold ${!slot.available ? 'line-through' : ''}`}>
                             {timeSlot}
                           </div>
-                          {slot.available && slot.price && (
+                          {slot.available && priceLabel && (
                             <div className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
-                              ${slot.price}
+                              ${priceLabel}
                             </div>
                           )}
                         </button>
@@ -693,3 +811,4 @@ const SportFieldDetailPage: React.FC = () => {
 };
 
 export default SportFieldDetailPage;
+

@@ -14,7 +14,7 @@ import type {
 
 interface CanchaManagementProps {
   sede: {
-    idSede: number;
+    id_sede: number;
     nombre: string;
   };
   onBack: () => void;
@@ -53,7 +53,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   // Cargar canchas de la sede
   const loadCanchas = async () => {
     try {
-      const sedeCanchas = await canchaService.getBySede(sede.idSede);
+      const sedeCanchas = await canchaService.getBySede(sede.id_sede);
       
       // Para cada cancha, cargar sus partes (disciplinas)
       for (const cancha of sedeCanchas) {
@@ -84,7 +84,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
 
   useEffect(() => {
     Promise.all([loadCanchas(), loadDisciplinas()]).finally(() => setLoading(false));
-  }, [sede.idSede]);
+  }, [sede.id_sede]);
 
   const resetForm = () => {
     setFormData({
@@ -110,7 +110,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       if (editingCancha) {
         await canchaService.update(editingCancha.id_cancha, formData);
       } else {
-        await canchaService.create({ ...formData, idSede: sede.idSede });
+        await canchaService.create({ ...formData, id_sede: sede.id_sede });
       }
       
       await loadCanchas();

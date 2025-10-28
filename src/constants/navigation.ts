@@ -31,7 +31,7 @@ export const HEADER_MENU_LINKS = {
   CLIENTE_DUENIO: [
     { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE, className: HEADER_MENU_LINK_CLASSES.neutral },
     { label: 'Mis reservas', to: ROUTE_PATHS.BOOKINGS, className: HEADER_MENU_LINK_CLASSES.neutral },
-    { label: 'Panel de Administracion (Dueno)', to: ROUTE_PATHS.OWNER_DASHBOARD, className: HEADER_MENU_LINK_CLASSES.success },
+    { label: 'Panel de Administracion (Dueño)', to: ROUTE_PATHS.OWNER_DASHBOARD, className: HEADER_MENU_LINK_CLASSES.success },
   ],
   CLIENTE_CONTROLADOR: [
     { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE, className: HEADER_MENU_LINK_CLASSES.neutral },
@@ -42,7 +42,7 @@ export const HEADER_MENU_LINKS = {
   CLIENTE_DUENIO_CONTROLADOR: [
     { label: 'Mi perfil', to: ROUTE_PATHS.PROFILE, className: HEADER_MENU_LINK_CLASSES.neutral },
     { label: 'Mis reservas', to: ROUTE_PATHS.BOOKINGS, className: HEADER_MENU_LINK_CLASSES.neutral },
-    { label: 'Panel de Administracion (klavnlksnlkasvnl)', to: ROUTE_PATHS.OWNER_DASHBOARD, className: HEADER_MENU_LINK_CLASSES.success },
+    { label: 'Panel de Administracion (Dueño)', to: ROUTE_PATHS.OWNER_DASHBOARD, className: HEADER_MENU_LINK_CLASSES.success },
     { label: 'Escanear / Control de acceso', to: ROUTE_PATHS.CONTROL_SCAN, className: HEADER_MENU_LINK_CLASSES.blue },
   ],
 } as const;

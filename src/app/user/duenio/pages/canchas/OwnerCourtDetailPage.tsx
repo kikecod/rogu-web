@@ -48,7 +48,7 @@ const mapCourt = (raw: Cancha): CanchaRecord => {
     typeof rawRecord.id_sede === 'number' ? (rawRecord.id_sede as number) : undefined;
   return {
     id_cancha: raw.id_cancha,
-    id_sede: typeof raw.idSede === 'number' ? raw.idSede : fallbackSede ?? 0,
+    id_sede: typeof raw.id_sede === 'number' ? raw.id_sede : fallbackSede ?? 0,
     nombre: raw.nombre,
     superficie: raw.superficie,
     aforoMax: raw.aforoMax,
@@ -84,6 +84,49 @@ const mapFoto = (raw: Foto): FotoRecord => {
     id_foto: id_foto,
     url_foto: url_foto,
   };
+};
+
+const parseBackendDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+  const attempts = [normalized, `${normalized}Z`];
+
+  for (const candidate of attempts) {
+    const date = new Date(candidate);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+
+  const match = trimmed.match(
+    /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/,
+  );
+  if (match) {
+    const [, year, month, day, hour, minute, second] = match;
+    const fallback = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      second ? Number(second) : 0,
+    );
+    if (!Number.isNaN(fallback.getTime())) return fallback;
+  }
+
+  return null;
+};
+
+const formatDateTime = (value: string | null | undefined): string => {
+  const date = parseBackendDate(value);
+  return date
+    ? date.toLocaleString('es-BO', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+        hour12: false,
+      })
+    : '-';
 };
 
 const OwnerCourtDetailPage: React.FC = () => {
@@ -404,8 +447,8 @@ const OwnerCourtDetailPage: React.FC = () => {
                   {bloqueos.map((b) => (
                     <tr key={b.id_bloqueo}>
                       <td className="px-4 py-2 font-medium text-slate-700">#{b.id_bloqueo}</td>
-                      <td className="px-4 py-2">{new Date(b.inicia_en).toLocaleString()}</td>
-                      <td className="px-4 py-2">{new Date(b.termina_en).toLocaleString()}</td>
+                      <td className="px-4 py-2">{formatDateTime(b.inicia_en)}</td>
+                      <td className="px-4 py-2">{formatDateTime(b.termina_en)}</td>
                       <td className="px-4 py-2">{b.motivo || '-'}</td>
                       <td className="px-4 py-2">
                         <button
@@ -480,10 +523,10 @@ const OwnerCourtDetailPage: React.FC = () => {
                     <tr key={reserva.id_reserva}>
                       <td className="px-4 py-2 font-medium text-slate-700">#{reserva.id_reserva}</td>
                       <td className="px-4 py-2">
-                        {new Date(reserva.inicia_en).toLocaleString()}
+                        {formatDateTime(reserva.inicia_en)}
                       </td>
                       <td className="px-4 py-2">
-                        {new Date(reserva.termina_en).toLocaleString()}
+                        {formatDateTime(reserva.termina_en)}
                       </td>
                       <td className="px-4 py-2">
                         {typeof reserva.monto_total === 'number' ? `Bs. ${reserva.monto_total}` : '-'}
