@@ -47,6 +47,25 @@ export interface ApiReserva {
   estado: string; // "Confirmada" | "Pendiente" | "Cancelada"
 }
 
+// Interface para reservas del usuario
+export interface ApiReservaUsuario {
+  idReserva: number;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  cancha: {
+    idCancha: number;
+    nombre: string;
+    sede: {
+      idSede: number;
+      nombre: string;
+    };
+  };
+  montoTotal: number;
+  cantidadPersonas: number;
+}
+
 export interface ApiUsuario {
   nombre: string;
   avatar?: string;

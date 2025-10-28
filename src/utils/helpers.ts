@@ -10,7 +10,8 @@ import hockeyImg from '../assets/hockey.webp';
 import type { 
   ApiCancha, 
   ApiCanchaDetalle, 
-  ApiReserva, 
+  ApiReserva,
+  ApiReservaUsuario,
   ApiResena, 
   ApiFoto,
   SportField, 
@@ -76,7 +77,7 @@ export const generateAvatarUrl = (name: string): string => {
 };
 
 // Mapear superficie a tipo de deporte
-const mapSuperficieToSport = (superficie: string): SportType => {
+export const mapSuperficieToSport = (superficie: string): SportType => {
   const superficieMap: { [key: string]: SportType } = {
     'parquet': 'basketball',
     'césped': 'football',
@@ -437,6 +438,85 @@ export const createReserva = async (
     return data;
   } catch (error) {
     console.error('❌ Error al crear reserva:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la imagen principal de una cancha
+ * @param canchaId - ID de la cancha
+ * @returns Promise con la URL de la imagen o imagen por defecto
+ */
+export const fetchCanchaImage = async (canchaId: number): Promise<string> => {
+  try {
+    const response = await fetch(getApiUrl(`/cancha/${canchaId}`));
+    
+    if (!response.ok) {
+      console.warn(`⚠️ No se pudo obtener imagen de cancha ${canchaId}`);
+      return getSportFieldImages('football')[0];
+    }
+    
+    const canchaData: ApiCanchaDetalle = await response.json();
+    
+    // Si tiene fotos, devolver la primera
+    if (canchaData.fotos && canchaData.fotos.length > 0) {
+      return getImageUrl(canchaData.fotos[0].urlFoto);
+    }
+    
+    // Si no tiene fotos, usar imagen por defecto según la superficie
+    const sport = mapSuperficieToSport(canchaData.superficie);
+    return getSportFieldImages(sport)[0];
+  } catch (error) {
+    console.error(`❌ Error al obtener imagen de cancha ${canchaId}:`, error);
+    return getSportFieldImages('football')[0];
+  }
+};
+
+/**
+ * Obtiene todas las reservas de un usuario
+ * @param userId - ID del usuario
+ * @returns Promise con la lista de reservas del usuario
+ */
+export const fetchReservasByUserId = async (userId: number): Promise<ApiReservaUsuario[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para ver tus reservas');
+    }
+
+    console.log(`🔍 Obteniendo reservas del usuario ${userId}`);
+    console.log('🔑 Token presente:', token ? 'Sí' : 'No');
+
+    const response = await fetch(getApiUrl(`/reservas/usuario/${userId}`), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+      } catch (e) {
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: ApiReservaUsuario[] = await response.json();
+    console.log('✅ Reservas obtenidas:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al obtener reservas:', error);
     throw error;
   }
 };

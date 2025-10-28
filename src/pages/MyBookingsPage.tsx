@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, Clock, MapPin, Users, QrCode, Edit, Trash2, 
@@ -6,7 +6,9 @@ import {
   Download, Share2, Filter, Search
 } from 'lucide-react';
 import Footer from '../components/Footer';
-import { getSportFieldImages } from '../utils/helpers';
+import { fetchReservasByUserId, fetchCanchaImage } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
+import type { ApiReservaUsuario } from '../types';
 
 interface Booking {
   id: string;
@@ -27,90 +29,92 @@ interface Booking {
   paymentMethod: 'card' | 'qr';
 }
 
-// Mock data de reservas
-const mockBookings: Booking[] = [
-  {
-    id: '1',
-    fieldId: '1',
-    fieldName: 'Cancha de Fútbol Premium Elite',
-    fieldImage: getSportFieldImages('football')[0],
-    sedeName: 'Centro Deportivo Elite',
-    address: 'Av. Revolución 1234, Col. San Ángel, Ciudad de México',
-    date: '15 de octubre de 2025',
-    timeSlot: '18:00 - 20:00',
-    participants: 12,
-    price: 150,
-    totalPaid: 165,
-    status: 'active',
-    bookingCode: 'ROGU-12345678',
-    rating: 4.9,
-    reviews: 127,
-    paymentMethod: 'card'
-  },
-  {
-    id: '2',
-    fieldId: '2',
-    fieldName: 'Cancha de Básquetbol Indoor',
-    fieldImage: getSportFieldImages('basketball')[0],
-    sedeName: 'Centro Deportivo Elite',
-    address: 'Av. Revolución 1234, Col. San Ángel, Ciudad de México',
-    date: '20 de octubre de 2025',
-    timeSlot: '16:00 - 18:00',
-    participants: 10,
-    price: 120,
-    totalPaid: 132,
-    status: 'active',
-    bookingCode: 'ROGU-87654321',
-    rating: 4.7,
-    reviews: 89,
-    paymentMethod: 'qr'
-  },
-  {
-    id: '3',
-    fieldId: '3',
-    fieldName: 'Cancha de Tenis Clay Court',
-    fieldImage: getSportFieldImages('tennis')[0],
-    sedeName: 'Centro Deportivo Elite',
-    address: 'Av. Revolución 1234, Col. San Ángel, Ciudad de México',
-    date: '5 de octubre de 2025',
-    timeSlot: '10:00 - 12:00',
-    participants: 4,
-    price: 100,
-    totalPaid: 110,
-    status: 'completed',
-    bookingCode: 'ROGU-11223344',
-    rating: 4.8,
-    reviews: 65,
-    paymentMethod: 'card'
-  },
-  {
-    id: '4',
-    fieldId: '1',
-    fieldName: 'Cancha de Fútbol Premium Elite',
-    fieldImage: getSportFieldImages('football')[0],
-    sedeName: 'Centro Deportivo Elite',
-    address: 'Av. Revolución 1234, Col. San Ángel, Ciudad de México',
-    date: '2 de octubre de 2025',
-    timeSlot: '14:00 - 16:00',
-    participants: 14,
-    price: 150,
-    totalPaid: 165,
-    status: 'cancelled',
-    bookingCode: 'ROGU-99887766',
-    rating: 4.9,
-    reviews: 127,
-    paymentMethod: 'card'
-  }
-];
-
 const MyBookingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+
+  // Cargar reservas del usuario
+  useEffect(() => {
+    const loadBookings = async () => {
+      if (!user?.idUsuario) {
+        setError('Debes iniciar sesión para ver tus reservas');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔍 Cargando reservas del usuario:', user.idUsuario);
+        console.log('👤 Usuario completo:', user);
+        
+        const reservasData = await fetchReservasByUserId(user.idUsuario);
+        
+        // Cargar las imágenes de todas las canchas en paralelo
+        console.log('🖼️ Cargando imágenes de las canchas...');
+        const imagePromises = reservasData.map(reserva => 
+          fetchCanchaImage(reserva.cancha.idCancha)
+        );
+        const images = await Promise.all(imagePromises);
+        console.log('✅ Imágenes cargadas:', images.length);
+        
+        // Convertir las reservas del API al formato del componente
+        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
+          // Determinar el estado de la reserva
+          let status: 'active' | 'completed' | 'cancelled' = 'active';
+          const fechaReserva = new Date(reserva.fecha);
+          const hoy = new Date();
+          
+          if (reserva.estado === 'Cancelada') {
+            status = 'cancelled';
+          } else if (fechaReserva < hoy) {
+            status = 'completed';
+          } else {
+            status = 'active';
+          }
+
+          return {
+            id: reserva.idReserva.toString(),
+            fieldId: reserva.cancha.idCancha.toString(),
+            fieldName: reserva.cancha.nombre,
+            fieldImage: images[index], // Usar la imagen cargada correspondiente
+            sedeName: reserva.cancha.sede.nombre,
+            address: '', // El API no proporciona dirección
+            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
+            participants: reserva.cantidadPersonas,
+            price: reserva.montoTotal,
+            totalPaid: reserva.montoTotal,
+            status,
+            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
+            paymentMethod: 'card' as const
+          };
+        });
+        
+        setBookings(bookingsConverted);
+        console.log('✅ Reservas cargadas:', bookingsConverted);
+      } catch (err) {
+        console.error('❌ Error al cargar reservas:', err);
+        setError(err instanceof Error ? err.message : 'Error al cargar las reservas');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBookings();
+  }, [user?.idUsuario]);
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -201,6 +205,36 @@ const MyBookingsPage: React.FC = () => {
       alert('Función de compartir no disponible en este navegador');
     }
   };
+
+  // Estados de loading y error
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Cargando tus reservas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-6xl mb-4">😞</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar reservas</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
