@@ -8,7 +8,7 @@ import {
 import Footer from '../components/Footer';
 import CustomCalendar from '../components/CustomCalendar';
 import type { SportField } from '../types';
-import { fetchCanchaById } from '../utils/helpers';
+import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 
 const SportFieldDetailPage: React.FC = () => {
@@ -28,6 +28,7 @@ const SportFieldDetailPage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [participants, setParticipants] = useState(1);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   // Cargar datos de la cancha
   useEffect(() => {
@@ -64,6 +65,44 @@ const SportFieldDetailPage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Actualizar horarios disponibles cuando cambie la fecha seleccionada
+  useEffect(() => {
+    const updateAvailability = async () => {
+      if (!field || !id) return;
+
+      try {
+        setLoadingSlots(true);
+        console.log('🔄 Actualizando horarios para fecha:', selectedDate.toISOString().split('T')[0]);
+        
+        // Obtener reservas para la fecha seleccionada
+        const reservasPorFecha = await fetchReservasByFecha(id, selectedDate);
+        
+        // Generar nuevos slots de disponibilidad
+        const newAvailability = generateAvailabilitySlots(
+          field.openingHours?.open || '06:00',
+          field.openingHours?.close || '23:00',
+          reservasPorFecha,
+          field.price,
+          selectedDate
+        );
+        
+        // Actualizar el field con los nuevos slots
+        setField(prev => prev ? { ...prev, availability: newAvailability } : null);
+        
+        // Limpiar horarios seleccionados al cambiar de fecha
+        setSelectedTimeSlots([]);
+        
+        console.log('✅ Horarios actualizados:', newAvailability);
+      } catch (error) {
+        console.error('❌ Error al actualizar horarios:', error);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    updateAvailability();
+  }, [selectedDate, field?.id, id]); // Se ejecuta cuando cambia la fecha o el ID de la cancha
 
   // Handlers
   const nextImage = () => {
@@ -517,8 +556,14 @@ const SportFieldDetailPage: React.FC = () => {
                   <Clock className="h-4 w-4 text-blue-600" />
                   Horarios (puedes seleccionar múltiples)
                 </label>
-                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 scrollbar-hide">
-                  {field.availability.length > 0 ? (
+                {loadingSlots ? (
+                  <div className="flex items-center justify-center py-8 text-blue-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-sm">Actualizando horarios...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 scrollbar-hide">
+                    {field.availability.length > 0 ? (
                     field.availability.map((slot) => {
                       const timeSlot = `${slot.startTime} - ${slot.endTime}`;
                       const isSelected = selectedTimeSlots.includes(timeSlot);
@@ -558,7 +603,8 @@ const SportFieldDetailPage: React.FC = () => {
                       ✅ Todos los horarios disponibles
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Summary - Solo si hay horarios seleccionados */}

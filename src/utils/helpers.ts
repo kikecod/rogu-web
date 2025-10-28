@@ -230,6 +230,29 @@ export const fetchCanchaById = async (id: string): Promise<SportField> => {
   }
 };
 
+// Obtener reservas de una cancha filtradas por fecha específica
+export const fetchReservasByFecha = async (canchaId: string, fecha: Date): Promise<ApiReserva[]> => {
+  try {
+    // Formatear fecha a YYYY-MM-DD
+    const fechaStr = fecha.toISOString().split('T')[0];
+    console.log(`🔍 Fetching reservas for cancha ${canchaId} on ${fechaStr}`);
+    
+    const response = await fetch(getApiUrl(`/reservas/cancha/${canchaId}?fecha=${fechaStr}`));
+    
+    if (!response.ok) {
+      throw new Error(`Error al obtener reservas: ${response.statusText}`);
+    }
+    
+    const reservasData: ApiReserva[] = await response.json();
+    console.log('✅ Reservas obtenidas para fecha:', reservasData);
+    
+    return reservasData;
+  } catch (error) {
+    console.error('❌ Error al obtener reservas por fecha:', error);
+    return [];
+  }
+};
+
 // Convertir ApiCanchaDetalle completo a SportField
 export const convertApiCanchaDetalleToSportField = (
   cancha: ApiCanchaDetalle,
@@ -331,14 +354,15 @@ export const convertApiCanchaDetalleToSportField = (
 };
 
 // Generar slots de disponibilidad por hora basado en horario y reservas
-const generateAvailabilitySlots = (
+export const generateAvailabilitySlots = (
   horarioApertura: string,
   horarioCierre: string,
   reservas: ApiReserva[],
-  precio: number
+  precio: number,
+  fecha?: Date
 ): TimeSlot[] => {
   const slots: TimeSlot[] = [];
-  const today = new Date();
+  const targetDate = fecha || new Date();
   
   // Parsear horas de apertura y cierre
   const [openHour] = horarioApertura.split(':').map(Number);
@@ -361,7 +385,7 @@ const generateAvailabilitySlots = (
     });
     
     slots.push({
-      date: today.toISOString().split('T')[0],
+      date: targetDate.toISOString().split('T')[0],
       startTime,
       endTime,
       available: !isReserved,
