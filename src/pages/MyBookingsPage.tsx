@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Footer from '../components/Footer';
 import EditBookingModal from '../components/EditBookingModal';
+import CancelBookingModal from '../components/CancelBookingModal';
 import { fetchReservasByUserId, fetchCanchaImage } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import type { ApiReservaUsuario } from '../types';
@@ -41,7 +42,6 @@ const MyBookingsPage: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
 
   // Cargar reservas del usuario
@@ -161,6 +161,7 @@ const MyBookingsPage: React.FC = () => {
 
   const handleEditBooking = (booking: Booking) => {
     setBookingToEdit(booking);
+    setSelectedBooking(null); // Cerrar modal de detalles
     setShowEditModal(true);
   };
 
@@ -224,19 +225,70 @@ const MyBookingsPage: React.FC = () => {
   };
 
   const handleDeleteBooking = (bookingId: string) => {
-    setBookingToDelete(bookingId);
-    setShowDeleteModal(true);
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking); // Actualizar selectedBooking para el modal de cancelación
+      setShowDeleteModal(true);
+    }
   };
 
-  const confirmDelete = () => {
-    if (bookingToDelete) {
-      setBookings(bookings.map(b => 
-        b.id === bookingToDelete 
-          ? { ...b, status: 'cancelled' as const }
-          : b
-      ));
-      setShowDeleteModal(false);
-      setBookingToDelete(null);
+  const handleCancelSuccess = async () => {
+    setShowDeleteModal(false);
+    setSelectedBooking(null);
+    
+    // Recargar las reservas
+    if (user?.idUsuario) {
+      setLoading(true);
+      try {
+        const reservasData = await fetchReservasByUserId(user.idUsuario);
+        
+        // Cargar las imágenes de todas las canchas en paralelo
+        const imagePromises = reservasData.map(reserva => 
+          fetchCanchaImage(reserva.cancha.idCancha)
+        );
+        const images = await Promise.all(imagePromises);
+        
+        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
+          let status: 'active' | 'completed' | 'cancelled' = 'active';
+          const fechaReserva = new Date(reserva.fecha);
+          const hoy = new Date();
+          
+          if (reserva.estado === 'Cancelada') {
+            status = 'cancelled';
+          } else if (fechaReserva < hoy) {
+            status = 'completed';
+          } else {
+            status = 'active';
+          }
+
+          return {
+            id: reserva.idReserva.toString(),
+            fieldId: reserva.cancha.idCancha.toString(),
+            fieldName: reserva.cancha.nombre,
+            fieldImage: images[index],
+            sedeName: reserva.cancha.sede.nombre,
+            address: '',
+            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
+            participants: reserva.cantidadPersonas,
+            price: reserva.montoTotal,
+            totalPaid: reserva.montoTotal,
+            status,
+            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
+            paymentMethod: 'card' as const
+          };
+        });
+        
+        setBookings(bookingsConverted);
+      } catch (err) {
+        console.error('Error recargando reservas:', err);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -506,14 +558,20 @@ const MyBookingsPage: React.FC = () => {
                           {booking.status === 'active' && (
                             <>
                               <button
-                                onClick={() => handleEditBooking(booking)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditBooking(booking);
+                                }}
                                 className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-all"
                                 title="Modificar reserva"
                               >
                                 <Edit className="h-5 w-5" />
                               </button>
                               <button
-                                onClick={() => handleDeleteBooking(booking.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteBooking(booking.id);
+                                }}
                                 className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
                                 title="Cancelar reserva"
                               >
@@ -533,7 +591,7 @@ const MyBookingsPage: React.FC = () => {
       </div>
 
       {/* Booking Details Modal */}
-      {selectedBooking && (
+      {selectedBooking && !showDeleteModal && !showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl">
@@ -684,37 +742,21 @@ const MyBookingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-                <AlertCircle className="h-8 w-8 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">¿Cancelar reserva?</h3>
-              <p className="text-gray-600">
-                Esta acción cancelará tu reserva. De acuerdo a la política de cancelación, 
-                {' '}si cancelas con menos de 24 horas de anticipación, se aplicará un cargo del 50%.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all"
-              >
-                No, mantener
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-all"
-              >
-                Sí, cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Modal de cancelación */}
+      {showDeleteModal && selectedBooking && (
+        <CancelBookingModal
+          booking={{
+            id: selectedBooking.id,
+            fieldName: selectedBooking.fieldName,
+            date: selectedBooking.date,
+            timeSlot: selectedBooking.timeSlot
+          }}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedBooking(null);
+          }}
+          onSuccess={handleCancelSuccess}
+        />
       )}
 
       {/* Modal de edición */}

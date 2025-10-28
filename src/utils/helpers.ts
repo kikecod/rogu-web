@@ -21,7 +21,9 @@ import type {
   CreateReservaRequest,
   CreateReservaResponse,
   UpdateReservaRequest,
-  UpdateReservaResponse
+  UpdateReservaResponse,
+  CancelReservaRequest,
+  CancelReservaResponse
 } from '../types';
 import { getApiUrl, getImageUrl } from '../config/api';
 
@@ -572,6 +574,70 @@ export const updateReserva = async (
     return data;
   } catch (error) {
     console.error('❌ Error al actualizar reserva:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cancela una reserva existente
+ * @param idReserva - ID de la reserva a cancelar
+ * @param cancelData - Datos de cancelación (motivo y canal opcionales)
+ * @returns Promise con la respuesta del servidor
+ */
+export const cancelReserva = async (
+  idReserva: number,
+  cancelData?: CancelReservaRequest
+): Promise<CancelReservaResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para cancelar una reserva');
+    }
+
+    console.log(`🗑️ Cancelando reserva ${idReserva}`, cancelData);
+
+    const response = await fetch(getApiUrl(`/reservas/${idReserva}`), {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: cancelData ? JSON.stringify(cancelData) : undefined,
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+        
+        // Manejar errores específicos
+        if (response.status === 404) {
+          throw new Error('Reserva no encontrada');
+        }
+        if (response.status === 409) {
+          throw new Error(errorData.error || 'La reserva ya está cancelada');
+        }
+      } catch (e) {
+        if (e instanceof Error && (e.message === 'Reserva no encontrada' || e.message.includes('ya está cancelada'))) {
+          throw e;
+        }
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: CancelReservaResponse = await response.json();
+    console.log('✅ Reserva cancelada exitosamente:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al cancelar reserva:', error);
     throw error;
   }
 };

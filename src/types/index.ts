@@ -241,3 +241,20 @@ export interface UpdateReservaResponse {
     actualizadoEn: string;
   };
 }
+
+// Interfaces para cancelar reservas
+export interface CancelReservaRequest {
+  motivo?: string;
+  canal?: string;
+}
+
+export interface CancelReservaResponse {
+  message: string;
+  cancelacion: {
+    idCancelacion: number;
+    idReserva: number;
+    canceladaEn: string;
+    motivo: string;
+    canal: string;
+  };
+}
