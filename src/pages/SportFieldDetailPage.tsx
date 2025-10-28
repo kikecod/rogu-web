@@ -321,7 +321,7 @@ const SportFieldDetailPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
-                    src={field.owner?.avatar || ""}
+                    src={field.owner?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(field.owner?.name || 'Sede')}&background=3b82f6&color=fff&size=128`}
                     alt={field.owner?.name || "Sede"}
                     className="w-14 h-14 rounded-full border-4 border-white shadow-lg"
                   />
@@ -394,7 +394,7 @@ const SportFieldDetailPage: React.FC = () => {
                     <div key={review.id} className="border-b border-gray-100 last:border-0 pb-3">
                       <div className="flex items-center gap-2.5 mb-2">
                         <img
-                          src={review.user.avatar}
+                          src={review.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.user.name)}&background=random&size=128`}
                           alt={review.user.name}
                           className="w-10 h-10 rounded-full object-cover"
                         />
@@ -494,13 +494,14 @@ const SportFieldDetailPage: React.FC = () => {
                   
                   <div className="text-center">
                     <div className="text-xl font-extrabold text-gray-900">{participants}</div>
+                    <div className="text-xs text-gray-500">de {field.capacity || 22}</div>
                   </div>
                   
                   <button
-                    onClick={() => setParticipants(Math.min(22, participants + 1))}
-                    disabled={participants >= 22}
+                    onClick={() => setParticipants(Math.min(field.capacity || 22, participants + 1))}
+                    disabled={participants >= (field.capacity || 22)}
                     className={`p-1.5 rounded-lg transition-all ${
-                      participants >= 22
+                      participants >= (field.capacity || 22)
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
