@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Users, DollarSign, ArrowLeft, Eye, AlertCircle } from 'lucide-react';
 
-interface Reserva {
+// Interfaz para la reserva que devuelve el API
+interface ApiReservaCancha {
   idReserva: number;
-  idCliente: number;
-  idCancha: number;
-  iniciaEn: string;
-  terminaEn: string;
-  cantidadPersonas: number;
-  requiereAprobacion: boolean;
-  montoBase: number;
-  montoExtra: number;
-  montoTotal: number;
-  creadoEn: string;
-  actualizadoEn: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: string;
+  idCliente?: number;
+  idUsuario?: number;
+  cantidadPersonas?: number;
+  montoBase?: number;
+  montoExtra?: number;
+  montoTotal?: number;
+  requiereAprobacion?: boolean;
+  creadoEn?: string;
+  actualizadoEn?: string;
   usuario?: {
     idUsuario: number;
     usuario: string;
@@ -29,10 +32,6 @@ interface Reserva {
       documentoNumero: string;
     };
   };
-  cancha?: {
-    idCancha: number;
-    nombre: string;
-  };
 }
 
 interface ReservaManagementProps {
@@ -44,9 +43,9 @@ interface ReservaManagementProps {
 }
 
 const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack }) => {
-  const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [reservas, setReservas] = useState<ApiReservaCancha[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReserva, setSelectedReserva] = useState<Reserva | null>(null);
+  const [selectedReserva, setSelectedReserva] = useState<ApiReservaCancha | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Cargar reservas de la cancha
@@ -60,17 +59,31 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
 
       if (response.ok) {
         const reservasData = await response.json();
+        console.log('Estructura completa de reservasData:', JSON.stringify(reservasData, null, 2));
         
         // Para cada reserva, intentar cargar los datos del usuario y persona
         const reservasConUsuario = await Promise.all(
-          reservasData.map(async (reserva: Reserva) => {
+          reservasData.map(async (reserva: ApiReservaCancha) => {
+            console.log('Reserva individual:', JSON.stringify(reserva, null, 2));
+            
+            // Buscar el idCliente o idUsuario en la reserva
+            const clienteId = reserva.idCliente || reserva.idUsuario;
+            
+            if (!clienteId) {
+              console.warn('Reserva sin idCliente/idUsuario:', reserva);
+              return reserva;
+            }
+            
             try {
-              const usuarioResponse = await fetch(`http://localhost:3000/api/usuarios/persona/${reserva.idCliente}`, {
+              const usuarioResponse = await fetch(`http://localhost:3000/api/usuarios/persona/${clienteId}`, {
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
               });
               
+              console.log('Usuario response status:', usuarioResponse.status);
+              console.log('Reserva being processed:', reserva);
+              console.log('Cliente ID usado:', clienteId)
               if (usuarioResponse.ok) {
                 const usuarioData = await usuarioResponse.json();
                 return { ...reserva, usuario: usuarioData };
@@ -96,6 +109,14 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
   useEffect(() => {
     loadReservas();
   }, [cancha.idCancha]);
+
+  // Funciones helper para convertir formato de fecha y hora de la API
+  const combinarFechaHora = (fecha: string, hora: string): string => {
+    // Si la fecha ya incluye la hora, retornarla directamente
+    if (fecha.includes('T')) return fecha;
+    // Combinar fecha (YYYY-MM-DD) con hora (HH:mm)
+    return `${fecha}T${hora}:00`;
+  };
 
   // Formatear fecha y hora
   const formatDateTime = (dateString: string) => {
@@ -142,7 +163,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
     }
   };
 
-  const openDetailModal = (reserva: Reserva) => {
+  const openDetailModal = (reserva: ApiReservaCancha) => {
     setSelectedReserva(reserva);
     setShowDetailModal(true);
   };
@@ -193,10 +214,14 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
       ) : (
         <div className="space-y-4">
           {reservas.map((reserva) => {
-            const inicioFormat = formatDateTime(reserva.iniciaEn);
-            const finFormat = formatDateTime(reserva.terminaEn);
-            const duracion = calcularDuracion(reserva.iniciaEn, reserva.terminaEn);
-            const estadoInfo = getEstadoReserva(reserva.iniciaEn, reserva.terminaEn);
+            // Combinar fecha y hora para los formatos esperados
+            const iniciaEn = combinarFechaHora(reserva.fecha, reserva.horaInicio);
+            const terminaEn = combinarFechaHora(reserva.fecha, reserva.horaFin);
+            
+            const inicioFormat = formatDateTime(iniciaEn);
+            const finFormat = formatDateTime(terminaEn);
+            const duracion = calcularDuracion(iniciaEn, terminaEn);
+            const estadoInfo = getEstadoReserva(iniciaEn, terminaEn);
 
             return (
               <div
@@ -215,7 +240,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                       <p className="text-sm text-gray-500">
                         {reserva.usuario?.persona 
                           ? `${reserva.usuario.persona.nombres} ${reserva.usuario.persona.paterno} ${reserva.usuario.persona.materno}`
-                          : `Cliente ID: ${reserva.idCliente}`
+                          : `Cliente ID: ${reserva.idCliente || reserva.idUsuario || 'No disponible'}`
                         }
                       </p>
                     </div>
@@ -360,24 +385,36 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Fecha y hora de inicio</label>
                     <p className="text-sm text-gray-900">
-                      {formatDateTime(selectedReserva.iniciaEn).date} a las {formatDateTime(selectedReserva.iniciaEn).time}
+                      {(() => {
+                        const iniciaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaInicio);
+                        const formatted = formatDateTime(iniciaEn);
+                        return `${formatted.date} a las ${formatted.time}`;
+                      })()}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Fecha y hora de fin</label>
                     <p className="text-sm text-gray-900">
-                      {formatDateTime(selectedReserva.terminaEn).date} a las {formatDateTime(selectedReserva.terminaEn).time}
+                      {(() => {
+                        const terminaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaFin);
+                        const formatted = formatDateTime(terminaEn);
+                        return `${formatted.date} a las ${formatted.time}`;
+                      })()}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Duración</label>
                     <p className="text-sm text-gray-900">
-                      {calcularDuracion(selectedReserva.iniciaEn, selectedReserva.terminaEn)}
+                      {(() => {
+                        const iniciaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaInicio);
+                        const terminaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaFin);
+                        return calcularDuracion(iniciaEn, terminaEn);
+                      })()}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Cantidad de personas</label>
-                    <p className="text-sm text-gray-900">{selectedReserva.cantidadPersonas} personas</p>
+                    <p className="text-sm text-gray-900">{selectedReserva.cantidadPersonas || 'No especificada'} {selectedReserva.cantidadPersonas && 'personas'}</p>
                   </div>
                 </div>
               </div>
@@ -388,15 +425,15 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Monto base</label>
-                    <p className="text-sm text-gray-900">Bs. {selectedReserva.montoBase}</p>
+                    <p className="text-sm text-gray-900">Bs. {selectedReserva.montoBase || 0}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Monto extra</label>
-                    <p className="text-sm text-gray-900">Bs. {selectedReserva.montoExtra}</p>
+                    <p className="text-sm text-gray-900">Bs. {selectedReserva.montoExtra || 0}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Monto total</label>
-                    <p className="text-lg font-semibold text-green-600">Bs. {selectedReserva.montoTotal}</p>
+                    <p className="text-lg font-semibold text-green-600">Bs. {selectedReserva.montoTotal || 0}</p>
                   </div>
                 </div>
               </div>
@@ -413,22 +450,40 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Estado</label>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoReserva(selectedReserva.iniciaEn, selectedReserva.terminaEn).color}`}>
-                      {getEstadoReserva(selectedReserva.iniciaEn, selectedReserva.terminaEn).estado}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(() => {
+                      const iniciaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaInicio);
+                      const terminaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaFin);
+                      return getEstadoReserva(iniciaEn, terminaEn).color;
+                    })()}`}>
+                      {(() => {
+                        const iniciaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaInicio);
+                        const terminaEn = combinarFechaHora(selectedReserva.fecha, selectedReserva.horaFin);
+                        return getEstadoReserva(iniciaEn, terminaEn).estado;
+                      })()}
                     </span>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500">Creado el</label>
-                    <p className="text-sm text-gray-900">
-                      {formatDateTime(selectedReserva.creadoEn).date} a las {formatDateTime(selectedReserva.creadoEn).time}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500">Última actualización</label>
-                    <p className="text-sm text-gray-900">
-                      {formatDateTime(selectedReserva.actualizadoEn).date} a las {formatDateTime(selectedReserva.actualizadoEn).time}
-                    </p>
-                  </div>
+                  {selectedReserva.creadoEn && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Creado el</label>
+                      <p className="text-sm text-gray-900">
+                        {(() => {
+                          const formatted = formatDateTime(selectedReserva.creadoEn!);
+                          return `${formatted.date} a las ${formatted.time}`;
+                        })()}
+                      </p>
+                    </div>
+                  )}
+                  {selectedReserva.actualizadoEn && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500">Última actualización</label>
+                      <p className="text-sm text-gray-900">
+                        {(() => {
+                          const formatted = formatDateTime(selectedReserva.actualizadoEn!);
+                          return `${formatted.date} a las ${formatted.time}`;
+                        })()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
