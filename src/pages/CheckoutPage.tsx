@@ -98,21 +98,54 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    // Validar y procesar horarios consecutivos
+    const validateAndMergeTimeSlots = (slots: string[]): { startTime: string; endTime: string } | null => {
+      if (slots.length === 0) return null;
+      
+      // Parsear todos los slots
+      const parsedSlots = slots.map(slot => {
+        const [start, end] = slot.split(' - ');
+        return { start, end };
+      });
+      
+      // Ordenar por hora de inicio
+      parsedSlots.sort((a, b) => a.start.localeCompare(b.start));
+      
+      // Verificar que sean consecutivos
+      for (let i = 0; i < parsedSlots.length - 1; i++) {
+        const currentEnd = parsedSlots[i].end;
+        const nextStart = parsedSlots[i + 1].start;
+        
+        if (currentEnd !== nextStart) {
+          // No son consecutivos
+          return null;
+        }
+      }
+      
+      // Si son consecutivos, retornar el rango completo
+      return {
+        startTime: parsedSlots[0].start,
+        endTime: parsedSlots[parsedSlots.length - 1].end
+      };
+    };
+
+    const timeRange = validateAndMergeTimeSlots(selectedTimeSlots);
+    
+    if (!timeRange) {
+      alert('Los horarios seleccionados deben ser consecutivos. Por favor, selecciona horarios continuos o haz reservas separadas.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Construir datos de la reserva para cada slot seleccionado
-      // Por ahora tomamos solo el primer slot (puedes mejorar esto para múltiples slots)
-      const firstSlot = selectedTimeSlots[0]; // "09:00 - 10:00"
-      const [startTime, endTime] = firstSlot.split(' - ');
-      
       // Crear timestamps ISO
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       
-      const iniciaEn = `${year}-${month}-${day}T${startTime}:00`;
-      const terminaEn = `${year}-${month}-${day}T${endTime}:00`;
+      const iniciaEn = `${year}-${month}-${day}T${timeRange.startTime}:00`;
+      const terminaEn = `${year}-${month}-${day}T${timeRange.endTime}:00`;
 
       const reservaData: CreateReservaRequest = {
         idCliente: idCliente,
@@ -127,6 +160,7 @@ const CheckoutPage: React.FC = () => {
       };
 
       console.log('📝 Enviando reserva:', reservaData);
+      console.log(`⏰ Horario: ${timeRange.startTime} - ${timeRange.endTime}`);
 
       // Crear la reserva en el backend
       const response = await createReserva(reservaData);

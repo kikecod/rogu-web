@@ -10,7 +10,8 @@ import hockeyImg from '../assets/hockey.webp';
 import type { 
   ApiCancha, 
   ApiCanchaDetalle, 
-  ApiReserva, 
+  ApiReserva,
+  ApiReservaUsuario,
   ApiResena, 
   ApiFoto,
   SportField, 
@@ -18,7 +19,11 @@ import type {
   TimeSlot,
   Review,
   CreateReservaRequest,
-  CreateReservaResponse
+  CreateReservaResponse,
+  UpdateReservaRequest,
+  UpdateReservaResponse,
+  CancelReservaRequest,
+  CancelReservaResponse
 } from '../types';
 import { getApiUrl, getImageUrl } from '../config/api';
 
@@ -76,7 +81,7 @@ export const generateAvatarUrl = (name: string): string => {
 };
 
 // Mapear superficie a tipo de deporte
-const mapSuperficieToSport = (superficie: string): SportType => {
+export const mapSuperficieToSport = (superficie: string): SportType => {
   const superficieMap: { [key: string]: SportType } = {
     'parquet': 'basketball',
     'césped': 'football',
@@ -230,6 +235,29 @@ export const fetchCanchaById = async (id: string): Promise<SportField> => {
   }
 };
 
+// Obtener reservas de una cancha filtradas por fecha específica
+export const fetchReservasByFecha = async (canchaId: string, fecha: Date): Promise<ApiReserva[]> => {
+  try {
+    // Formatear fecha a YYYY-MM-DD
+    const fechaStr = fecha.toISOString().split('T')[0];
+    console.log(`🔍 Fetching reservas for cancha ${canchaId} on ${fechaStr}`);
+    
+    const response = await fetch(getApiUrl(`/reservas/cancha/${canchaId}?fecha=${fechaStr}`));
+    
+    if (!response.ok) {
+      throw new Error(`Error al obtener reservas: ${response.statusText}`);
+    }
+    
+    const reservasData: ApiReserva[] = await response.json();
+    console.log('✅ Reservas obtenidas para fecha:', reservasData);
+    
+    return reservasData;
+  } catch (error) {
+    console.error('❌ Error al obtener reservas por fecha:', error);
+    return [];
+  }
+};
+
 // Convertir ApiCanchaDetalle completo a SportField
 export const convertApiCanchaDetalleToSportField = (
   cancha: ApiCanchaDetalle,
@@ -331,14 +359,15 @@ export const convertApiCanchaDetalleToSportField = (
 };
 
 // Generar slots de disponibilidad por hora basado en horario y reservas
-const generateAvailabilitySlots = (
+export const generateAvailabilitySlots = (
   horarioApertura: string,
   horarioCierre: string,
   reservas: ApiReserva[],
-  precio: number
+  precio: number,
+  fecha?: Date
 ): TimeSlot[] => {
   const slots: TimeSlot[] = [];
-  const today = new Date();
+  const targetDate = fecha || new Date();
   
   // Parsear horas de apertura y cierre
   const [openHour] = horarioApertura.split(':').map(Number);
@@ -361,7 +390,7 @@ const generateAvailabilitySlots = (
     });
     
     slots.push({
-      date: today.toISOString().split('T')[0],
+      date: targetDate.toISOString().split('T')[0],
       startTime,
       endTime,
       available: !isReserved,
@@ -413,6 +442,202 @@ export const createReserva = async (
     return data;
   } catch (error) {
     console.error('❌ Error al crear reserva:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la imagen principal de una cancha
+ * @param canchaId - ID de la cancha
+ * @returns Promise con la URL de la imagen o imagen por defecto
+ */
+export const fetchCanchaImage = async (canchaId: number): Promise<string> => {
+  try {
+    const response = await fetch(getApiUrl(`/cancha/${canchaId}`));
+    
+    if (!response.ok) {
+      console.warn(`⚠️ No se pudo obtener imagen de cancha ${canchaId}`);
+      return getSportFieldImages('football')[0];
+    }
+    
+    const canchaData: ApiCanchaDetalle = await response.json();
+    
+    // Si tiene fotos, devolver la primera
+    if (canchaData.fotos && canchaData.fotos.length > 0) {
+      return getImageUrl(canchaData.fotos[0].urlFoto);
+    }
+    
+    // Si no tiene fotos, usar imagen por defecto según la superficie
+    const sport = mapSuperficieToSport(canchaData.superficie);
+    return getSportFieldImages(sport)[0];
+  } catch (error) {
+    console.error(`❌ Error al obtener imagen de cancha ${canchaId}:`, error);
+    return getSportFieldImages('football')[0];
+  }
+};
+
+/**
+ * Obtiene todas las reservas de un usuario
+ * @param userId - ID del usuario
+ * @returns Promise con la lista de reservas del usuario
+ */
+export const fetchReservasByUserId = async (userId: number): Promise<ApiReservaUsuario[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para ver tus reservas');
+    }
+
+    console.log(`🔍 Obteniendo reservas del usuario ${userId}`);
+    console.log('🔑 Token presente:', token ? 'Sí' : 'No');
+
+    const response = await fetch(getApiUrl(`/reservas/usuario/${userId}`), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+      } catch (e) {
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: ApiReservaUsuario[] = await response.json();
+    console.log('✅ Reservas obtenidas:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al obtener reservas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza una reserva existente
+ * @param idReserva - ID de la reserva a modificar
+ * @param reservaData - Nuevos datos de la reserva
+ * @returns Promise con la respuesta del servidor
+ */
+export const updateReserva = async (
+  idReserva: number,
+  reservaData: UpdateReservaRequest
+): Promise<UpdateReservaResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para modificar una reserva');
+    }
+
+    console.log(`✏️ Actualizando reserva ${idReserva}:`, reservaData);
+
+    const response = await fetch(getApiUrl(`/reservas/${idReserva}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(reservaData),
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+      } catch (e) {
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: UpdateReservaResponse = await response.json();
+    console.log('✅ Reserva actualizada exitosamente:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al actualizar reserva:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cancela una reserva existente
+ * @param idReserva - ID de la reserva a cancelar
+ * @param cancelData - Datos de cancelación (motivo y canal opcionales)
+ * @returns Promise con la respuesta del servidor
+ */
+export const cancelReserva = async (
+  idReserva: number,
+  cancelData?: CancelReservaRequest
+): Promise<CancelReservaResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Debes iniciar sesión para cancelar una reserva');
+    }
+
+    console.log(`🗑️ Cancelando reserva ${idReserva}`, cancelData);
+
+    const response = await fetch(getApiUrl(`/reservas/${idReserva}`), {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: cancelData ? JSON.stringify(cancelData) : undefined,
+    });
+
+    console.log('📡 Status de respuesta:', response.status);
+
+    if (!response.ok) {
+      // Intentar obtener más detalles del error
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        console.error('📝 Detalle del error:', errorData);
+        
+        // Manejar errores específicos
+        if (response.status === 404) {
+          throw new Error('Reserva no encontrada');
+        }
+        if (response.status === 409) {
+          throw new Error(errorData.error || 'La reserva ya está cancelada');
+        }
+      } catch (e) {
+        if (e instanceof Error && (e.message === 'Reserva no encontrada' || e.message.includes('ya está cancelada'))) {
+          throw e;
+        }
+        console.error('❌ No se pudo parsear el error como JSON');
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data: CancelReservaResponse = await response.json();
+    console.log('✅ Reserva cancelada exitosamente:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error al cancelar reserva:', error);
     throw error;
   }
 };

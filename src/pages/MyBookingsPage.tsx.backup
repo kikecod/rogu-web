@@ -3,51 +3,38 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, Clock, MapPin, Users, QrCode, Edit, Trash2, 
   CheckCircle, XCircle, AlertCircle, ChevronRight, Star,
-  Download, Share2, Filter, Search
+  Download, Share2, Filter, Search, Loader2
 } from 'lucide-react';
 import Footer from '../components/Footer';
-import EditBookingModal from '../components/EditBookingModal';
-import CancelBookingModal from '../components/CancelBookingModal';
-import { fetchReservasByUserId, fetchCanchaImage } from '../utils/helpers';
+import { getUserBookings, cancelBooking, mapBackendToFrontend } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
-import type { ApiReservaUsuario } from '../types';
-
-interface Booking {
-  id: string;
-  fieldId: string;
-  fieldName: string;
-  fieldImage: string;
-  sedeName: string;
-  address: string;
-  date: string;
-  timeSlot: string;
-  participants: number;
-  price: number;
-  totalPaid: number;
-  status: 'active' | 'completed' | 'cancelled';
-  bookingCode: string;
-  rating?: number;
-  reviews?: number;
-  paymentMethod: 'card' | 'qr';
-}
+import type { FrontendBooking } from '../types';
 
 const MyBookingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [bookings, setBookings] = useState<FrontendBooking[]>([]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<FrontendBooking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [reembolsoInfo, setReembolsoInfo] = useState<{
+    aplicable: boolean;
+    porcentaje: number;
+    monto: string;
+    mensaje: string;
+  } | null>(null);
 
-  // Cargar reservas del usuario
+  // Cargar reservas del usuario al montar el componente
   useEffect(() => {
     const loadBookings = async () => {
-      if (!user?.idUsuario) {
+      if (!user || !user.idPersona) {
         setError('Debes iniciar sesión para ver tus reservas');
         setLoading(false);
         return;
@@ -56,58 +43,16 @@ const MyBookingsPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Cargando reservas del usuario:', user.idUsuario);
-        console.log('👤 Usuario completo:', user);
+        console.log('🔄 Cargando reservas para usuario:', user.idPersona);
         
-        const reservasData = await fetchReservasByUserId(user.idUsuario);
+        const response = await getUserBookings(user.idPersona);
+        console.log('📦 Respuesta del servidor:', response);
         
-        // Cargar las imágenes de todas las canchas en paralelo
-        console.log('🖼️ Cargando imágenes de las canchas...');
-        const imagePromises = reservasData.map(reserva => 
-          fetchCanchaImage(reserva.cancha.idCancha)
-        );
-        const images = await Promise.all(imagePromises);
-        console.log('✅ Imágenes cargadas:', images.length);
+        // Convertir reservas del backend al formato frontend
+        const frontendBookings = response.reservas.map(mapBackendToFrontend);
+        setBookings(frontendBookings);
         
-        // Convertir las reservas del API al formato del componente
-        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          // Determinar el estado de la reserva
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
-          const hoy = new Date();
-          
-          if (reserva.estado === 'Cancelada') {
-            status = 'cancelled';
-          } else if (fechaReserva < hoy) {
-            status = 'completed';
-          } else {
-            status = 'active';
-          }
-
-          return {
-            id: reserva.idReserva.toString(),
-            fieldId: reserva.cancha.idCancha.toString(),
-            fieldName: reserva.cancha.nombre,
-            fieldImage: images[index], // Usar la imagen cargada correspondiente
-            sedeName: reserva.cancha.sede.nombre,
-            address: '', // El API no proporciona dirección
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
-            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
-            participants: reserva.cantidadPersonas,
-            price: reserva.montoTotal,
-            totalPaid: reserva.montoTotal,
-            status,
-            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
-          };
-        });
-        
-        setBookings(bookingsConverted);
-        console.log('✅ Reservas cargadas:', bookingsConverted);
+        console.log('✅ Reservas cargadas:', frontendBookings.length);
       } catch (err) {
         console.error('❌ Error al cargar reservas:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar las reservas');
@@ -117,7 +62,7 @@ const MyBookingsPage: React.FC = () => {
     };
 
     loadBookings();
-  }, [user?.idUsuario]);
+  }, [user]);
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -159,148 +104,75 @@ const MyBookingsPage: React.FC = () => {
     }
   };
 
-  const handleEditBooking = (booking: Booking) => {
-    setBookingToEdit(booking);
-    setSelectedBooking(null); // Cerrar modal de detalles
-    setShowEditModal(true);
-  };
-
-  const handleEditSuccess = async () => {
-    setShowEditModal(false);
-    setBookingToEdit(null);
-    // Recargar las reservas
-    if (user?.idUsuario) {
-      setLoading(true);
-      try {
-        const reservasData = await fetchReservasByUserId(user.idUsuario);
-        
-        // Cargar las imágenes de todas las canchas en paralelo
-        const imagePromises = reservasData.map(reserva => 
-          fetchCanchaImage(reserva.cancha.idCancha)
-        );
-        const images = await Promise.all(imagePromises);
-        
-        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
-          const hoy = new Date();
-          
-          if (reserva.estado === 'Cancelada') {
-            status = 'cancelled';
-          } else if (fechaReserva < hoy) {
-            status = 'completed';
-          } else {
-            status = 'active';
-          }
-
-          return {
-            id: reserva.idReserva.toString(),
-            fieldId: reserva.cancha.idCancha.toString(),
-            fieldName: reserva.cancha.nombre,
-            fieldImage: images[index],
-            sedeName: reserva.cancha.sede.nombre,
-            address: '',
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
-            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
-            participants: reserva.cantidadPersonas,
-            price: reserva.montoTotal,
-            totalPaid: reserva.montoTotal,
-            status,
-            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
-          };
-        });
-        
-        setBookings(bookingsConverted);
-      } catch (err) {
-        console.error('Error recargando reservas:', err);
-      } finally {
-        setLoading(false);
+  const handleEditBooking = (booking: FrontendBooking) => {
+    navigate(`/field/${booking.fieldId}`, {
+      state: {
+        editMode: true,
+        bookingData: booking
       }
-    }
+    });
   };
 
   const handleDeleteBooking = (bookingId: string) => {
-    const booking = bookings.find(b => b.id === bookingId);
-    if (booking) {
-      setSelectedBooking(booking); // Actualizar selectedBooking para el modal de cancelación
-      setShowDeleteModal(true);
+    setBookingToDelete(bookingId);
+    setCancelError(null);
+    setCancelSuccess(null);
+    setReembolsoInfo(null);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!bookingToDelete) return;
+
+    try {
+      setCancelling(true);
+      setCancelError(null);
+      setCancelSuccess(null);
+      console.log('🗑️ Cancelando reserva:', bookingToDelete);
+
+      const response = await cancelBooking(
+        parseInt(bookingToDelete),
+        'Cancelación desde la interfaz de usuario'
+      );
+
+      console.log('✅ Reserva cancelada:', response);
+
+      // Actualizar el estado local de la reserva
+      setBookings(bookings.map(b => 
+        b.id === bookingToDelete 
+          ? { ...b, status: 'cancelled' as const }
+          : b
+      ));
+
+      // Mostrar información del reembolso
+      setReembolsoInfo(response.reembolso);
+      setCancelSuccess(response.message);
+
+      // Cerrar el modal después de 2 segundos
+      setTimeout(() => {
+        setShowDeleteModal(false);
+        setBookingToDelete(null);
+        setCancelSuccess(null);
+        setReembolsoInfo(null);
+      }, 3000);
+
+    } catch (err) {
+      console.error('❌ Error al cancelar reserva:', err);
+      setCancelError(err instanceof Error ? err.message : 'Error al cancelar la reserva');
+    } finally {
+      setCancelling(false);
     }
   };
 
-  const handleCancelSuccess = async () => {
-    setShowDeleteModal(false);
-    setSelectedBooking(null);
-    
-    // Recargar las reservas
-    if (user?.idUsuario) {
-      setLoading(true);
-      try {
-        const reservasData = await fetchReservasByUserId(user.idUsuario);
-        
-        // Cargar las imágenes de todas las canchas en paralelo
-        const imagePromises = reservasData.map(reserva => 
-          fetchCanchaImage(reserva.cancha.idCancha)
-        );
-        const images = await Promise.all(imagePromises);
-        
-        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
-          const hoy = new Date();
-          
-          if (reserva.estado === 'Cancelada') {
-            status = 'cancelled';
-          } else if (fechaReserva < hoy) {
-            status = 'completed';
-          } else {
-            status = 'active';
-          }
-
-          return {
-            id: reserva.idReserva.toString(),
-            fieldId: reserva.cancha.idCancha.toString(),
-            fieldName: reserva.cancha.nombre,
-            fieldImage: images[index],
-            sedeName: reserva.cancha.sede.nombre,
-            address: '',
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
-            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
-            participants: reserva.cantidadPersonas,
-            price: reserva.montoTotal,
-            totalPaid: reserva.montoTotal,
-            status,
-            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
-          };
-        });
-        
-        setBookings(bookingsConverted);
-      } catch (err) {
-        console.error('Error recargando reservas:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleViewDetails = (booking: Booking) => {
+  const handleViewDetails = (booking: FrontendBooking) => {
     setSelectedBooking(booking);
   };
 
-  const handleDownloadQR = (booking: Booking) => {
+  const handleDownloadQR = (booking: FrontendBooking) => {
     alert(`Descargando QR para: ${booking.bookingCode}`);
   };
 
-  const handleShareBooking = async (booking: Booking) => {
+  const handleShareBooking = async (booking: FrontendBooking) => {
     if (navigator.share) {
       try {
         await navigator.share({
@@ -316,36 +188,6 @@ const MyBookingsPage: React.FC = () => {
     }
   };
 
-  // Estados de loading y error
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Cargando tus reservas...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-6xl mb-4">😞</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar reservas</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Volver al inicio
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
@@ -359,6 +201,32 @@ const MyBookingsPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+            <p className="text-xl font-semibold text-gray-700">Cargando tus reservas...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar reservas</h3>
+            <p className="text-red-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
+
+        {/* Content - Only show if not loading and no error */}
+        {!loading && !error && (
+          <>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-xl p-5 shadow-lg border-2 border-green-100">
@@ -558,20 +426,14 @@ const MyBookingsPage: React.FC = () => {
                           {booking.status === 'active' && (
                             <>
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditBooking(booking);
-                                }}
+                                onClick={() => handleEditBooking(booking)}
                                 className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-all"
                                 title="Modificar reserva"
                               >
                                 <Edit className="h-5 w-5" />
                               </button>
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteBooking(booking.id);
-                                }}
+                                onClick={() => handleDeleteBooking(booking.id)}
                                 className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
                                 title="Cancelar reserva"
                               >
@@ -591,7 +453,7 @@ const MyBookingsPage: React.FC = () => {
       </div>
 
       {/* Booking Details Modal */}
-      {selectedBooking && !showDeleteModal && !showEditModal && (
+      {selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl">
@@ -742,37 +604,77 @@ const MyBookingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de cancelación */}
-      {showDeleteModal && selectedBooking && (
-        <CancelBookingModal
-          booking={{
-            id: selectedBooking.id,
-            fieldName: selectedBooking.fieldName,
-            date: selectedBooking.date,
-            timeSlot: selectedBooking.timeSlot
-          }}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedBooking(null);
-          }}
-          onSuccess={handleCancelSuccess}
-        />
-      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">¿Cancelar reserva?</h3>
+              <p className="text-gray-600">
+                Esta acción cancelará tu reserva. De acuerdo a la política de cancelación, 
+                {' '}si cancelas con menos de 24 horas de anticipación, se aplicará un cargo del 50%.
+              </p>
+            </div>
 
-      {/* Modal de edición */}
-      {showEditModal && bookingToEdit && user?.idUsuario && (
-        <EditBookingModal
-          booking={bookingToEdit}
-          onClose={() => {
-            setShowEditModal(false);
-            setBookingToEdit(null);
-          }}
-          onSuccess={handleEditSuccess}
-          userId={user.idUsuario}
-        />
+            {/* Error de cancelación */}
+            {cancelError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{cancelError}</p>
+              </div>
+            )}
+
+            {/* Éxito de cancelación */}
+            {cancelSuccess && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-600 font-semibold">{cancelSuccess}</p>
+                {reembolsoInfo && (
+                  <div className="mt-2 text-sm text-gray-700">
+                    <p className="font-semibold">Información de reembolso:</p>
+                    <p>{reembolsoInfo.mensaje}</p>
+                    {reembolsoInfo.aplicable && (
+                      <p className="text-green-600 font-bold mt-1">
+                        Reembolso: {reembolsoInfo.porcentaje}% - ${reembolsoInfo.monto}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={cancelling}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelling ? 'Procesando...' : 'No, mantener'}
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={cancelling}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {cancelling ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Cancelando...
+                  </>
+                ) : (
+                  'Sí, cancelar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Footer />
+      </>
+      )}
+    </div>
     </div>
   );
 };

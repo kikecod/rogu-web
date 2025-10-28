@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-react';
 import FotoManagement from './FotoManagement';
 import ReservaManagement from './ReservaManagement';
+import { getApiUrl } from '../config/api';
 
 interface Cancha {
   idCancha: number;
@@ -117,15 +118,25 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   // Cargar disciplinas disponibles
   const loadDisciplinas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/disciplina`, {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No hay token de autenticación');
+        return;
+      }
+
+      const response = await fetch(getApiUrl('/disciplina'), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (response.ok) {
         const allDisciplinas = await response.json();
         setDisciplinas(allDisciplinas);
+      } else {
+        console.error('Error al cargar disciplinas:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error loading disciplinas:', error);

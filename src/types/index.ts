@@ -47,6 +47,25 @@ export interface ApiReserva {
   estado: string; // "Confirmada" | "Pendiente" | "Cancelada"
 }
 
+// Interface para reservas del usuario
+export interface ApiReservaUsuario {
+  idReserva: number;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  estado: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  cancha: {
+    idCancha: number;
+    nombre: string;
+    sede: {
+      idSede: number;
+      nombre: string;
+    };
+  };
+  montoTotal: number;
+  cantidadPersonas: number;
+}
+
 export interface ApiUsuario {
   nombre: string;
   avatar?: string;
@@ -190,5 +209,52 @@ export interface CreateReservaResponse {
     montoTotal: string;
     creadoEn: string;
     actualizadoEn: string;
+  };
+}
+
+// Interfaces para actualizar reservas
+export interface UpdateReservaRequest {
+  idCliente: number;
+  idCancha: number;
+  iniciaEn: string;           // "YYYY-MM-DDTHH:mm:ss.000Z"
+  terminaEn: string;          // "YYYY-MM-DDTHH:mm:ss.000Z"
+  cantidadPersonas: number;
+  requiereAprobacion: boolean;
+  montoBase: number;
+  montoExtra: number;
+  montoTotal: number;
+}
+
+export interface UpdateReservaResponse {
+  message: string;
+  reserva: {
+    idReserva: number;
+    idCliente: number;
+    idCancha: number;
+    iniciaEn: string;
+    terminaEn: string;
+    cantidadPersonas: number;
+    montoBase: string;
+    montoExtra: string;
+    montoTotal: string;
+    estado: string;
+    actualizadoEn: string;
+  };
+}
+
+// Interfaces para cancelar reservas
+export interface CancelReservaRequest {
+  motivo?: string;
+  canal?: string;
+}
+
+export interface CancelReservaResponse {
+  message: string;
+  cancelacion: {
+    idCancelacion: number;
+    idReserva: number;
+    canceladaEn: string;
+    motivo: string;
+    canal: string;
   };
 }
