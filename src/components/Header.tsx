@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Menu, User, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import roguLogo from '../assets/rogu_logo.png';
-import { useAuth } from '../contexts/AuthContext';
+import roguLogo from '@/assets/rogu_logo.png';
+import { useAuth } from '@/auth/hooks/useAuth';
 
 interface HeaderProps {
   onLoginClick: () => void;
