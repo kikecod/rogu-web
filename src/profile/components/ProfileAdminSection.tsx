@@ -34,7 +34,7 @@ const ProfileAdminSection: React.FC<ProfileAdminSectionProps> = ({ data }) => {
             <ClipboardList className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-[11px] sm:text-xs uppercase tracking-wide text-slate-500 font-semibold">ID usuario</p>
-              <p className="text-sm font-semibold text-slate-800 break-words">#{data.usuario.id_usuario}</p>
+              <p className="text-sm font-semibold text-slate-800 break-words">#{data.usuario.idUsuario}</p>
             </div>
           </div>
         </div>

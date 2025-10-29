@@ -52,73 +52,43 @@ const ProfilePage: React.FC = () => {
   }
 
   const userRoles = (Array.isArray(user?.roles) ? user?.roles : []) as AppRole[];
-  const baseUsuario = data?.usuario ?? {
+  
+  // Si tenemos datos del backend, usarlos directamente
+  if (data) {
+    const effectiveRoles = data.usuario.roles.filter((role): role is AppRole =>
+      ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'].includes(role)
+    );
+    
+    const variant = resolveRoleVariant(effectiveRoles);
+    const VariantComponent = getVariantComponent(variant);
+    
+    return <VariantComponent data={data} />;
+  }
+
+  // Fallback con datos del usuario en memoria
+  const baseUsuario = {
     correo: user?.correo ?? '',
     usuario: user?.usuario ?? '',
-    id_persona: user?.idPersona ?? 0,
-    id_usuario: user?.idUsuario ?? 0,
+    idPersona: user?.idPersona ?? 0,
     idUsuario: user?.idUsuario ?? 0,
     correoVerificado: false,
     roles: userRoles,
     avatar: user?.avatar ?? undefined,
   };
-  const basePersona = data?.persona ?? null;
-  const sanitizedData = {
+  
+  const basePersona = null;
+  const sanitizedData: UserProfileData = {
     persona: basePersona,
     usuario: baseUsuario,
-    cliente: data?.cliente ?? null,
-    duenio: data?.duenio ?? null,
-    controlador: data?.controlador ?? null,
-  } as const;
-
-  const profileRolesRaw = Array.isArray(sanitizedData.usuario.roles)
-    ? sanitizedData.usuario.roles
-    : [];
-  const validRoleValues: AppRole[] = ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'];
-  const profileRoles = profileRolesRaw.filter((role): role is AppRole =>
-    validRoleValues.includes(role as AppRole),
-  );
-
-  const samePersona =
-    typeof user?.idPersona === 'number' && user?.idPersona === sanitizedData.usuario.id_persona;
-  const sameUsuario =
-    typeof user?.idUsuario === 'number' && user?.idUsuario === sanitizedData.usuario.id_usuario;
-
-  if (!samePersona || !sameUsuario) {
-    return renderError('No estas autorizado para ver este perfil.', () => {
-      void refresh();
-    });
-  }
-
-  const missingRoles = userRoles.filter((role) => !profileRoles.includes(role));
-  if (missingRoles.length > 0) {
-    return renderError('Tu sesion no tiene permisos para ver este perfil.', () => {
-      void refresh();
-    });
-  }
-
-  const effectiveRoles = userRoles.filter((role) => profileRoles.includes(role));
-  const variant = resolveRoleVariant(effectiveRoles);
-  const finalData: UserProfileData = {
-    persona: sanitizedData.persona,
-    usuario: {
-      idUsuario: sanitizedData.usuario.id_usuario,
-      id_usuario: sanitizedData.usuario.id_usuario,
-      correo: sanitizedData.usuario.correo,
-      usuario: sanitizedData.usuario.usuario,
-      id_persona: sanitizedData.usuario.id_persona,
-      correoVerificado: sanitizedData.usuario.correoVerificado,
-      roles: effectiveRoles,
-      avatar: sanitizedData.usuario.avatar,
-    },
-    cliente: sanitizedData.cliente,
-    duenio: sanitizedData.duenio,
-    controlador: sanitizedData.controlador,
+    cliente: null,
+    duenio: null,
+    controlador: null,
   };
 
+  const variant = resolveRoleVariant(userRoles);
   const VariantComponent = getVariantComponent(variant);
 
-  return <VariantComponent data={finalData} />;
+  return <VariantComponent data={sanitizedData} />;
 };
 
 export default ProfilePage;

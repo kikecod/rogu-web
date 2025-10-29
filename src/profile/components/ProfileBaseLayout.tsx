@@ -77,7 +77,12 @@ const renderRoles = (roles: string[]) => {
 // === Componente ===
 const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children }) => {
   const { persona, usuario } = data;
-  const avatarUrl = usuario.avatar || persona?.url_foto || null;
+  
+  // Log para debugging
+  console.log('👤 Datos de persona en ProfileBaseLayout:', persona);
+  console.log('👤 Datos de usuario en ProfileBaseLayout:', usuario);
+  
+  const avatarUrl = usuario.avatar || persona?.urlFoto || null;
   const fullName = getFullName(persona, usuario.usuario || usuario.correo || 'Usuario sin nombre');
   const initials = getInitials(persona, usuario);
   const documentoLabel =
@@ -159,6 +164,7 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                   <div>
                     <dt className="text-neutral-500">Telefono</dt>
                     <dd className="text-neutral-900 font-medium break-all">{persona?.telefono || 'No registrado'}</dd>
+                
                   </div>
                   <div>
                     <dt className="text-neutral-500">Telefono verificado</dt>
@@ -204,11 +210,11 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                   </div>
                   <div>
                     <dt className="text-neutral-500">ID persona</dt>
-                    <dd className="text-neutral-900 font-medium">#{usuario.id_persona}</dd>
+                    <dd className="text-neutral-900 font-medium">#{usuario.idPersona}</dd>
                   </div>
                   <div>
                     <dt className="text-neutral-500">ID usuario</dt>
-                    <dd className="text-neutral-900 font-medium">#{usuario.id_usuario}</dd>
+                    <dd className="text-neutral-900 font-medium">#{usuario.idUsuario}</dd>
                   </div>
                 </dl>
               </div>

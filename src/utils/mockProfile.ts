@@ -17,16 +17,15 @@ export const getMockProfileData = (userId: number, userEmail: string, userName: 
       genero: 'MASCULINO',
       documentoTipo: 'CI',
       documentoNumero: '12345678',
-      url_foto: null,
+      urlFoto: null,
       creadoEn: '2024-01-15T10:00:00.000Z',
       actualizadoEn: '2024-10-28T08:30:00.000Z',
     },
     usuario: {
       idUsuario: userId,
-      id_usuario: userId,
       correo: userEmail,
       usuario: userName,
-      id_persona: userId,
+      idPersona: userId,
       correoVerificado: true,
       roles: roles as any[],
       avatar: null,
@@ -40,7 +39,7 @@ export const getMockProfileData = (userId: number, userEmail: string, userName: 
     duenio: roles.includes('DUENIO') ? {
       idDuenio: userId,
       verificado: true,
-      verificado_en: '2024-08-10T15:20:00.000Z',
+      verificadoEn: '2024-08-10T15:20:00.000Z',
     } : null,
     controlador: roles.includes('CONTROLADOR') ? {
       idControlador: userId,

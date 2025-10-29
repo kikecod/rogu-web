@@ -14,14 +14,18 @@ interface ChangePasswordRequest {
 }
 
 // Flag para usar datos mock (cambiar a false cuando el backend esté listo)
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 class ProfileService {
+  private getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
   /**
    * Obtiene el perfil completo del usuario autenticado
    */
   async fetchProfile(): Promise<UserProfileData> {
-    const token = localStorage.getItem('token');
+    const token = this.getToken();
     if (!token) {
       throw new Error('No hay token de autenticación');
     }
@@ -46,23 +50,22 @@ class ProfileService {
       );
     }
 
-    // Modo real con backend
-    const response = await fetch(getApiUrl('/perfil'), {
+    // REAL API MODE
+    const url = getApiUrl('/auth/profile');
+    const res = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw { status: 401, message: 'Sesión expirada' };
-      }
-      throw new Error('Error al obtener el perfil');
+    if (!res.ok) {
+      throw { status: res.status, message: `Error ${res.status}` };
     }
 
-    const data = await response.json();
+    const data = await res.json();
+    console.log('📥 Datos recibidos del backend:', JSON.stringify(data, null, 2));
     return data;
   }
 
@@ -70,7 +73,7 @@ class ProfileService {
    * Actualiza los datos básicos del usuario (correo y usuario)
    */
   async updateUserBasic(request: UpdateUserBasicRequest): Promise<void> {
-    const token = localStorage.getItem('token');
+    const token = this.getToken();
     if (!token) {
       throw new Error('No hay token de autenticación');
     }
@@ -94,7 +97,7 @@ class ProfileService {
     }
 
     // Modo real con backend
-    const response = await fetch(getApiUrl(`/usuario/${request.id_usuario}`), {
+    const response = await fetch(getApiUrl(`/usuarios/${request.id_usuario}`), {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -116,7 +119,7 @@ class ProfileService {
    * Cambia la contraseña del usuario
    */
   async changePassword(request: ChangePasswordRequest): Promise<void> {
-    const token = localStorage.getItem('token');
+    const token = this.getToken();
     if (!token) {
       throw new Error('No hay token de autenticación');
     }
@@ -131,7 +134,7 @@ class ProfileService {
     }
 
     // Modo real con backend
-    const response = await fetch(getApiUrl(`/usuario/${request.id_usuario}/cambiar-contrasena`), {
+    const response = await fetch(getApiUrl(`/usuarios/${request.id_usuario}/cambiar-contrasena`), {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,

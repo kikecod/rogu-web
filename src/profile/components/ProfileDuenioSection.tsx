@@ -53,7 +53,7 @@ const ProfileDuenioSection: React.FC<ProfileDuenioSectionProps> = ({ duenio, can
         <div className="min-w-0">
           <dt className="text-neutral-500">Ultima verificacion</dt>
           <dd className="text-neutral-900 font-medium break-words">
-            {duenio.verificado ? formatDateTime(duenio.verificado_en) : 'No registrada'}
+            {duenio.verificado ? formatDateTime(duenio.verificadoEn) : 'No registrada'}
           </dd>
         </div>
       </dl>

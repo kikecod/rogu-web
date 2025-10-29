@@ -263,7 +263,7 @@ export interface CancelReservaResponse {
 
 export type AppRole = 'CLIENTE' | 'DUENIO' | 'CONTROLADOR' | 'ADMIN';
 
-// Perfil de Persona
+// Perfil de Persona (coincide con el backend)
 export interface PersonaProfile {
   idPersona: number;
   nombres: string;
@@ -275,39 +275,41 @@ export interface PersonaProfile {
   genero: string | null;
   documentoTipo: string | null;
   documentoNumero: string | null;
-  url_foto: string | null;
+  urlFoto: string | null;  // ✅ Backend usa urlFoto (camelCase)
   creadoEn: string | Date | null;
   actualizadoEn: string | Date | null;
+  eliminadoEn?: string | Date | null;
 }
 
-// Perfil de Usuario
+// Perfil de Usuario (coincide con el backend)
 export interface UsuarioProfile {
   idUsuario: number;
-  id_usuario: number;
   correo: string;
   usuario: string;
-  id_persona: number;
+  idPersona: number;  // ✅ Backend usa idPersona (camelCase)
   correoVerificado: boolean;
   roles: AppRole[];
+  estado?: string;  // ✅ Backend incluye estado
   avatar?: string | null;
 }
 
-// Perfil de Cliente
+// Perfil de Cliente (coincide con el backend)
 export interface ClienteProfile {
   idCliente: number;
   apodo: string | null;
   nivel: number | null;
   observaciones: string | null;
+  persona?: PersonaProfile;  // ✅ Backend incluye persona anidada
 }
 
-// Perfil de Dueño
+// Perfil de Dueño (coincide con el backend)
 export interface DuenioProfile {
   idDuenio: number;
   verificado: boolean;
-  verificado_en: string | Date | null;
+  verificadoEn?: string | Date | null;  // ✅ Backend usa verificadoEn (camelCase)
 }
 
-// Perfil de Controlador
+// Perfil de Controlador (coincide con el backend)
 export interface ControladorProfile {
   idControlador: number;
   codigoEmpleado: string | null;
@@ -315,7 +317,7 @@ export interface ControladorProfile {
   activo: boolean;
 }
 
-// Datos completos del perfil de usuario
+// Datos completos del perfil de usuario (coincide con el backend)
 export interface UserProfileData {
   persona: PersonaProfile | null;
   usuario: UsuarioProfile;
