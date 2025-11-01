@@ -25,18 +25,32 @@ const useUserProfile = (): UseUserProfileResult => {
     };
   }, []);
 
+  const SOFT_TIMEOUT = Number(((import.meta as any)?.env?.VITE_PROFILE_TIMEOUT_MS) ?? 3000);
+  const HARD_TIMEOUT = Number(((import.meta as any)?.env?.VITE_PROFILE_HARD_TIMEOUT_MS) ?? 5000);
+
   const fetchProfile = useCallback(async () => {
     try {
-      if (!isMountedRef.current || inFlightRef.current) return;
+      if (!isMountedRef.current) return;
+      // Si Auth aún está hidratando, no disparamos fetch ni marcamos in-flight para evitar quedar pegados
+      if (authLoading) {
+        setLoading(true);
+        setError(null);
+        if ((import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true') {
+          // eslint-disable-next-line no-console
+          console.debug('[profile] auth still hydrating, skipping fetch');
+        }
+        return;
+      }
+
+      if (inFlightRef.current) return;
       inFlightRef.current = true;
       setLoading(true);
 
-      // Esperar a que el contexto de auth termine de hidratar estado
-      if (authLoading) {
-        return; // el finally pondrá loading=false cuando termine el ciclo actual
-      }
-
       if (!isLoggedIn) {
+        if ((import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true') {
+          // eslint-disable-next-line no-console
+          console.debug('[profile] not logged in, aborting fetch');
+        }
         setError('Debes iniciar sesion para ver tu perfil.');
         setData(null);
         return;
@@ -48,7 +62,7 @@ const useUserProfile = (): UseUserProfileResult => {
         setError('Tiempo de espera agotado al cargar tu perfil. Intenta nuevamente.');
         setLoading(false);
         inFlightRef.current = false;
-      }, 8000);
+      }, SOFT_TIMEOUT);
       const profile = await profileService.fetchProfile();
       if (!isMountedRef.current) return;
       setData(profile);
@@ -59,6 +73,12 @@ const useUserProfile = (): UseUserProfileResult => {
       const status = (err && typeof err === 'object' && 'status' in (err as any))
         ? Number((err as any).status)
         : undefined;
+      // Log de depuración para ver exactamente el estado y URL
+      if ((import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true') {
+        const url = (err && typeof err === 'object' && 'url' in (err as any)) ? (err as any).url : undefined;
+        // eslint-disable-next-line no-console
+        console.debug('[profile] error', { status, url, err });
+      }
       if (status === 401) {
         try { await logout(); } catch { /* ignore */ }
         setError('Tu sesion expiro. Inicia sesion nuevamente.');
@@ -95,7 +115,7 @@ const useUserProfile = (): UseUserProfileResult => {
         setError('No pudimos cargar tu perfil a tiempo. Reintenta.');
         setLoading(false);
       }
-    }, 10000);
+  }, HARD_TIMEOUT);
     return () => {
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     };

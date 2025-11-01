@@ -27,7 +27,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
     if (!email || !username) { setErr('Correo y usuario son requeridos'); return; }
     try {
       setSavingBasic(true);
-      await profileService.updateUserBasic({ id_usuario: usuario.idUsuario, correo: email, usuario: username });
+      await profileService.updateUserBasic({ idUsuario: usuario.idUsuario, correo: email, usuario: username });
       // adaptar a tipo User del AuthContext (avatar?: string)
       updateUser({
         correo: email,
@@ -51,7 +51,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
     if (pwd !== pwd2) { setErr('Las contraseñas no coinciden'); return; }
     try {
       setSavingPwd(true);
-      await profileService.changePassword({ id_usuario: usuario.idUsuario, nuevaContrasena: pwd });
+      await profileService.changePasswordSimple({ idUsuario: usuario.idUsuario, nuevaContrasena: pwd });
       setPwd(''); setPwd2('');
       setMsg('Contraseña actualizada');
     } catch (e: any) {

@@ -1,15 +1,11 @@
 import React from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
-import { useAuth } from '@/auth/hooks/useAuth';
 import { resolveRoleVariant, type RoleVariant } from '@/auth/lib/roles';
-import { type AppRole, type UserProfileData } from '../types/profile.types';
+import { type AppRole } from '../types/profile.types';
 import useUserProfile from '../hooks/useUserProfile';
-import {
-  PROFILE_VARIANT_COMPONENTS,
-  type ProfileVariantComponentProps,
-} from '../components/profileVariants';
-
-// Eliminado: no mostramos loading en pantalla para el perfil
+import { PROFILE_VARIANT_COMPONENTS, type ProfileVariantComponentProps } from '../components/profileVariants';
+import { useAuth } from '@/auth/hooks/useAuth';
+import { getAuthToken } from '@/core/config/api';
 
 const renderError = (message: string, onRetry: () => void) => (
   <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4 py-8 sm:py-12">
@@ -42,8 +38,8 @@ const getVariantComponent = (
 };
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
-  const { data, loading: _loading, error, refresh } = useUserProfile();
+  const { data, error, refresh } = useUserProfile();
+  const { isLoading: authLoading, isLoggedIn } = useAuth();
 
   if (error) {
     return renderError(error, () => {
@@ -51,7 +47,38 @@ const ProfilePage: React.FC = () => {
     });
   }
 
-  const userRoles = (Array.isArray(user?.roles) ? user?.roles : []) as AppRole[];
+  // Mostrar un panel de diagnóstico breve mientras aún no hay datos y tampoco error
+  if (!data) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center bg-neutral-50 px-4 py-8">
+        <div className="max-w-md w-full bg-white border border-amber-200 rounded-2xl shadow-sm p-6 text-center">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-amber-50 mx-auto mb-3">
+            <AlertTriangle className="h-6 w-6 text-amber-500" />
+          </div>
+          <h2 className="text-lg font-semibold text-neutral-900 mb-1">Esperando datos del perfil</h2>
+          <p className="text-neutral-600 text-sm mb-5">Si el backend no responde en pocos segundos, verás un error automático.</p>
+          <button
+            type="button"
+            onClick={() => { void refresh(); }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-medium shadow-sm hover:bg-blue-600/90"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Reintentar ahora
+          </button>
+          {(import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true' ? (
+            <div className="mt-4 text-left text-xs text-neutral-500">
+              <div><b>debug:</b></div>
+              <div>authLoading: {String(authLoading)}</div>
+              <div>isLoggedIn: {String(isLoggedIn)}</div>
+              <div>hasToken: {String(Boolean(getAuthToken()))}</div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // sin fallback de datos cuando aún no llegan
   
   // Si tenemos datos del backend, usarlos directamente
   if (data) {
@@ -62,33 +89,10 @@ const ProfilePage: React.FC = () => {
     const variant = resolveRoleVariant(effectiveRoles);
     const VariantComponent = getVariantComponent(variant);
     
-    return <VariantComponent data={data} />;
+    return <VariantComponent data={data} onRefresh={refresh} />;
   }
 
-  // Fallback con datos del usuario en memoria
-  const baseUsuario = {
-    correo: user?.correo ?? '',
-    usuario: user?.usuario ?? '',
-    idPersona: user?.idPersona ?? 0,
-    idUsuario: user?.idUsuario ?? 0,
-    correoVerificado: false,
-    roles: userRoles,
-    avatar: user?.avatar ?? undefined,
-  };
-  
-  const basePersona = null;
-  const sanitizedData: UserProfileData = {
-    persona: basePersona,
-    usuario: baseUsuario,
-    cliente: null,
-    duenio: null,
-    controlador: null,
-  };
-
-  const variant = resolveRoleVariant(userRoles);
-  const VariantComponent = getVariantComponent(variant);
-
-  return <VariantComponent data={sanitizedData} />;
+  return null;
 };
 
 export default ProfilePage;

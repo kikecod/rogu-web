@@ -10,6 +10,7 @@ import ProfileGenericView from './Profile.Generic';
 
 export interface ProfileVariantComponentProps {
   data: UserProfileData;
+  onRefresh: () => Promise<void>;
 }
 
 export const PROFILE_VARIANT_COMPONENTS: Record<RoleVariant, ComponentType<ProfileVariantComponentProps>> =

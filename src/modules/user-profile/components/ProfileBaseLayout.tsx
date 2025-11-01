@@ -8,6 +8,7 @@ import {
   User2,
   UserCircle2,
 } from 'lucide-react';
+import { getImageUrl } from '@/core/config/api';
 import type { UserProfileData } from '../types/profile.types';
 
 interface ProfileBaseLayoutProps {
@@ -15,7 +16,6 @@ interface ProfileBaseLayoutProps {
   children?: React.ReactNode;
 }
 
-// === Utilidades (SIN CAMBIOS DE LÓGICA) ===
 const formatDate = (value: string | Date | null | undefined): string => {
   if (!value) return 'No registrado';
   try {
@@ -74,15 +74,21 @@ const renderRoles = (roles: string[]) => {
   );
 };
 
-// === Componente ===
 const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children }) => {
   const { persona, usuario } = data;
-  
-  // Log para debugging
-  console.log('👤 Datos de persona en ProfileBaseLayout:', persona);
-  console.log('👤 Datos de usuario en ProfileBaseLayout:', usuario);
-  
-  const avatarUrl = usuario.avatar || persona?.urlFoto || null;
+
+  const avatarCandidate =
+    usuario.avatar ??
+    usuario.avatarPath ??
+    persona?.urlFoto ??
+    null;
+
+  const avatarUrl = avatarCandidate
+    ? avatarCandidate.startsWith('http')
+      ? avatarCandidate
+      : getImageUrl(avatarCandidate)
+    : null;
+
   const fullName = getFullName(persona, usuario.usuario || usuario.correo || 'Usuario sin nombre');
   const initials = getInitials(persona, usuario);
   const documentoLabel =
@@ -94,10 +100,8 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
     <div className="min-h-screen bg-neutral-50 pb-16">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="bg-white rounded-3xl shadow-sm border border-neutral-200 overflow-hidden">
-          {/* Encabezado */}
           <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-4 sm:px-8 md:px-10 pt-8 sm:pt-10 pb-20 sm:pb-24 md:pb-28">
             <div className="flex flex-col md:flex-row md:items-center md:gap-8 text-white">
-              {/* Avatar */}
               <div className="relative inline-flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 rounded-full border-4 border-white/30 bg-white/20 shadow-lg ring-0">
                 {avatarUrl ? (
                   <img
@@ -117,7 +121,6 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                 </span>
               </div>
 
-              {/* Datos principales */}
               <div className="mt-5 sm:mt-6 md:mt-0">
                 <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] text-white/80 font-semibold mb-1.5 sm:mb-2">
                   Perfil de usuario
@@ -138,11 +141,8 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
             </div>
           </div>
 
-          {/* Contenido */}
           <div className="px-4 sm:px-8 md:px-10 pb-8 sm:pb-10">
-            {/* Cards en grid */}
             <div className="grid grid-cols-1 gap-16 sm:gap-6 md:gap-8 lg:grid-cols-2">
-              {/* Card: Datos personales */}
               <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 shadow-md transition-all duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500/30">
                 <div className="flex items-center gap-2.5 sm:gap-3 mb-3.5 sm:mb-4">
                   <User2 className="h-5 w-5 text-blue-600" />
@@ -158,16 +158,15 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                     <dd className="text-neutral-900 font-medium">{formatDate(persona?.fechaNacimiento ?? null)}</dd>
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Genero</dt>
-                    <dd className="text-neutral-900 font-medium">{persona?.genero || 'No especificado'}</dd>
+                    <dt className="text-neutral-500">Género</dt>
+                    <dd className="text-neutral-900 font-medium">{persona?.genero ?? 'No registrado'}</dd>
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Telefono</dt>
+                    <dt className="text-neutral-500">Teléfono</dt>
                     <dd className="text-neutral-900 font-medium break-all">{persona?.telefono || 'No registrado'}</dd>
-                
                   </div>
                   <div>
-                    <dt className="text-neutral-500">Telefono verificado</dt>
+                    <dt className="text-neutral-500">Teléfono verificado</dt>
                     <dd className="text-neutral-900 font-medium">{persona?.telefonoVerificado ? 'Confirmado' : 'No verificado'}</dd>
                   </div>
                   <div>
@@ -178,10 +177,47 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                     <dt className="text-neutral-500">Actualizado el</dt>
                     <dd className="text-neutral-900 font-medium">{formatDate(persona?.actualizadoEn ?? null)}</dd>
                   </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-neutral-500">Biografía</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {persona?.bio && persona.bio.trim().length > 0 ? persona.bio : 'No registrada'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-neutral-500">Dirección</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {persona?.direccion && persona.direccion.trim().length > 0 ? persona.direccion : 'No registrada'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-neutral-500">Ciudad</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {persona?.ciudad && persona.ciudad.trim().length > 0 ? persona.ciudad : 'No registrada'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-neutral-500">País</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {persona?.pais && persona.pais.trim().length > 0 ? persona.pais : 'No registrado'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-neutral-500">Ocupación</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {persona?.ocupacion && persona.ocupacion.trim().length > 0 ? persona.ocupacion : 'No registrada'}
+                    </dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-neutral-500">Deportes favoritos</dt>
+                    <dd className="text-neutral-900 font-medium break-words">
+                      {Array.isArray(persona?.deportesFavoritos) && persona!.deportesFavoritos!.length > 0
+                        ? persona!.deportesFavoritos!.join(', ')
+                        : 'No registrado'}
+                    </dd>
+                  </div>
                 </dl>
               </div>
 
-              {/* Card: Credenciales y seguridad */}
               <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 shadow-md transition-all duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500/30">
                 <div className="flex items-center gap-2.5 sm:gap-3 mb-3.5 sm:mb-4">
                   <ShieldCheck className="h-5 w-5 text-emerald-600" />
@@ -220,7 +256,6 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
               </div>
             </div>
 
-            {/* Slot children */}
             {children ? <div className="mt-6 sm:mt-8 space-y-6">{children}</div> : null}
           </div>
         </div>

@@ -99,7 +99,7 @@ Implementar un sistema completo de perfil y configuración de usuario que permit
 │     - Middleware multer para recibir archivos               │
 │     - Validación de tipo y tamaño                           │
 │     - Procesamiento con Sharp (redimensionar)               │
-│     - Guardar en /uploads o S3/Cloudinary                   │
+│     - Guardar en /uploads/avatars o S3/Cloudinary                   │
 │     - Eliminar imagen anterior                              │
 │                                                              │
 │  2. GESTIÓN DE PERFIL                                        │
@@ -116,12 +116,26 @@ Implementar un sistema completo de perfil y configuración de usuario que permit
 └─────────────────────────────────────────────────────────────┘
                               ↓ ↑
 ┌─────────────────────────────────────────────────────────────┐
-│                  BASE DE DATOS (MySQL)                       │
-├─────────────────────────────────────────────────────────────┤
-│  - Tabla Usuario (correo, contraseña, fotoPerfil URL)       │
-│  - Tabla Persona (nombre, apellido, telefono, direccion)    │
-│  - Tabla PreferenciaUsuario (privacidad, notificaciones)    │
-│  - Almacenamiento de archivos (filesystem o cloud)          │
+│                  BASE DE DATOS (PostgreSql)                       │
+├─────────────────────────────────────────────────────────────┤                │
+│  Tabla Persona (idPersona, nombres, paterno, materno, documentoTipo, documentoNumero, telefono, telefonoVerificado, fechaNacimiento, genero, urlFoto, creadoEn, actualizadoEn, eliminadoEn)  
+Tabla Usuario (idUsuario, idPersona, usuario, correo, correoVerificado, hashContrasena, estado, creadoEn, actualizadoEn, ultimoAccesoEn)
+│         Tabla Cliente (idCliente, apodo, nivel, observaciones)
+  Tabla Duenio (idPersonaD, verificado, verificadoEn, imagenCI, imagenFacial, creadoEn, actualizadoEn, eliminadoEn)
+  
+  Tabla Controlador (idPersonaOpe, idSede, codigoEmpleado, activo, turno)
+  
+  donde idPersona es igual a idusuario iscliente ispersonad idpersonaope 
+
+  entonces si yo quiero los datos de un usuario en general q normalmente sera cliente por defecto
+
+  el profile el perfil debe tener los datos de la tabla de usuario persona usuariorol cliente
+
+  si es duenio debe tener usuario persona usuariolrol cliente + duenio
+
+  si es controlador + controlador me entiendes??? verdad
+                                                                      │
+│           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -133,47 +147,21 @@ Implementar un sistema completo de perfil y configuración de usuario que permit
 
 #### Tabla Usuario - Agregar campo de foto
 ```sql
-ALTER TABLE Usuario 
-ADD COLUMN fotoPerfil VARCHAR(500) NULL AFTER correo;
+
+Select * from persona; -- el atributo url forto
 
 -- Ejemplo: 'https://miservidor.com/uploads/avatars/user-123.jpg'
 -- O ruta relativa: '/uploads/avatars/user-123.jpg'
 ```
 
-#### Tabla Persona - Agregar campos adicionales
+#### Tabla Persona - Estos campos ya lo tengo en mi entidad campos adicionales
 ```sql
 ALTER TABLE Persona 
-ADD COLUMN biografia TEXT NULL,
 ADD COLUMN fechaNacimiento DATE NULL,
 ADD COLUMN genero ENUM('MASCULINO', 'FEMENINO', 'OTRO', 'NO_ESPECIFICAR') NULL;
 ```
 
-#### Crear tabla de Preferencias de Usuario
-```sql
-CREATE TABLE PreferenciaUsuario (
-  idPreferencia INT PRIMARY KEY AUTO_INCREMENT,
-  idUsuario INT NOT NULL UNIQUE,
-  
-  -- Privacidad
-  perfilPublico BOOLEAN DEFAULT TRUE,
-  mostrarEmail BOOLEAN DEFAULT FALSE,
-  mostrarTelefono BOOLEAN DEFAULT FALSE,
-  
-  -- Notificaciones (mantener simple por ahora)
-  recibirEmails BOOLEAN DEFAULT TRUE,
-  recibirSMS BOOLEAN DEFAULT FALSE,
-  
-  -- Preferencias de app
-  idioma VARCHAR(10) DEFAULT 'es',
-  tema ENUM('CLARO', 'OSCURO', 'AUTO') DEFAULT 'AUTO',
-  
-  -- Timestamps
-  creadoEn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  actualizadoEn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  
-  FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario) ON DELETE CASCADE
-);
-```
+lo ves necesario??? entonces crear en la carpeta persona para q no se mezcle con otros depende de ti
 
 #### Crear tabla de Verificación de Email
 ```sql
@@ -194,7 +182,7 @@ CREATE TABLE VerificacionEmail (
 
 ---
 
-### 2. SISTEMA DE UPLOAD DE IMÁGENES
+### 2. SISTEMA DE UPLOAD DE IMÁGENES ahi esta la carpeta avatars
 
 #### Configuración de Multer
 
@@ -255,32 +243,66 @@ Authorization: Bearer <token>
 
 Response:
 {
-  "data": {
-    "usuario": {
+  "data": { Revisa la tabla usuario rol q tambien es importante
+    "usuario": { //obligatorio para el perfil
       "idUsuario": 1,
-      "correo": "user@example.com",
-      "fotoPerfil": "https://...",
-      "rol": "CLIENTE"
-    },
-    "persona": {
       "idPersona": 1,
-      "nombre": "Juan",
-      "apellido": "Pérez",
-      "telefono": "77123456",
-      "direccion": "Av. 6 de Agosto",
-      "biografia": "Amante del fútbol",
-      "fechaNacimiento": "1995-05-15",
-      "genero": "MASCULINO"
+      "usuario": "juanp",
+      "correo": "user@example.com",
+      "correoVerificado": false,
+      "estado": "ACTIVO",
+      "rol": "CLIENTE",
+      "ultimoAccesoEn": "2025-10-29T14:30:00Z",
+      "creadoEn": "2025-10-01T12:00:00Z",
+      "actualizadoEn": "2025-10-20T08:00:00Z"
     },
-    "preferencias": {
-      "perfilPublico": true,
-      "mostrarEmail": false,
-      "recibirEmails": true,
-      "idioma": "es",
-      "tema": "CLARO"
+    "persona": { //obligatorio para el perfil
+      "idPersona": 1,
+      "nombres": "Juan",
+      "paterno": "Pérez",
+      "materno": "García",
+      "documentoTipo": "CC",
+      "documentoNumero": "12345678",
+      "telefono": "77123456",
+      "telefonoVerificado": true,
+      "fechaNacimiento": "1995-05-15",
+      "genero": "MASCULINO",
+      "urlFoto": "https://...",
+      "creadoEn": "2025-10-01T12:00:00Z",
+      "actualizadoEn": "2025-10-20T08:00:00Z",
+      "eliminadoEn": null
+    },
+    "cliente": { //obligatorio para el perfil
+      "idCliente": 1,
+      "apodo": "Juancho",
+      "nivel": 3,
+      "observaciones": null
+    },
+
+    "duenio": { si es cliente y duenio
+      "idPersonaD": 7,
+      "verificado": true,
+      "verificadoEn": "2025-10-10T12:00:00Z",
+      "imagenCI": "https://.../ci.jpg",
+      "imagenFacial": "https://.../face.jpg",
+      "creadoEn": "2025-09-15T09:00:00Z",
+      "actualizadoEn": "2025-10-25T18:00:00Z",
+      "eliminadoEn": null,
+      "sedes": [
+        { "idSede": 10 },
+        { "idSede": 11 }
+      ]
+    },
+    "controlador": { si es cliente y controlador (oculta la tabla duenio si no tiene ese rol) || si cliente duenio(muestra la tabla duenio) controlador
+      "idPersonaOpe": 21,
+      "idSede": 10,
+      "codigoEmpleado": "EMP-00021",
+      "activo": true,
+      "turno": "NOCHE"
     }
   }
 }
+
 ```
 
 #### 3.2 Actualizar Información Personal
