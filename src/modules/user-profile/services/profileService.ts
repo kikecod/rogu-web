@@ -14,6 +14,8 @@ type UpdatePersonaPayload = Partial<Pick<
   | 'nombres'
   | 'paterno'
   | 'materno'
+  | 'documentoTipo'
+  | 'documentoNumero'
   | 'telefono'
   | 'direccion'
   | 'ciudad'

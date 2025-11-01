@@ -19,7 +19,7 @@ const useUserProfile = (): UseUserProfileResult => {
   const isMountedRef = useRef(true);
   const inFlightRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { isLoggedIn, isLoading: authLoading, logout } = useAuth();
+  const { isLoggedIn, isLoading: authLoading, logout, user, updateUser } = useAuth();
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -77,13 +77,33 @@ const useUserProfile = (): UseUserProfileResult => {
         inFlightRef.current = false;
       }, SOFT_TIMEOUT);
       setDebugInfo((prev) => `${prev ?? ''} -> llamando GET /profile`.trim());
-      const profile = await profileService.fetchProfile();
+  const profile = await profileService.fetchProfile();
       if ((import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true') {
         // eslint-disable-next-line no-console
         console.debug('[profile] normalized data', profile);
       }
       if (!isMountedRef.current) return;
       setData(profile);
+      // Sincroniza avatar/email/usuario con AuthContext para que Header muestre el avatar
+      try {
+        if (user) {
+          const nextAvatar = (profile.usuario.avatar ?? profile.usuario.avatarPath ?? profile.persona?.urlFoto) || undefined;
+          const needsUpdate =
+            user.avatar !== nextAvatar ||
+            user.usuario !== profile.usuario.usuario ||
+            user.correo !== profile.usuario.correo;
+          if (needsUpdate) {
+            updateUser({
+              ...user,
+              avatar: nextAvatar,
+              usuario: profile.usuario.usuario || user.usuario,
+              correo: profile.usuario.correo || user.correo,
+            });
+          }
+        }
+      } catch {
+        // no-op
+      }
       setError(null);
       setDebugInfo('Perfil cargado correctamente.');
     } catch (err) {

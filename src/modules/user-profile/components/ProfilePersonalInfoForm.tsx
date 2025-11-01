@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, UserCircle2, MapPin, NotebookPen, Sparkles, XCircle } from 'lucide-react';
+import { Loader2, UserCircle2, MapPin, NotebookPen, Sparkles, XCircle, PencilLine } from 'lucide-react';
 import type { ClienteProfile, PersonaProfile } from '../types/profile.types';
 import profileService from '../services/profileService';
 
@@ -17,11 +17,14 @@ interface Props {
 const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated }) => {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formState, setFormState] = useState(() => ({
     nombres: persona?.nombres ?? '',
     paterno: persona?.paterno ?? '',
     materno: persona?.materno ?? '',
+    documentoTipo: (persona?.documentoTipo as string) ?? '',
+    documentoNumero: persona?.documentoNumero ?? '',
     telefono: persona?.telefono ?? '',
     direccion: persona?.direccion ?? '',
     ciudad: persona?.ciudad ?? '',
@@ -43,6 +46,8 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
       nombres: persona?.nombres ?? '',
       paterno: persona?.paterno ?? '',
       materno: persona?.materno ?? '',
+      documentoTipo: (persona?.documentoTipo as string) ?? '',
+      documentoNumero: persona?.documentoNumero ?? '',
       telefono: persona?.telefono ?? '',
       direccion: persona?.direccion ?? '',
       ciudad: persona?.ciudad ?? '',
@@ -58,6 +63,8 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
       nivel: cliente?.nivel ?? 1,
       observaciones: cliente?.observaciones ?? '',
     });
+    // Al cambiar los datos de props, salimos de modo edición para evitar estados inconsistentes
+    setIsEditing(false);
   }, [persona, cliente]);
 
   const isCliente = useMemo(() => Boolean(cliente), [cliente]);
@@ -86,6 +93,8 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
           nombres: formState.nombres.trim(),
           paterno: formState.paterno.trim(),
           materno: formState.materno.trim(),
+          documentoTipo: formState.documentoTipo ? (formState.documentoTipo as any) : undefined,
+          documentoNumero: formState.documentoNumero?.trim() || undefined,
           telefono: formState.telefono.trim(),
           direccion: formState.direccion.trim(),
           ciudad: formState.ciudad.trim(),
@@ -105,6 +114,7 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
 
       setFeedback({ type: 'success', message: 'Información personal actualizada correctamente.' });
       onUpdated?.();
+      setIsEditing(false);
     } catch (error: any) {
       setFeedback({
         type: 'error',
@@ -115,14 +125,50 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
     }
   };
 
+  const renderChips = (items: string[]) => (
+    <div className="flex flex-wrap gap-2">
+      {items.map((tag, idx) => (
+        <span key={`${tag}-${idx}`} className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xxs sm:text-xs font-medium">
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+
+  const deportesList = (() => {
+    if (!persona?.deportesFavoritos) return [] as string[];
+    return Array.isArray(persona.deportesFavoritos)
+      ? persona.deportesFavoritos.filter(Boolean)
+      : String(persona.deportesFavoritos).split(',').map(s => s.trim()).filter(Boolean);
+  })();
+
+  const ReadonlyRow: React.FC<{ label: string; value?: React.ReactNode }> = ({ label, value }) => (
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold mb-1">{label}</div>
+      <div className="text-sm sm:text-base text-neutral-800 min-h-[1.5rem]">{value ?? <span className="text-neutral-400">No registrado</span>}</div>
+    </div>
+  );
+
   return (
     <div className="bg-white rounded-2xl shadow-md border border-neutral-200 p-5 sm:p-6 md:p-7 transition-shadow duration-200 hover:shadow-lg">
-      <div className="flex items-center gap-2 mb-5">
-        <UserCircle2 className="h-5 w-5 text-emerald-600" />
-        <div>
-          <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Información personal</h2>
-          <p className="text-sm text-neutral-500">Mantén actualizado tu perfil para mejorar tu experiencia.</p>
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2">
+          <UserCircle2 className="h-5 w-5 text-emerald-600" />
+          <div>
+            <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Información personal</h2>
+            <p className="text-sm text-neutral-500">Ve tus datos y edítalos cuando lo necesites.</p>
+          </div>
         </div>
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-100 transition"
+          >
+            <PencilLine className="h-4 w-4" />
+            Editar
+          </button>
+        ) : null}
       </div>
 
       {feedback && (
@@ -142,91 +188,189 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field
-            label="Nombres"
-            name="nombres"
-            value={formState.nombres}
-            onChange={handleChange}
-            required
-          />
-          <Field label="Apellido paterno" name="paterno" value={formState.paterno} onChange={handleChange} />
-          <Field label="Apellido materno" name="materno" value={formState.materno} onChange={handleChange} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field
-            label="Teléfono"
-            name="telefono"
-            value={formState.telefono}
-            onChange={handleChange}
-            placeholder="+591 70000000"
-          />
-          <Field label="Ocupación" name="ocupacion" value={formState.ocupacion} onChange={handleChange} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Dirección" name="direccion" value={formState.direccion} onChange={handleChange} icon={MapPin} />
-          <Field label="Ciudad" name="ciudad" value={formState.ciudad} onChange={handleChange} />
-          <Field label="País" name="pais" value={formState.pais} onChange={handleChange} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Textarea
-            label="Biografía"
-            name="bio"
-            value={formState.bio}
-            onChange={handleChange}
-            placeholder="Cuéntales a los demás sobre ti, tu experiencia o tus deportes favoritos."
-          />
-          <Textarea
-            label="Deportes favoritos (separados por coma)"
-            name="deportesFavoritos"
-            value={formState.deportesFavoritos}
-            onChange={handleChange}
-            placeholder="Fútbol, Running, Tenis"
-          />
-        </div>
-
-        {isCliente && (
-          <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-4">
-            <div className="flex items-center gap-2 text-neutral-700">
-              <NotebookPen className="h-4 w-4 text-emerald-600" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como cliente</h3>
+      {!isEditing ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ReadonlyRow label="Nombres" value={persona?.nombres} />
+            <ReadonlyRow label="Apellido paterno" value={persona?.paterno} />
+            <ReadonlyRow label="Apellido materno" value={persona?.materno} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ReadonlyRow label="Teléfono" value={persona?.telefono} />
+            <ReadonlyRow label="Ocupación" value={persona?.ocupacion} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ReadonlyRow label="Dirección" value={persona?.direccion} />
+            <ReadonlyRow label="Ciudad" value={persona?.ciudad} />
+            <ReadonlyRow label="País" value={persona?.pais} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ReadonlyRow label="Biografía" value={persona?.bio} />
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold mb-1">Deportes favoritos</div>
+              {deportesList.length ? renderChips(deportesList) : (
+                <div className="text-sm text-neutral-400">No registrado</div>
+              )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Apodo deportivo" name="apodo" value={formState.apodo} onChange={handleChange} />
-              <Field
-                label="Nivel"
-                name="nivel"
-                type="number"
-                min={1}
-                value={String(formState.nivel ?? '')}
-                onChange={handleChange}
-              />
+          </div>
+          {isCliente ? (
+            <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-4">
+              <div className="flex items-center gap-2 text-neutral-700">
+                <NotebookPen className="h-4 w-4 text-emerald-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como cliente</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ReadonlyRow label="Apodo" value={cliente?.apodo ?? undefined} />
+                <ReadonlyRow label="Nivel" value={cliente?.nivel ?? undefined} />
+              </div>
+              <ReadonlyRow label="Observaciones" value={cliente?.observaciones ?? undefined} />
             </div>
-            <Textarea
-              label="Observaciones"
-              name="observaciones"
-              value={formState.observaciones}
+          ) : null}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Nombres"
+              name="nombres"
+              value={formState.nombres}
               onChange={handleChange}
-              placeholder="Notas sobre tu estilo de juego, posiciones favoritas, etc."
+              required
+            />
+            <Field label="Apellido paterno" name="paterno" value={formState.paterno} onChange={handleChange} />
+            <Field label="Apellido materno" name="materno" value={formState.materno} onChange={handleChange} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">Tipo de documento</label>
+              <select
+                name="documentoTipo"
+                value={formState.documentoTipo}
+                onChange={(e) => setFormState((prev) => ({ ...prev, documentoTipo: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition bg-white"
+              >
+                <option value="">Seleccione...</option>
+                <option value="CC">Cédula de Ciudadanía (CC)</option>
+                <option value="CE">Cédula de Extranjería (CE)</option>
+                <option value="TI">Tarjeta de Identidad (TI)</option>
+                <option value="PP">Pasaporte (PP)</option>
+              </select>
+            </div>
+            <Field
+              label="Número de documento"
+              name="documentoNumero"
+              value={formState.documentoNumero}
+              onChange={handleChange}
             />
           </div>
-        )}
 
-        <div className="flex flex-wrap justify-end gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-sm hover:bg-emerald-600/90 disabled:opacity-70 transition"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Guardar información
-          </button>
-        </div>
-      </form>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field
+              label="Teléfono"
+              name="telefono"
+              value={formState.telefono}
+              onChange={handleChange}
+              placeholder="+591 70000000"
+            />
+            <Field label="Ocupación" name="ocupacion" value={formState.ocupacion} onChange={handleChange} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Dirección" name="direccion" value={formState.direccion} onChange={handleChange} icon={MapPin} />
+            <Field label="Ciudad" name="ciudad" value={formState.ciudad} onChange={handleChange} />
+            <Field label="País" name="pais" value={formState.pais} onChange={handleChange} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Textarea
+              label="Biografía"
+              name="bio"
+              value={formState.bio}
+              onChange={handleChange}
+              placeholder="Cuéntales a los demás sobre ti, tu experiencia o tus deportes favoritos."
+            />
+            <Textarea
+              label="Deportes favoritos (separados por coma)"
+              name="deportesFavoritos"
+              value={formState.deportesFavoritos}
+              onChange={handleChange}
+              placeholder="Fútbol, Running, Tenis"
+            />
+          </div>
+
+          {isCliente && (
+            <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-4">
+              <div className="flex items-center gap-2 text-neutral-700">
+                <NotebookPen className="h-4 w-4 text-emerald-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como cliente</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Field label="Apodo deportivo" name="apodo" value={formState.apodo} onChange={handleChange} />
+                <Field
+                  label="Nivel"
+                  name="nivel"
+                  type="number"
+                  min={1}
+                  value={String(formState.nivel ?? '')}
+                  onChange={handleChange}
+                />
+              </div>
+              <Textarea
+                label="Observaciones"
+                name="observaciones"
+                value={formState.observaciones}
+                onChange={handleChange}
+                placeholder="Notas sobre tu estilo de juego, posiciones favoritas, etc."
+              />
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                // Restablecer campos al estado de props y salir de edición
+                setFormState({
+                  nombres: persona?.nombres ?? '',
+                  paterno: persona?.paterno ?? '',
+                  materno: persona?.materno ?? '',
+                  documentoTipo: (persona?.documentoTipo as string) ?? '',
+                  documentoNumero: persona?.documentoNumero ?? '',
+                  telefono: persona?.telefono ?? '',
+                  direccion: persona?.direccion ?? '',
+                  ciudad: persona?.ciudad ?? '',
+                  pais: persona?.pais ?? '',
+                  ocupacion: persona?.ocupacion ?? '',
+                  bio: persona?.bio ?? '',
+                  deportesFavoritos: Array.isArray(persona?.deportesFavoritos)
+                    ? persona?.deportesFavoritos?.join(', ') ?? ''
+                    : typeof persona?.deportesFavoritos === 'string'
+                      ? persona.deportesFavoritos
+                      : '',
+                  apodo: cliente?.apodo ?? '',
+                  nivel: cliente?.nivel ?? 1,
+                  observaciones: cliente?.observaciones ?? '',
+                });
+                setIsEditing(false);
+                setFeedback(null);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-100 transition"
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-sm hover:bg-emerald-600/90 disabled:opacity-70 transition"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };

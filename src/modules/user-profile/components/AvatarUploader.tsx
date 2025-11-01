@@ -4,6 +4,7 @@ import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { Camera, Loader2, ImageOff, Trash2, ZoomIn, CheckCircle2, XCircle } from 'lucide-react';
 import profileService from '../services/profileService';
+import { useAuth } from '@/auth/hooks/useAuth';
 import { readFileAsDataUrl, getCroppedFile } from '../lib/imageTools';
 
 type Feedback =
@@ -18,6 +19,7 @@ interface AvatarUploaderProps {
 }
 
 const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, fallbackInitials, onAvatarUpdated }) => {
+  const { user, updateUser } = useAuth();
   const [isCropping, setIsCropping] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -78,6 +80,10 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, fallbackInit
       setIsCropping(false);
       setImageSrc(null);
       setCacheBuster(Date.now());
+      // Actualiza el AuthContext para reflejar el cambio en el header/menú
+      if (user) {
+        updateUser({ ...user, avatar: result?.avatar ?? undefined });
+      }
       onAvatarUpdated?.(result?.avatar ?? null);
     } catch (error: any) {
       setFeedback({ type: 'error', message: error?.message ?? 'No se pudo guardar el avatar.' });
@@ -100,6 +106,9 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, fallbackInit
       await profileService.removeAvatar();
       setFeedback({ type: 'success', message: 'Avatar eliminado correctamente.' });
       setCacheBuster(Date.now());
+      if (user) {
+        updateUser({ ...user, avatar: undefined });
+      }
       onAvatarUpdated?.(null);
     } catch (error: any) {
       setFeedback({ type: 'error', message: error?.message ?? 'No se pudo eliminar el avatar.' });
