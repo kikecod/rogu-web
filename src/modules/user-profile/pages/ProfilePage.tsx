@@ -7,7 +7,7 @@ import { PROFILE_VARIANT_COMPONENTS, type ProfileVariantComponentProps } from '.
 import { useAuth } from '@/auth/hooks/useAuth';
 import { getAuthToken } from '@/core/config/api';
 
-const renderError = (message: string, onRetry: () => void) => (
+const renderError = (message: string, onRetry: () => void, debugInfo?: string | null) => (
   <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4 py-8 sm:py-12">
     <div
       className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-sm p-6 sm:p-8 text-center transition-shadow duration-200 hover:shadow-md"
@@ -19,6 +19,11 @@ const renderError = (message: string, onRetry: () => void) => (
       </div>
       <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">No se pudo cargar el perfil</h2>
       <p className="text-neutral-600 text-sm leading-relaxed mb-6 break-words">{message}</p>
+      {debugInfo ? (
+        <pre className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-100 rounded-lg p-3 overflow-auto max-h-32 mb-4 text-left whitespace-pre-wrap">
+          {debugInfo}
+        </pre>
+      ) : null}
       <button
         type="button"
         onClick={onRetry}
@@ -38,44 +43,41 @@ const getVariantComponent = (
 };
 
 const ProfilePage: React.FC = () => {
-  const { data, error, refresh } = useUserProfile();
+  const { data, error, debugInfo, loading, refresh } = useUserProfile();
   const { isLoading: authLoading, isLoggedIn } = useAuth();
 
   if (error) {
     return renderError(error, () => {
       void refresh();
-    });
+    }, debugInfo);
   }
 
-  // Mostrar un panel de diagnóstico breve mientras aún no hay datos y tampoco error
-  if (!data) {
+  if (loading && !data) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center bg-neutral-50 px-4 py-8">
-        <div className="max-w-md w-full bg-white border border-amber-200 rounded-2xl shadow-sm p-6 text-center">
-          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-amber-50 mx-auto mb-3">
-            <AlertTriangle className="h-6 w-6 text-amber-500" />
+      <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4 py-8 sm:py-12">
+        <div className="max-w-md w-full bg-white border border-blue-100 rounded-2xl shadow-sm p-6 sm:p-8 text-center">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-50 mx-auto mb-4">
+            <RefreshCcw className="h-6 w-6 text-blue-500 animate-spin" />
           </div>
-          <h2 className="text-lg font-semibold text-neutral-900 mb-1">Esperando datos del perfil</h2>
-          <p className="text-neutral-600 text-sm mb-5">Si el backend no responde en pocos segundos, verás un error automático.</p>
-          <button
-            type="button"
-            onClick={() => { void refresh(); }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-medium shadow-sm hover:bg-blue-600/90"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Reintentar ahora
-          </button>
-          {(import.meta as any)?.env?.VITE_DEBUG_PROFILE === 'true' ? (
-            <div className="mt-4 text-left text-xs text-neutral-500">
-              <div><b>debug:</b></div>
-              <div>authLoading: {String(authLoading)}</div>
-              <div>isLoggedIn: {String(isLoggedIn)}</div>
-              <div>hasToken: {String(Boolean(getAuthToken()))}</div>
-            </div>
-          ) : null}
+          <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">Cargando tu perfil</h2>
+          <p className="text-neutral-600 text-sm leading-relaxed mb-6 break-words">
+            Estamos obteniendo tu información. Si tarda demasiado, prueba nuevamente con Reintentar.
+          </p>
         </div>
       </div>
     );
+  }
+
+  // En vez de esperar silenciosamente, mostrar un error explicativo inmediato si no hay datos
+  if (!data) {
+    const hasToken = Boolean(getAuthToken());
+    const message = authLoading
+      ? 'La autenticación aún se está inicializando (authLoading=true). Si no avanza, recarga la página o vuelve a iniciar sesión.'
+      : (!isLoggedIn && !hasToken)
+        ? 'No has iniciado sesión. Inicia sesión para cargar tu perfil.'
+        : 'No recibimos respuesta del backend para /api/profile todavía. Revisa la pestaña Network y la consola (VITE_DEBUG_PROFILE=true).';
+
+    return renderError(message, () => { void refresh(); }, debugInfo);
   }
 
   // sin fallback de datos cuando aún no llegan

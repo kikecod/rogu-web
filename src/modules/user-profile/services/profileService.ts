@@ -189,6 +189,8 @@ class ProfileService {
     return {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
     };
   }
 
@@ -381,6 +383,115 @@ class ProfileService {
     };
   }
 
+  private async requestProfileWithFallback(token: string): Promise<{
+    endpoint: string;
+    payload: any;
+    attempts: Array<{
+      endpoint: string;
+      status?: number;
+      message?: string;
+      error?: string;
+    }>;
+  }> {
+    const candidateEndpoints = ['/profile', '/auth/profile', '/perfil', '/auth/perfil'];
+    const attempts: Array<{ endpoint: string; status?: number; message?: string; error?: string }> = [];
+
+    for (const endpoint of candidateEndpoints) {
+      const timestamp = Date.now();
+      const cacheBustingEndpoint = endpoint.includes('?')
+        ? `${endpoint}&_=${timestamp}`
+        : `${endpoint}?_=${timestamp}`;
+      const url = getApiUrl(cacheBustingEndpoint);
+      try {
+        let response = await fetch(url, {
+          method: 'GET',
+          headers: this.jsonHeaders(token),
+          cache: 'no-store',
+        });
+
+        if (response.status === 304) {
+          try {
+            response = await fetch(url, {
+              method: 'GET',
+              headers: this.jsonHeaders(token),
+              cache: 'reload',
+            });
+          } catch (reloadErr) {
+            attempts.push({
+              endpoint: cacheBustingEndpoint,
+              status: 304,
+              error: reloadErr instanceof Error ? reloadErr.message : String(reloadErr),
+            });
+            continue;
+          }
+        }
+
+        if (response.ok) {
+          const rawText = await response.text();
+          console.log('[profile] raw text from', cacheBustingEndpoint, rawText);
+          let payload: any;
+          try {
+            payload = rawText ? JSON.parse(rawText) : null;
+          } catch (parseError) {
+            console.error('[profile] JSON parse error', parseError, rawText);
+            attempts.push({
+              endpoint: cacheBustingEndpoint,
+              status: response.status,
+              message: `JSON inválido: ${(parseError as Error).message}`,
+            });
+            continue;
+          }
+          console.log('[profile] raw payload parsed', payload);
+          return { endpoint: cacheBustingEndpoint, payload, attempts };
+        }
+
+        let bodyText: string | null = null;
+        try {
+          bodyText = await response.text();
+        } catch {
+          bodyText = null;
+        }
+
+        let message: string | undefined;
+        if (bodyText) {
+          try {
+            const parsed = JSON.parse(bodyText);
+            message = parsed?.message ?? JSON.stringify(parsed);
+          } catch {
+            message = bodyText;
+          }
+        } else {
+          message = response.statusText || undefined;
+        }
+
+        attempts.push({
+          endpoint: cacheBustingEndpoint,
+          status: response.status,
+          message,
+        });
+        // En caso de 404 probamos el siguiente endpoint para mantener compatibilidad con APIs antiguas.
+        // Para otros códigos seguimos probando igualmente para ser tolerantes a cambios en rutas.
+      } catch (err) {
+        attempts.push({
+          endpoint: cacheBustingEndpoint,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    const aggregatedError: any = new Error('No se pudo cargar el perfil');
+    aggregatedError.attempts = attempts;
+
+    const statusFromAttempts = attempts
+      .map((attempt) => attempt.status)
+      .find((status): status is number => typeof status === 'number');
+    if (statusFromAttempts !== undefined) {
+      aggregatedError.status = statusFromAttempts;
+    }
+
+    throw aggregatedError;
+  }
+
   async fetchProfile(): Promise<UserProfileData> {
     const token = this.ensureToken();
 
@@ -403,35 +514,16 @@ class ProfileService {
       };
     }
 
-    const url = getApiUrl('/profile');
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: this.jsonHeaders(token),
-    });
+    const { endpoint, payload, attempts } = await this.requestProfileWithFallback(token);
 
-    if (!response.ok) {
-      let message = 'No se pudo cargar el perfil';
-      let details: any = null;
-      try {
-        details = await response.json();
-        if (details?.message) message = details.message;
-      } catch {
-        try { message = await response.text(); } catch { /* ignore */ }
-      }
-      const err: any = new Error(message || `HTTP ${response.status}`);
-      err.status = response.status;
-      err.url = url;
-      throw err;
-    }
-    const responseData = await response.json();
     if (DEBUG_PROFILE) {
-      // Ayuda de depuración: inspeccionar la respuesta cruda del backend
-      // para detectar desajustes de nombres o estructuras.
-      // No afecta producción si VITE_DEBUG_PROFILE !== 'true'.
       // eslint-disable-next-line no-console
-      console.debug('[profile] GET', url, '->', responseData);
+      console.debug('[profile] GET', getApiUrl(endpoint), '->', payload, { attempts });
     }
-    return this.normalizeProfileResponse(responseData);
+
+    const normalized = this.normalizeProfileResponse(payload);
+    console.log('[profile] normalized payload', normalized);
+    return normalized;
   }
 
   async updateProfileSections(sections: {

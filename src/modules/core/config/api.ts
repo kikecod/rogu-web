@@ -15,7 +15,9 @@ export const API_CONFIG = {
 
 // Helper para construir URLs completas de endpoints API
 export const getApiUrl = (endpoint: string): string => {
-  return `${API_CONFIG.baseURL}${endpoint}`;
+  const base = API_CONFIG.baseURL.replace(/\/$/, ''); // sin barra al final
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`; // con barra al inicio
+  return `${base}${path}`;
 };
 
 // Helper para obtener URL de imagen (las imágenes están en el servidor, no en /api)
@@ -23,7 +25,9 @@ export const getImageUrl = (path: string): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   // Las imágenes están directamente en el servidor, no bajo /api
-  return `${API_CONFIG.serverURL}${path}`;
+  const base = API_CONFIG.serverURL.replace(/\/$/, '');
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${p}`;
 };
 
 // Helper para obtener el token de autenticación
