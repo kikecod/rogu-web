@@ -24,10 +24,14 @@ export const getApiUrl = (endpoint: string): string => {
 export const getImageUrl = (path: string): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  // Las imágenes están directamente en el servidor, no bajo /api
+  // Normalización de rutas servidas por Nest estático:
+  // El backend sirve el directorio 'uploads' en '/uploads',
+  // pero algunos endpoints devuelven paths como '/avatars/...'.
+  // En ese caso, debemos anteponer '/uploads' para evitar 404.
   const base = API_CONFIG.serverURL.replace(/\/$/, '');
   const p = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${p}`;
+  const normalized = p.startsWith('/uploads/') ? p : p.startsWith('/avatars/') ? `/uploads${p}` : p;
+  return `${base}${normalized}`;
 };
 
 // Helper para obtener el token de autenticación

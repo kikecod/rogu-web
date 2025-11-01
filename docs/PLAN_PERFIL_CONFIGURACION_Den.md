@@ -1,12 +1,21 @@
 # Plan de Implementación – Perfil y Configuración de Usuario
 
 > _Persona 3 – Perfil y Configuración_  
-> Última actualización: 2025-10-31
+> Última actualización: 2025-11-01
 
 > Resumen de implementación actual (frontend: rogu-web, backend: espacios_deportivos)
 > - Backend: módulo Profile operativo con endpoints protegidos y lógica completa de agregación/actualización. Integración con Usuarios/Personas/Roles/Preferencias/EmailVerificación/Logs de avatar.
 > - Frontend: módulo user-profile con servicios, hook de carga, vistas por variantes y formularios de información personal, seguridad, preferencias y zona de peligro. Añadidos flags y timeouts de depuración.
 > - Sección “Qué se aplicó y qué falta” se detalla en cada capítulo.
+
+### Auditoría rápida del repo (2025-11-01)
+- Verificado en backend (`espacios_deportivos`): `ProfileModule` completo (controlador/servicio/DTOs) + entidades auxiliares (`usuario_preferencias`, `usuario_email_verificacion`, `usuario_avatar_logs`). `UsuariosController` expone `PUT /usuarios/:id` y `PUT /usuarios/:id/cambiar-contrasena` y se usan desde el frontend.
+- Verificado en frontend (`rogu-web`): módulo `user-profile` con `profileService.ts`, `useUserProfile`, componentes (`AvatarUploader`, `ProfilePersonalInfoForm`, `ProfilePreferencesForm`, `ProfileAccountSettings`, `ProfileDangerZone`, layouts y variantes por rol). Flags `.env` soportadas.
+- Hallazgos clave:
+   - URL pública de avatar inconsistente: el backend retorna rutas como `/avatars/archivo.webp`, pero el servidor estático sirve bajo `/uploads/*`. Esto puede causar 404 al renderizar imágenes. Soluciones sugeridas más abajo.
+   - Upload de avatar ya valida tipo MIME genérico (`image/*`) y limita tamaño a 3 MB (no 2 MB). Si el objetivo es 2 MB y lista blanca estricta (jpeg/png/webp), hay que ajustar `MulterModule`.
+   - Navegación tras desactivar/eliminar cuenta: ya implementada en `ProfileDangerZone` (hace `logout()` y redirige a `/`). Actualizar estado a [APLICADO].
+   - Migraciones aún no consolidadas (se usa `synchronize: true`).
 
 ## 1. Alcance General
 - Implementar un módulo completo de perfil respetando las variantes por rol (CLIENTE, DUEÑO, CONTROLADOR, ADMIN).
@@ -35,7 +44,7 @@
 ## 3. Backend – Nuevo `ProfileModule`
 1. **Estructura**
    - [APLICADO] `profile.controller.ts`, `profile.service.ts` y DTOs específicos en `src/profile/dto/*`.  
-   - [APLICADO] Importación e inyección de `UsuariosService`, `PersonasService`, `ClientesService`, `ControladorService` y repositorios necesarios; `Multer` vía `@nestjs/platform-express` para upload.
+   - [APLICADO] Importación e inyección de `UsuariosService`, `PersonasService`, `ClientesService`, `ControladorService` y repositorios necesarios; `Multer` vía `@nestjs/platform-express` (diskStorage en `uploads/avatars`, límite 3 MB y filtro `image/*`).
 2. **Endpoints**
    - [APLICADO] `GET /profile` → Agrega `usuario`, `persona`, `cliente/duenio/controlador` según roles y `preferencias`.  
    - [APLICADO] `PUT /profile/personal` → Actualiza `Persona` y, condicionalmente por rol, `Cliente` y `Controlador`.  
@@ -59,6 +68,11 @@
    - [APLICADO] DTOs de cambio de contraseña, email request/verify, preferencias, info personal; uso de `BadRequest/Conflict/NotFound/Unauthorized`.  
    - [APLICADO] Respuestas con mensajes consistentes; logs mínimos de errores.
 
+6. **Conexión y archivos estáticos (Backend)**
+- [APLICADO] Prefijo global de API: `/api/` (ver `main.ts`).
+- [APLICADO] Archivos estáticos con `ServeStaticModule` sirviendo `uploads` en `/uploads`.
+- [ATENCIÓN] Rutas de avatar: el servicio guarda archivos en `uploads/avatars` pero devuelve paths como `/avatars/...`. Dado que el servidor expone `/uploads/*`, el path público correcto debería ser `/uploads/avatars/...` o, alternativamente, cambiar `serveRoot` a `/` o normalizar en frontend.
+
 ## 4. Frontend – Módulo `user-profile`
 1. **Servicios (`profileService.ts`)**
    - [APLICADO] `fetchProfile`, `updateProfileSections` (actualiza `persona`/`cliente`/`controlador`), `updatePreferences`, `uploadAvatar`, `removeAvatar`, `changePassword`, `updateUsername`, `requestEmailChange`, `verifyEmailChange`, `exportData`, `deactivateAccount`, `deleteAccount`.  
@@ -78,20 +92,22 @@
 5. **Sincronización con Auth**
    - [APLICADO] `AuthProvider.login/updateUser/logout` se usan para sincronizar email/usuario/avatar y expirar sesión 401.  
    - [APLICADO] Tras 401 en perfil, se fuerza `logout()` y se muestra mensaje.  
-   - [PENDIENTE] Navegación automática a pantalla pública tras desactivar/eliminar (actualmente se devuelve mensaje de éxito).
+   - [APLICADO] Navegación automática a pantalla pública tras desactivar/eliminar (se hace `logout()` y redirección a `/` en `ProfileDangerZone`).
 
 ## 5. Seguridad y Cumplimiento
 - Hash de contraseñas con bcrypt 10+ rounds.
 - Tokens de verificación con expiración configurable (ej. 30 minutos).
-- Limitar tamaño de avatar (<= 2 MB) y tipos MIME (jpeg/png/webp).
+ - Límite de tamaño de avatar: objetivo <= 2 MB (hoy el límite efectivo de `Multer` está en 3 MB) y lista blanca de tipos MIME (jpeg/png/webp).
 - Eliminar archivos huérfanos al actualizar/eliminar avatar.
 - Logs mínimos (sin datos sensibles) para auditoría.
 
 [APLICADO]
 - Bcrypt en backend; TTL de verificación configurable; procesamiento de avatar con `sharp` (resize 512x512 webp) y eliminación de avatar previo con log; CORS habilitado.
+- `Multer` configurado con `diskStorage`, límite de 3 MB y filtro básico `image/*`.
 
 [PENDIENTE]
-- Validación estricta de MIME y tamaño máximo del archivo en upload (hoy se procesa y se rechaza si falla `sharp`, pero no hay validación de límite 2 MB explícito).  
+- Ajustar límite de upload a 2 MB y aplicar lista blanca `image/jpeg`, `image/png`, `image/webp` (hoy es `image/*` y 3 MB).  
+- Corregir path público de avatar: retornar `/uploads/avatars/...` desde backend o normalizar en frontend (`getImageUrl`) para anteponer `/uploads` cuando el path empiece con `/avatars/`.  
 - Rate limit para endpoints sensibles.
 
 ## 6. Plan de Trabajo (Iteraciones)
@@ -123,13 +139,17 @@
 
 [Adicionales]
 - Validaciones de tamaño/MIME en subida de avatar.  
-- Hook `useProfileActions` y navegación automática tras desactivar/eliminar.  
+- Hook `useProfileActions`.  
 - Migraciones versionadas y seeding documentado.
 
-> **Próximo paso inmediato:** ejecutar Iteración 1 – migraciones y módulo backend base antes de tocar UI.
+> **Próximo paso inmediato:**
+> 1) Corregir la URL pública del avatar para evitar 404 (backend: devolver `/uploads/avatars/...` o frontend: normalizar path en `getImageUrl`).
+> 2) Endurecer upload: límite 2 MB y MIME estricto (jpeg/png/webp).
+> 3) Consolidar migraciones (desactivar `synchronize` en entornos no-dev) y documentar seeding de preferencias.
+> 4) (Opcional) Añadir `useProfileActions` para desacoplar acciones de cuenta y tests mínimos de integración del módulo.
 
 
 ## 9. Estado actual
 - Iteraciones 1 a 5 completadas en backend y frontend (módulo Profile en NestJS y formularios React).  
 - Builds locales ejecutados en `espacios_deportivos` y `rogu-web` sin errores de compilación.  
-- Pendiente: pruebas manuales adicionales de flujo de correo y ajustes UX; consolidar migraciones/versionado y hardening de subida de avatar.
+- Pendiente: pruebas manuales adicionales de flujo de correo y ajustes UX; consolidar migraciones/versionado y hardening de subida de avatar. Validar y corregir URL pública de avatar.
