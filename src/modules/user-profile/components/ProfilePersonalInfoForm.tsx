@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, UserCircle2, MapPin, NotebookPen, Sparkles, XCircle, PencilLine } from 'lucide-react';
-import type { ClienteProfile, PersonaProfile } from '../types/profile.types';
+import type { ClienteProfile, ControladorProfile, DuenioProfile, PersonaProfile } from '../types/profile.types';
 import profileService from '../services/profileService';
 
 type Feedback =
@@ -11,10 +11,12 @@ type Feedback =
 interface Props {
   persona: PersonaProfile | null;
   cliente: ClienteProfile | null;
+  duenio?: DuenioProfile | null;
+  controlador?: ControladorProfile | null;
   onUpdated?: () => void;
 }
 
-const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated }) => {
+const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, duenio, controlador, onUpdated }) => {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -63,11 +65,12 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
       nivel: cliente?.nivel ?? 1,
       observaciones: cliente?.observaciones ?? '',
     });
-    // Al cambiar los datos de props, salimos de modo edición para evitar estados inconsistentes
     setIsEditing(false);
   }, [persona, cliente]);
 
   const isCliente = useMemo(() => Boolean(cliente), [cliente]);
+  const isDuenio = useMemo(() => Boolean(duenio), [duenio]);
+  const isControlador = useMemo(() => Boolean(controlador), [controlador]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -93,7 +96,7 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
           nombres: formState.nombres.trim(),
           paterno: formState.paterno.trim(),
           materno: formState.materno.trim(),
-          documentoTipo: formState.documentoTipo ? (formState.documentoTipo as any) : undefined,
+          documentoTipo: formState.documentoTipo?.trim() || undefined, // <- mantiene cualquier valor (soluciona "documento" perdido)
           documentoNumero: formState.documentoNumero?.trim() || undefined,
           telefono: formState.telefono.trim(),
           direccion: formState.direccion.trim(),
@@ -128,7 +131,10 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
   const renderChips = (items: string[]) => (
     <div className="flex flex-wrap gap-2">
       {items.map((tag, idx) => (
-        <span key={`${tag}-${idx}`} className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xxs sm:text-xs font-medium">
+        <span
+          key={`${tag}-${idx}`}
+          className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xxs sm:text-xs font-medium"
+        >
           {tag}
         </span>
       ))}
@@ -142,20 +148,32 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
       : String(persona.deportesFavoritos).split(',').map(s => s.trim()).filter(Boolean);
   })();
 
+  const documentoLabel = (() => {
+    const tipo = persona?.documentoTipo?.toString().trim();
+    const num = persona?.documentoNumero?.toString().trim();
+    if (tipo && num) return `${tipo} ${num}`;
+    if (num) return num;
+    if (tipo) return tipo;
+    return 'No registrado';
+  })();
+
   const ReadonlyRow: React.FC<{ label: string; value?: React.ReactNode }> = ({ label, value }) => (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold mb-1">{label}</div>
-      <div className="text-sm sm:text-base text-neutral-800 min-h-[1.5rem]">{value ?? <span className="text-neutral-400">No registrado</span>}</div>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{label}</div>
+      <div className="min-h-[1.5rem] text-sm sm:text-base text-neutral-900">
+        {value ?? <span className="text-neutral-400">No registrado</span>}
+      </div>
     </div>
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-neutral-200 p-5 sm:p-6 md:p-7 transition-shadow duration-200 hover:shadow-lg">
-      <div className="flex items-start justify-between gap-3 mb-5">
+    <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition">
+      {/* header tipo card */}
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <UserCircle2 className="h-5 w-5 text-emerald-600" />
+          <UserCircle2 className="h-5 w-5 text-indigo-600" />
           <div>
-            <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Información personal</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Información personal</h2>
             <p className="text-sm text-neutral-500">Ve tus datos y edítalos cuando lo necesites.</p>
           </div>
         </div>
@@ -190,46 +208,83 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
 
       {!isEditing ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Documento (visible en modo lectura) */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <ReadonlyRow label="Documento" value={documentoLabel} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <ReadonlyRow label="Nombres" value={persona?.nombres} />
             <ReadonlyRow label="Apellido paterno" value={persona?.paterno} />
             <ReadonlyRow label="Apellido materno" value={persona?.materno} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <ReadonlyRow label="Teléfono" value={persona?.telefono} />
             <ReadonlyRow label="Ocupación" value={persona?.ocupacion} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <ReadonlyRow label="Dirección" value={persona?.direccion} />
             <ReadonlyRow label="Ciudad" value={persona?.ciudad} />
             <ReadonlyRow label="País" value={persona?.pais} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <ReadonlyRow label="Biografía" value={persona?.bio} />
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold mb-1">Deportes favoritos</div>
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Deportes favoritos</div>
               {deportesList.length ? renderChips(deportesList) : (
                 <div className="text-sm text-neutral-400">No registrado</div>
               )}
             </div>
           </div>
+
           {isCliente ? (
             <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-4">
               <div className="flex items-center gap-2 text-neutral-700">
-                <NotebookPen className="h-4 w-4 text-emerald-600" />
+                <NotebookPen className="h-4 w-4 text-indigo-600" />
                 <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como cliente</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <ReadonlyRow label="Apodo" value={cliente?.apodo ?? undefined} />
                 <ReadonlyRow label="Nivel" value={cliente?.nivel ?? undefined} />
               </div>
               <ReadonlyRow label="Observaciones" value={cliente?.observaciones ?? undefined} />
             </div>
           ) : null}
+
+          {/* Resumen de roles no editables: Due f1o y Controlador */}
+          {isDuenio ? (
+            <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-3">
+              <div className="flex items-center gap-2 text-neutral-700">
+                <NotebookPen className="h-4 w-4 text-blue-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como due f1o</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <ReadonlyRow label="Estado de verificaci f3n" value={duenio?.verificado ? 'Verificado' : 'Pendiente'} />
+                <ReadonlyRow label=" daltima verificaci f3n" value={duenio?.verificado ? (duenio?.verificadoEn ? new Date(duenio.verificadoEn as any).toLocaleString('es-BO') : 'No registrada') : 'No registrada'} />
+              </div>
+            </div>
+          ) : null}
+
+          {isControlador ? (
+            <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-3">
+              <div className="flex items-center gap-2 text-neutral-700">
+                <NotebookPen className="h-4 w-4 text-purple-600" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como controlador</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <ReadonlyRow label="C f3digo de empleado" value={controlador?.codigoEmpleado ?? 'No asignado'} />
+                <ReadonlyRow label="Turno" value={controlador?.turno ?? 'No definido'} />
+                <ReadonlyRow label="Estado" value={controlador?.activo ? 'Activo' : 'Inactivo'} />
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field
               label="Nombres"
               name="nombres"
@@ -241,22 +296,30 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
             <Field label="Apellido materno" name="materno" value={formState.materno} onChange={handleChange} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Documento (tipo libre con sugerencias + número) */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">Tipo de documento</label>
-              <select
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                Tipo de documento
+              </label>
+              <input
+                list="doc-types"
                 name="documentoTipo"
                 value={formState.documentoTipo}
-                onChange={(e) => setFormState((prev) => ({ ...prev, documentoTipo: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition bg-white"
-              >
-                <option value="">Seleccione...</option>
-                <option value="CC">Cédula de Ciudadanía (CC)</option>
-                <option value="CE">Cédula de Extranjería (CE)</option>
-                <option value="TI">Tarjeta de Identidad (TI)</option>
-                <option value="PP">Pasaporte (PP)</option>
-              </select>
+                onChange={handleChange}
+                placeholder="CI, DNI, NIT, Pasaporte…"
+                className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition bg-white"
+              />
+              <datalist id="doc-types">
+                <option value="CI" />
+                <option value="DNI" />
+                <option value="NIT" />
+                <option value="Pasaporte" />
+                <option value="CE" />
+                <option value="TI" />
+              </datalist>
             </div>
+
             <Field
               label="Número de documento"
               name="documentoNumero"
@@ -265,7 +328,7 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field
               label="Teléfono"
               name="telefono"
@@ -276,13 +339,13 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
             <Field label="Ocupación" name="ocupacion" value={formState.ocupacion} onChange={handleChange} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Dirección" name="direccion" value={formState.direccion} onChange={handleChange} icon={MapPin} />
             <Field label="Ciudad" name="ciudad" value={formState.ciudad} onChange={handleChange} />
             <Field label="País" name="pais" value={formState.pais} onChange={handleChange} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Textarea
               label="Biografía"
               name="bio"
@@ -302,10 +365,10 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
           {isCliente && (
             <div className="rounded-xl border border-neutral-200 p-4 bg-white space-y-4">
               <div className="flex items-center gap-2 text-neutral-700">
-                <NotebookPen className="h-4 w-4 text-emerald-600" />
+                <NotebookPen className="h-4 w-4 text-indigo-600" />
                 <h3 className="text-sm font-semibold uppercase tracking-wide">Perfil como cliente</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Field label="Apodo deportivo" name="apodo" value={formState.apodo} onChange={handleChange} />
                 <Field
                   label="Nivel"
@@ -326,11 +389,11 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
             </div>
           )}
 
-          <div className="flex flex-wrap justify-end gap-2">
+          {/* footer tipo card */}
+          <div className="mt-2 border-t border-neutral-200 pt-4 flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => {
-                // Restablecer campos al estado de props y salir de edición
                 setFormState({
                   nombres: persona?.nombres ?? '',
                   paterno: persona?.paterno ?? '',
@@ -363,7 +426,7 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-sm hover:bg-emerald-600/90 disabled:opacity-70 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium shadow-sm hover:bg-indigo-600/90 disabled:opacity-70 transition"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Guardar cambios
@@ -371,7 +434,7 @@ const ProfilePersonalInfoForm: React.FC<Props> = ({ persona, cliente, onUpdated 
           </div>
         </form>
       )}
-    </div>
+    </section>
   );
 };
 
@@ -380,16 +443,14 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
-const Field: React.FC<FieldProps> = ({ label, icon: Icon, ...props }) => (
+const Field: React.FC<FieldProps> = ({ label, icon: Icon, className, ...props }) => (
   <div>
-    <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">{label}</label>
+    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</label>
     <div className="relative">
       {Icon ? <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" /> : null}
       <input
         {...props}
-        className={`w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition ${
-          Icon ? 'pl-9' : ''
-        } ${props.className ?? ''}`}
+        className={`w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition ${Icon ? 'pl-9' : ''} ${className ?? ''}`}
       />
     </div>
   </div>
@@ -399,15 +460,13 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   label: string;
 }
 
-const Textarea: React.FC<TextareaProps> = ({ label, ...props }) => (
+const Textarea: React.FC<TextareaProps> = ({ label, className, ...props }) => (
   <div>
-    <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">{label}</label>
+    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</label>
     <textarea
       rows={4}
       {...props}
-      className={`w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition ${
-        props.className ?? ''
-      }`}
+      className={`w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition ${className ?? ''}`}
     />
   </div>
 );

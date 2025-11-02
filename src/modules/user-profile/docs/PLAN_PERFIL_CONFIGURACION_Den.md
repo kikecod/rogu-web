@@ -5,7 +5,7 @@
 
 > Resumen de implementación actual (frontend: rogu-web, backend: espacios_deportivos)
 > - Backend: módulo Profile operativo con endpoints protegidos y lógica completa de agregación/actualización. Integración con Usuarios/Personas/Roles/Preferencias/EmailVerificación/Logs de avatar.
-> - Frontend: módulo user-profile con servicios, hook de carga, vistas por variantes y formularios de información personal, seguridad, preferencias y zona de peligro. Añadidos flags y timeouts de depuración.
+- Frontend: módulo user-profile con servicios, hook de carga, vista unificada por roles (Profile.Generic) que compone todas las secciones (Admin/Cliente/Dueño/Controlador), formularios de información personal, seguridad, preferencias y zona de peligro. Añadidos flags y timeouts de depuración.
 > - Sección “Qué se aplicó y qué falta” se detalla en cada capítulo.
 
 ### Auditoría rápida del repo (2025-11-01)
@@ -14,7 +14,7 @@
 - Hallazgos clave:
    - URL pública de avatar inconsistente: el backend retorna rutas como `/avatars/archivo.webp`, pero el servidor estático sirve bajo `/uploads/*`. Esto puede causar 404 al renderizar imágenes. Soluciones sugeridas más abajo.
    - Upload de avatar ya valida tipo MIME genérico (`image/*`) y limita tamaño a 3 MB (no 2 MB). Si el objetivo es 2 MB y lista blanca estricta (jpeg/png/webp), hay que ajustar `MulterModule`.
-   - Navegación tras desactivar/eliminar cuenta: ya implementada en `ProfileDangerZone` (hace `logout()` y redirige a `/`). Actualizar estado a [APLICADO].
+   - Navegación tras desactivar/eliminar cuenta: ya implementada en `ProfileDangerZone` (hace `logout()` y redirige a `/`). [APLICADO]
    - Migraciones aún no consolidadas (se usa `synchronize: true`).
 
 ## 1. Alcance General
@@ -83,8 +83,8 @@
    - [APLICADO] `useUserProfile` con control de carrera (auth hydration), timeouts configurables, manejo de 401/otros, y `refresh`.  
    - [PENDIENTE] `useProfileActions` (acciones de cuenta desacopladas en un hook dedicado).
 3. **Componentes**
-   - [APLICADO] `AvatarUploader`, `ProfilePersonalInfoForm`, `ProfilePreferencesForm`, `ProfileAccountSettings` (usuario/contraseña), `ProfileDangerZone`, `ProfileBaseLayout`.  
-   - [APLICADO] Variantes por rol: `Profile.Generic/Admin/Cliente/ClienteDuenio/ClienteControlador/ClienteDuenioControlador`.  
+   - [APLICADO] `AvatarUploader`, `ProfilePersonalInfoForm` (incluye resúmenes readonly de Dueño/Controlador), `ProfilePreferencesForm`, `ProfileAccountSettings` (usuario/contraseña), `ProfileDangerZone`, `ProfileBaseLayout`.  
+   - [APLICADO] Vista unificada por rol: `Profile.Generic` + `profileVariants` redirige todas las combinaciones a esta vista.  
    - [APLICADO] Actualización en caliente vía `onRefresh` tras guardar/actualizar avatar.
 4. **Flujo UI**
    - [APLICADO] Layout por tarjetas con banners de éxito/error, botones de reintento y estados de guardado.  
@@ -123,6 +123,7 @@
    - [COMPLETADO] Export (JSON base64), desactivar, eliminar con validaciones de reservas y limpieza de avatar.
 6. **Iteración 6 – QA & Documentación**
    - [EN PROCESO] QA manual ampliado, actualización de documentación; pendiente profundizar en tests automatizados.
+   - [APLICADO] Unificación de vistas por rol y documentación de los cambios.
 
 ## 7. Riesgos y Mitigaciones
 - **Colisión de datos personalizados** → usar transacciones y validar antes de guardar.
@@ -147,6 +148,11 @@
 > 2) Endurecer upload: límite 2 MB y MIME estricto (jpeg/png/webp).
 > 3) Consolidar migraciones (desactivar `synchronize` en entornos no-dev) y documentar seeding de preferencias.
 > 4) (Opcional) Añadir `useProfileActions` para desacoplar acciones de cuenta y tests mínimos de integración del módulo.
+
+Actualización 2025-11-01 (frontend)
+- Vista unificada `Profile.Generic` muestra secciones por rol (Admin/Cliente/Dueño/Controlador) y mantiene formularios “ver/editar”.
+- `ProfilePersonalInfoForm` añade resúmenes readonly de Dueño/Controlador (no editables).
+- `profileService` normaliza roles (DUEÑO/DUENO/OWNER → DUENIO) y acepta claves `duenio/dueno/owner/propietario`.
 
 
 ## 9. Estado actual

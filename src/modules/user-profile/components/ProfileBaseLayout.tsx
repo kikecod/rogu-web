@@ -20,9 +20,7 @@ const formatDate = (value: string | Date | null | undefined): string => {
   if (!value) return 'No registrado';
   try {
     const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'No registrado';
-    }
+    if (Number.isNaN(date.getTime())) return 'No registrado';
     return new Intl.DateTimeFormat('es-BO', {
       day: '2-digit',
       month: 'short',
@@ -38,8 +36,7 @@ const getFullName = (persona: UserProfileData['persona'], fallback: string) => {
   const parts = [persona.nombres, persona.paterno, persona.materno]
     .filter((part) => typeof part === 'string' && part.trim().length > 0)
     .map((part) => part!.trim());
-  if (!parts.length) return fallback;
-  return parts.join(' ');
+  return parts.length ? parts.join(' ') : fallback;
 };
 
 const getInitials = (persona: UserProfileData['persona'], usuario: UserProfileData['usuario']) => {
@@ -52,21 +49,11 @@ const getInitials = (persona: UserProfileData['persona'], usuario: UserProfileDa
 };
 
 const renderRoles = (roles: string[]) => {
-  if (!roles.length) {
-    return (
-      <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-        Rol no asignado
-      </span>
-    );
-  }
-
+  if (!roles.length) return <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">Rol no asignado</span>;
   return (
     <div className="flex flex-wrap gap-2">
       {roles.map((role) => (
-        <span
-          key={role}
-          className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xxs sm:text-xs font-semibold uppercase tracking-wide"
-        >
+        <span key={role} className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xxs sm:text-xs font-semibold uppercase tracking-wide">
           {role}
         </span>
       ))}
@@ -84,9 +71,7 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
     null;
 
   const avatarUrl = avatarCandidate
-    ? avatarCandidate.startsWith('http')
-      ? avatarCandidate
-      : getImageUrl(avatarCandidate)
+    ? (avatarCandidate.startsWith('http') ? avatarCandidate : getImageUrl(avatarCandidate))
     : null;
 
   const fullName = getFullName(persona, usuario.usuario || usuario.correo || 'Usuario sin nombre');
@@ -98,11 +83,13 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-16">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="bg-white rounded-3xl shadow-sm border border-neutral-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 px-4 sm:px-8 md:px-10 pt-8 sm:pt-10 pb-20 sm:pb-24 md:pb-28">
+      {/* contenedor ancho */}
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+        <div className="rounded-3xl overflow-hidden bg-white/0">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 px-4 sm:px-8 md:px-10 pt-8 sm:pt-10 pb-12 sm:pb-14 md:pb-16 rounded-3xl">
             <div className="flex flex-col md:flex-row md:items-center md:gap-8 text-white">
-              <div className="relative inline-flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 rounded-full border-4 border-white/30 bg-white/20 shadow-lg ring-0">
+              <div className="relative inline-flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 rounded-full border-4 border-white/30 bg-white/20 shadow-lg">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -116,7 +103,7 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                 ) : (
                   <UserCircle2 className="h-10 w-10 sm:h-12 sm:w-12 text-white/80" />
                 )}
-                <span className="absolute -bottom-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-400 flex items-center justify-center shadow ring-2 ring-blue-400">
+                <span className="absolute -bottom-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-500 flex items-center justify-center shadow ring-2 ring-white/40">
                   <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                 </span>
               </div>
@@ -126,107 +113,123 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                   Perfil de usuario
                 </p>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">{fullName}</h1>
-                <p className="mt-2 text-white/90 flex flex-wrap items-center gap-2">
-                  <Mail className="h-4 w-4 shrink-0" />
-                  <span className="break-all">{usuario.correo || 'Correo no registrado'}</span>
-                </p>
-                {persona?.telefono ? (
-                  <p className="mt-1 text-white/90 flex items-center gap-2">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <span className="break-all">{persona.telefono}</span>
+
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-white/90 flex flex-wrap items-center gap-2">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <span className="break-all">{usuario.correo || 'Correo no registrado'}</span>
                   </p>
-                ) : null}
+                  {persona?.telefono ? (
+                    <p className="text-white/90 flex items-center gap-2">
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <span className="break-all">{persona.telefono}</span>
+                    </p>
+                  ) : null}
+                </div>
+
                 <div className="mt-4">{renderRoles(usuario.roles)}</div>
               </div>
             </div>
           </div>
 
-          <div className="px-4 sm:px-8 md:px-10 pb-8 sm:pb-10">
-            <div className="grid grid-cols-1 gap-16 sm:gap-6 md:gap-8 lg:grid-cols-2">
-              <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 shadow-md transition-all duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500/30">
-                <div className="flex items-center gap-2.5 sm:gap-3 mb-3.5 sm:mb-4">
-                  <User2 className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Datos personales</h2>
-                </div>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 sm:gap-y-4 gap-x-6 text-sm">
-                  <div>
+          {/* Contenido encapsulado tipo "card" (igual al de Avatar) */}
+          <div className="px-0 sm:px-0 md:px-0 mt-6">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+              {/* Datos personales */}
+              <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition xl:col-span-8">
+                <header className="mb-4 sm:mb-5">
+                  <div className="flex items-center gap-3">
+                    <User2 className="h-5 w-5 text-indigo-600" />
+                    <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Datos personales</h2>
+                  </div>
+                </header>
+
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-4 gap-x-6 text-sm">
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Documento</dt>
-                    <dd className="text-neutral-900 font-medium break-words">{documentoLabel}</dd>
+                    <dd className="font-medium break-words">{documentoLabel}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Fecha de nacimiento</dt>
-                    <dd className="text-neutral-900 font-medium">{formatDate(persona?.fechaNacimiento ?? null)}</dd>
+                    <dd className="font-medium">{formatDate(persona?.fechaNacimiento ?? null)}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Género</dt>
-                    <dd className="text-neutral-900 font-medium">{persona?.genero ?? 'No registrado'}</dd>
+                    <dd className="font-medium">{persona?.genero ?? 'No registrado'}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Teléfono</dt>
-                    <dd className="text-neutral-900 font-medium break-all">{persona?.telefono || 'No registrado'}</dd>
+                    <dd className="font-medium break-all">{persona?.telefono || 'No registrado'}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Teléfono verificado</dt>
-                    <dd className="text-neutral-900 font-medium">{persona?.telefonoVerificado ? 'Confirmado' : 'No verificado'}</dd>
+                    <dd className="font-medium">{persona?.telefonoVerificado ? 'Confirmado' : 'No verificado'}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Registrado el</dt>
-                    <dd className="text-neutral-900 font-medium">{formatDate(persona?.creadoEn ?? null)}</dd>
+                    <dd className="font-medium">{formatDate(persona?.creadoEn ?? null)}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Actualizado el</dt>
-                    <dd className="text-neutral-900 font-medium">{formatDate(persona?.actualizadoEn ?? null)}</dd>
+                    <dd className="font-medium">{formatDate(persona?.actualizadoEn ?? null)}</dd>
                   </div>
-                  <div className="sm:col-span-2">
+
+                  <div className="min-w-0 xl:col-span-2">
                     <dt className="text-neutral-500">Biografía</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {persona?.bio && persona.bio.trim().length > 0 ? persona.bio : 'No registrada'}
                     </dd>
                   </div>
-                  <div>
+
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Dirección</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {persona?.direccion && persona.direccion.trim().length > 0 ? persona.direccion : 'No registrada'}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Ciudad</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {persona?.ciudad && persona.ciudad.trim().length > 0 ? persona.ciudad : 'No registrada'}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">País</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {persona?.pais && persona.pais.trim().length > 0 ? persona.pais : 'No registrado'}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Ocupación</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {persona?.ocupacion && persona.ocupacion.trim().length > 0 ? persona.ocupacion : 'No registrada'}
                     </dd>
                   </div>
-                  <div className="sm:col-span-2">
+
+                  <div className="min-w-0 xl:col-span-2">
                     <dt className="text-neutral-500">Deportes favoritos</dt>
-                    <dd className="text-neutral-900 font-medium break-words">
+                    <dd className="font-medium break-words">
                       {Array.isArray(persona?.deportesFavoritos) && persona!.deportesFavoritos!.length > 0
                         ? persona!.deportesFavoritos!.join(', ')
                         : 'No registrado'}
                     </dd>
                   </div>
                 </dl>
-              </div>
+              </section>
 
-              <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 shadow-md transition-all duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500/30">
-                <div className="flex items-center gap-2.5 sm:gap-3 mb-3.5 sm:mb-4">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                  <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Credenciales y seguridad</h2>
-                </div>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 sm:gap-y-4 gap-x-6 text-sm">
-                  <div>
+              {/* Credenciales y seguridad */}
+              <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition xl:col-span-4">
+                <header className="mb-4 sm:mb-5">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Credenciales y seguridad</h2>
+                  </div>
+                </header>
+
+                <dl className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-y-4 gap-x-6 text-sm">
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Correo verificado</dt>
-                    <dd className="text-neutral-900 font-medium flex items-center gap-2">
+                    <dd className="font-medium flex items-center gap-2">
                       {usuario.correoVerificado ? (
                         <>
                           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -240,20 +243,20 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
                       )}
                     </dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">Usuario</dt>
-                    <dd className="text-neutral-900 font-medium break-words">{usuario.usuario || 'N/D'}</dd>
+                    <dd className="font-medium break-words">{usuario.usuario || 'N/D'}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">ID persona</dt>
-                    <dd className="text-neutral-900 font-medium">#{usuario.idPersona}</dd>
+                    <dd className="font-medium">#{usuario.idPersona}</dd>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-neutral-500">ID usuario</dt>
-                    <dd className="text-neutral-900 font-medium">#{usuario.idUsuario}</dd>
+                    <dd className="font-medium">#{usuario.idUsuario}</dd>
                   </div>
                 </dl>
-              </div>
+              </section>
             </div>
 
             {children ? <div className="mt-6 sm:mt-8 space-y-6">{children}</div> : null}

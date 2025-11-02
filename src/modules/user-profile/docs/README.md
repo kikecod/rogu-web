@@ -8,12 +8,7 @@ Este módulo implementa la experiencia completa de Perfil de Usuario en rogu-web
 src/modules/user-profile/
 ├─ components/
 │  ├─ AvatarUploader.tsx                 # Subida/recorte de avatar con react-easy-crop
-│  ├─ Profile.Admin.tsx                  # Vista para usuarios con rol ADMIN
-│  ├─ Profile.Cliente.tsx                # Vista para CLIENTE
-│  ├─ Profile.ClienteControlador.tsx     # Vista para CLIENTE + CONTROLADOR
-│  ├─ Profile.ClienteDuenio.tsx          # Vista para CLIENTE + DUENIO
-│  ├─ Profile.ClienteDuenioControlador.tsx# Vista para CLIENTE + DUENIO + CONTROLADOR
-│  ├─ Profile.Generic.tsx                # Vista genérica (fallback)
+│  ├─ Profile.Generic.tsx                # Vista unificada: compone secciones por rol
 │  ├─ ProfileAccountSettings.tsx         # Ajustes de cuenta: correo/usuario/contraseña
 │  ├─ ProfileAdminSection.tsx            # Panel informativo para ADMIN
 │  ├─ ProfileBaseLayout.tsx              # Encabezado y layout común del perfil
@@ -23,7 +18,7 @@ src/modules/user-profile/
 │  ├─ ProfileDuenioSection.tsx           # Sección informativa de DUENIO
 │  ├─ ProfilePersonalInfoForm.tsx        # Formulario de datos personales/cliente
 │  ├─ ProfilePreferencesForm.tsx         # Formulario de preferencias/privacidad
-│  └─ profileVariants.ts                 # Mapa RoleVariant -> componente de vista
+│  └─ profileVariants.ts                 # Todas las variantes → Profile.Generic (unificada)
 ├─ hooks/
 │  └─ useUserProfile.ts                  # Hook que carga/gestiona el estado del perfil
 ├─ lib/
@@ -42,12 +37,12 @@ src/modules/user-profile/
 1) La página `pages/ProfilePage.tsx` usa el hook `hooks/useUserProfile.ts` para cargar los datos.
 2) El hook llama a `services/profileService.ts` → `fetchProfile()` y maneja timeouts, estados y errores.
 3) El servicio consulta el backend (Bearer token), intenta varias rutas de compatibilidad (`/profile`, `/auth/profile`, `/perfil`, …) y normaliza la respuesta a `UserProfileData` (tolerante a naming camelCase/snake_case).
-4) Con los datos ya normalizados, `ProfilePage` resuelve la variante según los roles (`resolveRoleVariant`) y renderiza el componente correspondiente mapeado en `components/profileVariants.ts`.
-5) Las vistas de variante se construyen sobre `ProfileBaseLayout` y componen secciones:
+4) Con los datos ya normalizados, `ProfilePage` resuelve la variante según los roles; todas las variantes apuntan a `Profile.Generic` (vista unificada) que decide qué secciones mostrar.
+5) La vista unificada se construye sobre `ProfileBaseLayout` y compone secciones:
    - `AvatarUploader` (subida/crop),
    - `ProfilePersonalInfoForm` (datos personales/cliente),
    - `ProfilePreferencesForm` (preferencias),
-   - secciones por rol (`ProfileClienteSection`, `ProfileDuenioSection`, `ProfileControladorSection`, `ProfileAdminSection`),
+  - secciones por rol (`ProfileClienteSection`, `ProfileDuenioSection`, `ProfileControladorSection`, `ProfileAdminSection`),
    - `ProfileAccountSettings` (correo/usuario/contraseña),
    - `ProfileDangerZone` (exportar, desactivar, eliminar).
 
@@ -116,6 +111,7 @@ Variables de entorno usadas en el hook:
   - Sube a `/profile/avatar` y hace cache-busting local para ver el nuevo avatar al instante.
 - `ProfilePersonalInfoForm`:
   - Edición de `PersonaProfile` (+ `ClienteProfile` cuando aplica). Envía a `updateProfileSections`.
+  - Muestra resúmenes NO editables de Dueño y Controlador (estado/verificación y turno/código/activo) cuando existen esos roles.
 - `ProfilePreferencesForm`:
   - Togs de privacidad/notificaciones, idioma, timezone, modo oscuro, firma. Envía a `updatePreferences`.
 - `ProfileAccountSettings`:
@@ -125,8 +121,7 @@ Variables de entorno usadas en el hook:
 - Secciones por rol:
   - `ProfileClienteSection`, `ProfileDuenioSection`, `ProfileControladorSection` (solo se muestran si el rol está presente).
 - Variantes por rol:
-  - `profileVariants.ts` mapea `RoleVariant` a componente.
-  - `Profile.*.tsx` componen Layout + secciones. La página las elige según roles.
+  - `profileVariants.ts` ahora mapea TODAS las variantes a `Profile.Generic` (vista unificada). Los antiguos `Profile.*.tsx` específicos quedan obsoletos.
 
 ## 🧪 Utilidades (`lib/…`)
 
@@ -164,12 +159,15 @@ Variables de entorno usadas en el hook:
 
 ## 📝 Notas y mejoras sugeridas
 
-- Duplicaciones de `ProfileDangerZone`:
-  - En `Profile.ClienteDuenio.tsx`, `Profile.ClienteControlador.tsx` y `Profile.ClienteDuenioControlador.tsx` aparece dos veces la línea `<ProfileDangerZone />`. Se recomienda dejar una sola instancia.
-- Consolidación de variantes:
-  - Las vistas por combinación de roles comparten mucha composición. Podría extraerse una función/fábrica para reducir duplicación.
+- Consolidación aplicada:
+  - Variantes unificadas en `Profile.Generic`. Menos duplicación y mantenimiento más simple.
 - Bandera de mocks:
   - `USE_MOCK_DATA` está en `false`. Para pruebas locales sin backend, podría exponerse vía variable de entorno.
+
+Actualización 2025-11-01
+- Unificación de variantes a `Profile.Generic` y render condicional de secciones por rol.
+- `ProfilePersonalInfoForm` incluye resúmenes readonly para Dueño/Controlador.
+- `profileService` normaliza roles (DUEÑO/DUENO/OWNER → DUENIO) y acepta `duenio/dueno/owner/propietario`.
 
 ## 🔍 Cómo orientarte rápidamente
 

@@ -64,7 +64,6 @@ const ProfileClienteControladorView: React.FC<ProfileVariantProps> = ({ data, on
       <ProfileControladorSection controlador={data.controlador} canView={hasRole('CONTROLADOR')} />
       <ProfileAccountSettings usuario={data.usuario} />
       <ProfileDangerZone />
-<ProfileDangerZone />
     </ProfileBaseLayout>
   );
 };

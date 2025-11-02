@@ -64,7 +64,6 @@ const ProfileClienteDuenioView: React.FC<ProfileVariantProps> = ({ data, onRefre
       <ProfileDuenioSection duenio={data.duenio} canView={hasRole('DUENIO')} />
       <ProfileAccountSettings usuario={data.usuario} />
       <ProfileDangerZone />
-<ProfileDangerZone />
     </ProfileBaseLayout>
   );
 };

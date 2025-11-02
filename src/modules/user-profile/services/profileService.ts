@@ -98,10 +98,30 @@ const DEFAULT_PREFERENCIAS: UsuarioPreferencias = {
   firmaReserva: null,
 };
 
-const APP_ROLES = ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'] as const;
-
-const isAppRole = (role: string): role is AppRole =>
-  (APP_ROLES as readonly string[]).includes(role);
+// Canonicaliza nombres de rol provenientes del backend con variaciones
+// Acepta: "DUEÑO"/"DUENO"/"OWNER" -> "DUENIO"; normaliza mayúsculas y elimina acentos
+const canonicalizeRole = (role: string): AppRole | null => {
+  if (!role) return null;
+  const upper = role.toString().trim().toUpperCase();
+  // Eliminar diacríticos para que DUEÑO -> DUENO
+  const normalized = upper.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  switch (normalized) {
+    case 'CLIENTE':
+      return 'CLIENTE';
+    case 'DUENIO':
+    case 'DUENO':
+    case 'OWNER':
+      return 'DUENIO';
+    case 'CONTROLADOR':
+    case 'CONTROL':
+      return 'CONTROLADOR';
+    case 'ADMIN':
+    case 'ADMINISTRADOR':
+      return 'ADMIN';
+    default:
+      return null;
+  }
+};
 
 const coalesce = <T = unknown>(
   source: Record<string, any> | null | undefined,
@@ -209,9 +229,13 @@ class ProfileService {
       );
 
     const usuario = this.normalizeUsuario(rawUsuario, persona);
-    const cliente = payload.cliente ? this.normalizeCliente(payload.cliente) : null;
-    const duenio = payload.duenio ? this.normalizeDuenio(payload.duenio) : null;
-    const controlador = payload.controlador ? this.normalizeControlador(payload.controlador) : null;
+  const clienteRaw = coalesce(payload, ['cliente']);
+  const duenioRaw = coalesce(payload, ['duenio', 'dueno', 'owner', 'propietario']);
+  const controladorRaw = coalesce(payload, ['controlador', 'controller']);
+
+  const cliente = clienteRaw ? this.normalizeCliente(clienteRaw) : null;
+  const duenio = duenioRaw ? this.normalizeDuenio(duenioRaw) : null;
+  const controlador = controladorRaw ? this.normalizeControlador(controladorRaw) : null;
 
     const preferencias = payload.preferencias
       ? this.normalizePreferencias(payload.preferencias)
@@ -282,7 +306,13 @@ class ProfileService {
           .filter((role): role is string => Boolean(role))
       : [];
 
-    const roles = Array.from(new Set(roleStrings.filter(isAppRole)));
+    const roles = Array.from(
+      new Set(
+        roleStrings
+          .map((r) => canonicalizeRole(r))
+          .filter((r): r is AppRole => Boolean(r)),
+      ),
+    );
 
     const avatarPath = toNullableString(coalesce(raw, ['avatarPath', 'avatar_path']));
     const avatarCandidate =
@@ -330,7 +360,7 @@ class ProfileService {
 
   private normalizeDuenio(raw: any): UserProfileData['duenio'] {
     return {
-      idDuenio: toNumber(coalesce(raw, ['idDuenio', 'id_duenio', 'id']), 0),
+      idDuenio: toNumber(coalesce(raw, ['idDuenio', 'id_duenio', 'id_dueno', 'id']), 0),
       verificado: toBoolean(coalesce(raw, ['verificado', 'esVerificado', 'es_verificado']), false),
       verificadoEn: normalizeDateValue(
         coalesce(raw, ['verificadoEn', 'verificado_en', 'fechaVerificacion', 'fecha_verificacion']),

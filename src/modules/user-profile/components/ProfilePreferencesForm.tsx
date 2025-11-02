@@ -13,6 +13,20 @@ interface Props {
   onUpdated?: (preferencias: UsuarioPreferencias) => void;
 }
 
+const defaultPreferences: UsuarioPreferencias = {
+  idPreferencias: 0,
+  mostrarEmail: true,
+  mostrarTelefono: false,
+  perfilPublico: true,
+  notificarReservas: true,
+  notificarPromociones: true,
+  notificarRecordatorios: true,
+  idioma: 'es',
+  zonaHoraria: 'America/La_Paz',
+  modoOscuro: false,
+  firmaReserva: null,
+};
+
 const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) => {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -28,7 +42,9 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
     }));
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = event.target;
     setState((prev) => ({
       ...prev,
@@ -39,7 +55,6 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFeedback(null);
-
     try {
       setSaving(true);
       const payload = {
@@ -69,31 +84,43 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-neutral-200 p-5 sm:p-6 md:p-7 transition-shadow duration-200 hover:shadow-lg">
-      <div className="flex items-center gap-2 mb-5">
-        <Bell className="h-5 w-5 text-sky-600" />
-        <div>
-          <h2 className="text-base sm:text-lg font-semibold text-neutral-800">Preferencias y privacidad</h2>
-          <p className="text-sm text-neutral-500">Controla la visibilidad de tus datos y cómo deseas recibir notificaciones.</p>
+    <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition space-y-5">
+      {/* Header tipo card */}
+      <header className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <Bell className="h-5 w-5 text-sky-600" />
+          <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Preferencias y privacidad</h2>
         </div>
-      </div>
+        <p className="text-sm text-neutral-500">
+          Controla la visibilidad de tus datos y cómo deseas recibir notificaciones.
+        </p>
+      </header>
 
+      {/* Feedback */}
       {feedback && (
         <div
-          className={`mb-5 inline-flex items-start gap-2 px-3 py-2 rounded-lg border text-sm ${
+          className={`inline-flex items-start gap-2 px-3 py-2 rounded-lg border text-sm ${
             feedback.type === 'success'
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
               : 'bg-red-50 text-red-700 border-red-200'
           }`}
+          role={feedback.type === 'success' ? 'status' : 'alert'}
+          aria-live={feedback.type === 'success' ? 'polite' : 'assertive'}
         >
-          {feedback.type === 'success' ? <Bell className="mt-0.5 h-4 w-4" /> : <ToggleLeft className="mt-0.5 h-4 w-4" />}
+          {feedback.type === 'success' ? (
+            <Bell className="mt-0.5 h-4 w-4" />
+          ) : (
+            <ToggleLeft className="mt-0.5 h-4 w-4" />
+          )}
           <span className="break-words">{feedback.message}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Privacidad */}
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">Privacidad</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-600">Privacidad</h3>
+
           <ToggleSwitch
             label="Mostrar mi correo a otros usuarios"
             description="Permite que otros usuarios vean tu correo al interactuar contigo."
@@ -114,8 +141,10 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
           />
         </section>
 
+        {/* Notificaciones */}
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">Notificaciones</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-600">Notificaciones</h3>
+
           <ToggleSwitch
             label="Recibir recordatorios de reservas"
             checked={state.notificarReservas}
@@ -133,9 +162,10 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
           />
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Idioma / Zona horaria */}
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide flex items-center gap-1">
+            <label className="mb-1 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-neutral-600">
               <Globe className="h-3.5 w-3.5 text-neutral-400" />
               Idioma
             </label>
@@ -143,19 +173,22 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
               name="idioma"
               value={state.idioma}
               onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition bg-white"
             >
               <option value="es">Español</option>
               <option value="en">English</option>
             </select>
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">Zona horaria</label>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600">
+              Zona horaria
+            </label>
             <select
               name="zonaHoraria"
               value={state.zonaHoraria}
               onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              className="w-full px-3 py-2 rounded-lg text-sm border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition bg-white"
             >
               <option value="America/La_Paz">America/La_Paz (GMT-4)</option>
               <option value="America/Bogota">America/Bogota (GMT-5)</option>
@@ -165,6 +198,7 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
           </div>
         </section>
 
+        {/* Apariencia y firma */}
         <section className="space-y-3">
           <ToggleSwitch
             label="Activar modo oscuro"
@@ -174,7 +208,7 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
             onChange={() => handleToggle('modoOscuro')}
           />
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wide">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600">
               Firma para reservas (opcional)
             </label>
             <textarea
@@ -199,24 +233,9 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
           </button>
         </div>
       </form>
-    </div>
+    </section>
   );
 };
-
-const defaultPreferences: UsuarioPreferencias = {
-  idPreferencias: 0,
-  mostrarEmail: true,
-  mostrarTelefono: false,
-  perfilPublico: true,
-  notificarReservas: true,
-  notificarPromociones: true,
-  notificarRecordatorios: true,
-  idioma: 'es',
-  zonaHoraria: 'America/La_Paz',
-  modoOscuro: false,
-  firmaReserva: null,
-};
-
 interface ToggleSwitchProps {
   label: string;
   description?: string;
@@ -225,21 +244,66 @@ interface ToggleSwitchProps {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ label, description, checked, onChange, icon: Icon }) => (
-  <label className="flex items-start justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-3 hover:border-neutral-300 transition cursor-pointer">
+/* Toggle accesible y estilizado (misma API, solo UI) */
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  label,
+  description,
+  checked,
+  onChange,
+  icon: Icon,
+}) => (
+  <label className="group flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-neutral-200 p-4 hover:bg-neutral-50 transition">
     <div className="flex-1">
-      <div className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+      <div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
         {Icon ? <Icon className="h-4 w-4 text-neutral-400" /> : null}
         {label}
       </div>
-      {description ? <p className="mt-0.5 text-xs text-neutral-500">{description}</p> : null}
+      {description ? (
+        <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+      ) : null}
     </div>
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      className="h-5 w-10 rounded-full border-neutral-300 text-sky-600 focus:ring-sky-500"
-    />
+
+    {/* Switch */}
+    <span className="relative inline-flex h-7 w-12 items-center">
+      {/* Checkbox accesible (peer) */}
+      <input
+        type="checkbox"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        checked={checked}
+        onChange={onChange}
+        className="peer sr-only"
+      />
+
+      {/* Track */}
+      <span
+        className="
+          pointer-events-none absolute inset-0 rounded-full bg-neutral-200 ring-1 ring-neutral-300
+          transition-all duration-300 ease-out
+          peer-checked:bg-gradient-to-r peer-checked:from-sky-600 peer-checked:to-indigo-600 peer-checked:ring-sky-600
+          peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-sky-500/40
+          [box-shadow:inset_0_1px_0_rgba(255,255,255,.6)]
+        "
+      />
+
+      {/* Thumb */}
+      <span
+        className="
+          pointer-events-none absolute left-0.5 h-6 w-6 rounded-full bg-white shadow
+          transition-transform duration-300 ease-out will-change-transform
+          peer-checked:translate-x-5
+        "
+      />
+
+      {/* Sutileza: brillo al activar */}
+      <span
+        className="
+          pointer-events-none absolute -inset-1 rounded-full opacity-0 transition-opacity duration-300
+          peer-checked:opacity-20 peer-checked:bg-sky-400
+        "
+      />
+    </span>
   </label>
 );
 
