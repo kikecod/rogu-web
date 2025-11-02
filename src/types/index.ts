@@ -59,6 +59,8 @@ export interface ApiResena {
   comentario: string;
   fecha: string;
   usuario?: ApiUsuario;
+  editadoEn?: string;
+  estado?: 'ACTIVA' | 'OCULTA' | 'ELIMINADA';
 }
 
 export interface ApiCancha {

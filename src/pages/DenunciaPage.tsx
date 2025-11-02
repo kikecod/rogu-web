@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { createDenuncia, type CreateDenunciaRequest } from '../utils/helpers';
@@ -8,6 +8,8 @@ const DenunciaPage = () => {
   const { idCliente } = useParams<{ idCliente: string }>(); // cliente denunciado
   const { user } = useAuth(); // denunciante (puede ser cliente o controlador)
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = (location.state || {}) as { idCancha?: number | string; idSede?: number | string };
   const { register, handleSubmit, formState: { errors } } = useForm<CreateDenunciaRequest>();
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,10 +20,22 @@ const DenunciaPage = () => {
       return;
     }
 
+    // Validar que tengamos idCancha e idSede provenientes del dashboard
+    const idCancha = state.idCancha || (data as any).idCancha;
+    const idSede = state.idSede || (data as any).idSede;
+
+    if (!idCancha || !idSede) {
+      alert('No se puede enviar la denuncia: faltan idCancha o idSede. Abre la denuncia desde la reserva correspondiente.');
+      return;
+    }
+
     setLoading(true);
     try {
       const denunciaData: CreateDenunciaRequest = {
         reporterId: String(user.idPersona),
+        idCliente: String(user.idPersona),
+        idCancha: String(idCancha),
+        idSede: String(idSede),
         reportedId: idCliente,
         categoria: data.categoria,
         gravedad: data.gravedad,

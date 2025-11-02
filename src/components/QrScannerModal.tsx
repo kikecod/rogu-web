@@ -52,13 +52,21 @@ const QrScannerModal: React.FC<QrScannerModalProps> = ({
 
         <div className="overflow-hidden rounded-lg border border-gray-200">
           <QrScanner
-            onResult={handleScan}
+            // @yudiel/react-qr-scanner usa la prop `onScan` que recibe un array de códigos detectados
+            onScan={(detected) => {
+              try {
+                const first = Array.isArray(detected) && detected.length > 0 ? detected[0] : null;
+                handleScan(first ? first.rawValue : null);
+              } catch (err) {
+                console.error('Error procesando resultado del scanner:', err);
+              }
+            }}
             onError={(err) => {
               console.error('📸 Error de cámara:', err);
               setError('Error accediendo a la cámara.');
             }}
             constraints={{ facingMode: 'environment' }}
-            style={{ width: '100%', height: 'auto' }}
+            styles={{ container: { width: '100%' }, video: { height: 'auto' } }}
           />
         </div>
 

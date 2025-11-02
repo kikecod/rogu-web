@@ -163,7 +163,7 @@ const ControladorDashboard = () => {
                         </thead>
                         <tbody>
                           {(participantes[res.idReserva] || []).map((p) => (
-                            <tr key={p.idCliente}>
+                              <tr key={p.idCliente}>
                               <td className="border px-4 py-2">
                                 {p.persona?.nombres} {p.persona?.paterno}
                               </td>
@@ -172,7 +172,12 @@ const ControladorDashboard = () => {
                               </td>
                               <td className="border px-4 py-2">
                                 <button
-                                  onClick={() => navigate(`/denuncia/${p.idCliente}`)}
+                                  onClick={() => navigate(`/denuncia/${p.idCliente}`, {
+                                    state: {
+                                      idCancha: (res as any)?.cancha?.idCancha || (res as any)?.idCancha,
+                                      idSede: (res as any)?.cancha?.sede?.idSede || (res as any)?.cancha?.sede?.id_Sede || (res as any)?.sede?.idSede || (res as any)?.sede?.id_Sede
+                                    }
+                                  })}
                                   className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
                                 >
                                   Denunciar

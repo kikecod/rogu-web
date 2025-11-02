@@ -471,28 +471,123 @@ export const fetchParticipantesByReserva = async (idReserva: string) => {
 // ==========================================
 
 export interface CreateDenunciaRequest {
-  reporterId: string;
-  reportedId: string;
+  // idCliente (reportante) - puede venir como reporterId (legacy) o idCliente
+  reporterId?: string;
+  idCliente?: string;
+
+  // idCancha y idSede son requeridos por el backend DTO
+  idCancha?: string;
+  idSede?: string;
+
+  // persona denunciada (opcional en backend actual)
+  reportedId?: string;
+
   categoria: string;
   gravedad: string;
   titulo: string;
-  descripcion: string;
+  descripcion?: string;
 }
 
 /**
  * Envía una denuncia al backend
  */
+// Helper: verifica si un cliente (idCliente) tiene al menos una reserva previa
+// en la cancha especificada (idCancha). Se considera válida si existe una
+// reserva con idCancha igual y cuya fecha/terminaEn esté en el pasado
+export const clientHasVisitedCancha = async (idCliente: string, idCancha: string): Promise<boolean> => {
+  try {
+    if (!idCliente || !idCancha) return false;
+    const token = localStorage.getItem('token');
+
+    // Intentar obtener el historial de reservas del usuario
+    const resp = await fetch(getApiUrl(`/reservas/usuario/${idCliente}`), {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+    });
+
+    if (!resp.ok) {
+      console.warn('No se pudo obtener historial de reservas del cliente');
+      return false;
+    }
+
+    const reservas = await resp.json();
+    const now = new Date();
+
+    // Buscar alguna reserva donde coincida la cancha y ya haya terminado
+    const hasVisited = reservas.some((r: any) => {
+      const reservaCanchaId = r.idCancha || r.id_cancha || r.id_canha || r.idCancha;
+      if (!reservaCanchaId) return false;
+      if (parseInt(String(reservaCanchaId), 10) !== parseInt(idCancha, 10)) return false;
+
+      // Si existe 'terminaEn' ó 'termina_en' o 'fecha' + 'horaFin'
+      const termina = r.terminaEn || r.termina_en || r.termina || null;
+      if (termina) {
+        const terminaDate = new Date(termina);
+        if (!isNaN(terminaDate.getTime()) && terminaDate < now) return true;
+      }
+
+      // fallback: si existe 'fecha' y 'horaFin', construir fecha
+      if (r.fecha && r.horaFin) {
+        const dt = new Date(`${r.fecha}T${r.horaFin}`);
+        if (!isNaN(dt.getTime()) && dt < now) return true;
+      }
+
+      // si estado indica asistido/confirmado y la fecha es anterior
+      if (r.estado && (r.estado.toLowerCase() === 'confirmada' || r.estado.toLowerCase() === 'asistida')) {
+        const inicia = r.iniciaEn || r.inicia_en || null;
+        if (inicia) {
+          const iniciaDate = new Date(inicia);
+          if (!isNaN(iniciaDate.getTime()) && iniciaDate < now) return true;
+        }
+      }
+
+      return false;
+    });
+
+    return !!hasVisited;
+  } catch (err) {
+    console.error('Error verificando historial de reservas:', err);
+    return false;
+  }
+};
+
+
 export const createDenuncia = async (denunciaData: CreateDenunciaRequest): Promise<boolean> => {
   try {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(getApiUrl('/denuncias'), {
+    // Normalizar identificador de cliente (reportante)
+    const idCliente = denunciaData.idCliente || denunciaData.reporterId;
+    const idCancha = denunciaData.idCancha;
+    const idSede = denunciaData.idSede;
+
+    if (!idCliente) throw new Error('Falta id del cliente (reportante)');
+    if (!idCancha || !idSede) throw new Error('Falta idCancha o idSede en la denuncia');
+
+    // Validar que el cliente efectivamente estuvo en la cancha
+    const visited = await clientHasVisitedCancha(String(idCliente), String(idCancha));
+    if (!visited) {
+      throw new Error('Solo se pueden denunciar canchas en las que el cliente haya tenido una reserva previa');
+    }
+
+    // Construir payload acorde al DTO del backend
+    const payload = {
+      idCliente: parseInt(String(idCliente), 10),
+      idCancha: parseInt(String(idCancha), 10),
+      idSede: parseInt(String(idSede), 10),
+      categoria: denunciaData.categoria,
+      gravedad: denunciaData.gravedad,
+      titulo: denunciaData.titulo,
+      descripcion: denunciaData.descripcion || ''
+    };
+
+    // Nota: el controlador del backend expone la ruta '/denuncia'
+    const response = await fetch(getApiUrl('/denuncia'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': token ? `Bearer ${token}` : ''
       },
-      body: JSON.stringify(denunciaData)
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
@@ -500,7 +595,7 @@ export const createDenuncia = async (denunciaData: CreateDenunciaRequest): Promi
       throw new Error(err.error || 'Error al enviar denuncia');
     }
 
-    console.log('✅ Denuncia enviada:', denunciaData);
+    console.log('✅ Denuncia enviada:', payload);
     return true;
   } catch (error) {
     console.error('❌ Error al crear denuncia:', error);
@@ -527,13 +622,35 @@ export const createCalificacion = async (calificacionData: CreateCalificacionReq
   try {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(getApiUrl('/calificaciones'), {
+    // Validar que cliente estuvo en la cancha
+    const visited = await clientHasVisitedCancha(String(calificacionData.idCliente), String(calificacionData.idCancha));
+    if (!visited) {
+      throw new Error('Solo se pueden calificar canchas en las que el cliente haya tenido una reserva previa');
+    }
+
+    // El backend expone el recurso bajo '/califica-cancha'
+    // Asegurarse de incluir idSede si es que no viene en el objeto
+    let payload: any = { ...calificacionData };
+    if (!payload.idSede) {
+      try {
+        const canchaResp = await fetch(getApiUrl(`/cancha/${calificacionData.idCancha}`));
+        if (canchaResp.ok) {
+          const canchaJson = await canchaResp.json();
+          // intentar leer id de sede desde el objeto cancha
+          payload.idSede = canchaJson.id_Sede || canchaJson.sede?.idSede || canchaJson.sede?.id_Sede || canchaJson.idSede;
+        }
+      } catch (err) {
+        console.warn('No se pudo obtener idSede desde la cancha:', err);
+      }
+    }
+
+    const response = await fetch(getApiUrl('/califica-cancha'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(calificacionData)
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
