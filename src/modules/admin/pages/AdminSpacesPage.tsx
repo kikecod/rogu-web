@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BarChart3, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VenueManagement from '@/venues/components/VenueManagement';
 import FieldManagement from '@/fields/components/FieldManagement';
 import ProtectedRoute from '@/core/routing/ProtectedRoute';
 import { useAuth } from '@/auth/hooks/useAuth';
+import AnalyticsDashboardPage from '../../analytics/pages/AnalyticsDashboardPage';
+import CanchaAnalyticsPage from '../../analytics/pages/CanchaAnalyticsPage';
+import ResenasPage from '../../analytics/pages/ResenasPage';
 
 interface Sede {
   idSede: number;
@@ -21,19 +24,44 @@ interface Sede {
   LicenciaFuncionamiento: string;
 }
 
+type ViewMode = 'sedes' | 'canchas' | 'analytics' | 'cancha-analytics' | 'resenas';
+
 const AdminSpacesPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('sedes');
+  const [selectedCanchaId, setSelectedCanchaId] = useState<number | null>(null);
   const { user } = useAuth();
 
   // Manejar selección de sede para gestionar canchas
   const handleSedeSelect = (sede: Sede) => {
     setSelectedSede(sede);
+    setViewMode('canchas');
   };
 
   // Volver a la gestión de sedes
   const handleBackToSedes = () => {
     setSelectedSede(null);
+    setViewMode('sedes');
+    setSelectedCanchaId(null);
+  };
+
+  // Cambiar a vista de analytics
+  const handleShowAnalytics = () => {
+    setSelectedCanchaId(null); // Reset cancha selection
+    setViewMode('analytics');
+  };
+
+  // Cambiar a vista de reseñas
+  const handleShowResenas = () => {
+    setSelectedCanchaId(null); // Reset cancha selection
+    setViewMode('resenas');
+  };
+
+  // Ver analytics de una cancha específica
+  const handleViewCanchaAnalytics = (idCancha: number) => {
+    setSelectedCanchaId(idCancha);
+    setViewMode('cancha-analytics');
   };
 
   return (
@@ -60,13 +88,48 @@ const AdminSpacesPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <div className="mt-4 flex md:mt-0 md:ml-4">
+                <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+                  {viewMode !== 'sedes' && (
+                    <button
+                      onClick={handleBackToSedes}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Mis Sedes
+                    </button>
+                  )}
+                  {(viewMode === 'sedes' || viewMode === 'canchas' || viewMode === 'analytics' || viewMode === 'resenas' || viewMode === 'cancha-analytics') && (
+                    <>
+                      <button
+                        onClick={handleShowAnalytics}
+                        className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+                          viewMode === 'analytics'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={handleShowResenas}
+                        className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+                          viewMode === 'resenas'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Reseñas
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => navigate('/')}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Volver al Inicio
+                    Inicio
                   </button>
                 </div>
               </div>
@@ -76,19 +139,48 @@ const AdminSpacesPage: React.FC = () => {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Componente principal de gestión */}
+          {/* Componente principal según el modo de vista */}
           {user?.idPersona ? (
-            selectedSede ? (
-              <FieldManagement 
-                sede={selectedSede}
-                onBack={handleBackToSedes}
-              />
-            ) : (
-              <VenueManagement 
-                idPersonaD={user.idPersona} 
-                onSedeSelect={handleSedeSelect}
-              />
-            )
+            <>
+              {viewMode === 'sedes' && (
+                <VenueManagement 
+                  idPersonaD={user.idPersona} 
+                  onSedeSelect={handleSedeSelect}
+                />
+              )}
+              
+              {viewMode === 'canchas' && selectedSede && (
+                <FieldManagement 
+                  sede={selectedSede}
+                  onBack={handleBackToSedes}
+                />
+              )}
+
+              {viewMode === 'analytics' && (
+                <AnalyticsDashboardPage 
+                  key={`analytics-${selectedSede?.idSede || 'all'}`}
+                  idPersonaD={user.idPersona}
+                  idSede={selectedSede?.idSede}
+                  onViewCanchaAnalytics={handleViewCanchaAnalytics}
+                />
+              )}
+
+              {viewMode === 'cancha-analytics' && selectedCanchaId && (
+                <CanchaAnalyticsPage 
+                  key={`cancha-${selectedCanchaId}`}
+                  idCancha={selectedCanchaId}
+                  onBack={handleBackToSedes}
+                />
+              )}
+
+              {viewMode === 'resenas' && (
+                <ResenasPage 
+                  key={`resenas-${selectedSede?.idSede || 'all'}`}
+                  idPersonaD={user.idPersona}
+                  idSede={selectedSede?.idSede}
+                />
+              )}
+            </>
           ) : (
             <div className="text-center py-16">
               <div className="text-red-600 text-lg">

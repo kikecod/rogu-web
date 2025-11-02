@@ -46,3 +46,262 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #2563eb, #4f46e5);
 }
+
+/* Estilos personalizados para react-big-calendar */
+.rbc-calendar {
+  font-family: inherit;
+  border: none;
+}
+
+.rbc-header {
+  padding: 14px 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  background-color: #b0b5be;
+  border-bottom: 2px solid #d1d5db;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.rbc-header + .rbc-header {
+  border-left: 1px solid #e5e7eb;
+}
+
+.rbc-today {
+  background-color: #eff6ff;
+}
+
+.rbc-event {
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.rbc-event:hover {
+  opacity: 1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.rbc-event-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.rbc-event-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rbc-toolbar {
+  display: none;
+}
+
+.rbc-time-view {
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.rbc-time-header {
+  border-bottom: 2px solid #d1d5db;
+  display: flex;
+  align-items: stretch;
+}
+
+.rbc-time-header-content {
+  border-left: 1px solid #e5e7eb;
+  flex: 1;
+  display: flex;
+}
+
+.rbc-time-header-gutter {
+  flex: none;
+}
+
+/* Ocultar la fila extra de allDay debajo de los headers */
+.rbc-allday-cell {
+  display: none;
+}
+
+.rbc-time-header .rbc-row.rbc-row-resource {
+  display: none;
+}
+
+
+.rbc-time-content {
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Scrollbar moderno y minimalista para el calendario */
+.rbc-time-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rbc-time-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 100px;
+}
+
+.rbc-time-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(59, 130, 246, 0.4) 0%,
+    rgba(99, 102, 241, 0.4) 100%
+  );
+  border-radius: 100px;
+  transition: all 0.3s ease;
+}
+
+.rbc-time-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(37, 99, 235, 0.7) 0%,
+    rgba(79, 70, 229, 0.7) 100%
+  );
+  width: 8px;
+}
+
+/* Para Firefox - estilo moderno */
+.rbc-time-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.4) rgba(0, 0, 0, 0.02);
+}
+
+.rbc-time-gutter {
+  background-color: #fafafa;
+  border-right: 2px solid #d1d5db;
+  flex: none;
+}
+
+.rbc-timeslot-group {
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 80px;
+}
+
+.rbc-time-slot {
+  border-top: 1px solid #f3f4f6;
+}
+
+.rbc-label {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  text-align: right;
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid #2a4374;
+}
+
+.rbc-day-slot .rbc-events-container {
+  margin-right: 0;
+}
+
+.rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+  z-index: 10;
+}
+
+.rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.rbc-selected-cell {
+  background-color: #dbeafe;
+}
+
+.rbc-time-column {
+  background-color: white;
+  flex: 1;
+  min-width: 0;
+}
+
+.rbc-time-column.rbc-today {
+  background-color: #eff6ff;
+}
+
+/* Asegurar que el header de días se alinee con las columnas */
+.rbc-time-header .rbc-row {
+  display: flex;
+  flex: 1;
+}
+
+.rbc-time-header .rbc-header {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Ajustes para mejor legibilidad de horarios */
+.rbc-time-content > * + * > * {
+  border-left: 1px solid #e5e7eb;
+}
+
+.rbc-day-bg {
+  flex: 1;
+  min-width: 0;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid #e5e7eb;
+}
+
+/* Mejorar contraste de eventos */
+.rbc-event.rbc-selected {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* Estilos para vista de mes (si se usa en el futuro) */
+.rbc-month-view {
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+}
+
+.rbc-month-row {
+  border-color: #e5e7eb;
+  overflow: visible;
+}
+
+.rbc-date-cell {
+  padding: 8px;
+}
+
+.rbc-off-range-bg {
+  background-color: #f9fafb;
+}
+
+/* Responsive ajustes */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .rbc-toolbar-label {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .rbc-event {
+    font-size: 10px;
+  }
+}

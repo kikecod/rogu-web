@@ -49,6 +49,44 @@
 - Flujo de gestión de perfil (Upload de foto)
 - Flujo de dueño (Dashboard → Analytics → Reportes)
 - Flujo de cancelación y reembolso
+
+---
+
+### 4. 📊 IMPLEMENTACION_ANALYTICS.md ⭐ NUEVO
+**Propósito:** Documentación técnica completa del módulo de Analytics y Reportes
+
+**Contenido:**
+- Resumen de implementación
+- Características completadas
+- Servicios de API implementados
+- Componentes reutilizables creados
+- Páginas principales
+- Tipos TypeScript
+- Gráficos sin librerías externas
+- Endpoints conectados
+- Ejemplos de código
+- Checklist de implementación
+
+**Cuándo leerlo:** Para desarrolladores que necesiten entender o extender el módulo de analytics
+
+---
+
+### 5. 📖 GUIA_USUARIO_ANALYTICS.md ⭐ NUEVO
+**Propósito:** Guía de usuario final para el módulo de Analytics
+
+**Contenido:**
+- ¿Qué es Analytics?
+- Acceso rápido
+- Dashboard principal explicado
+- Métricas y KPIs detallados
+- Cómo usar cada gráfico
+- Análisis por cancha
+- Gestión de reseñas
+- Descarga de reportes
+- Consejos y mejores prácticas
+- Preguntas frecuentes
+
+**Cuándo leerlo:** Para usuarios dueños que usarán la funcionalidad de analytics
 - Matriz de dependencias entre módulos
 - Puntos de integración clave
 - Checklist de integración
