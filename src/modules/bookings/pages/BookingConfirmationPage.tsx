@@ -257,16 +257,16 @@ const BookingConfirmationPage: React.FC = () => {
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-700">Costo de reserva</span>
-              <span className="font-semibold">${bookingDetails.price.toFixed(2)} MXN</span>
+              <span className="font-semibold">Bs {bookingDetails.price.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-green-200">
               <span className="text-gray-700">Tarifa de servicio</span>
-              <span className="font-semibold">${(bookingDetails.price * 0.1).toFixed(2)} MXN</span>
+              <span className="font-semibold">Bs {(bookingDetails.price * 0.1).toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-gray-900">Total pagado</span>
               <span className="text-2xl font-extrabold text-green-600">
-                ${(bookingDetails.price * 1.1).toFixed(2)} MXN
+                Bs {(bookingDetails.price * 1.1).toFixed(2)}
               </span>
             </div>
             <p className="text-xs text-green-700 mt-2 flex items-center gap-1">

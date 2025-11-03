@@ -65,9 +65,9 @@ export const getSportFieldImages = (sport: string): string[] => {
 };
 
 export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-MX', {
+  return new Intl.NumberFormat('es-BO', {
     style: 'currency',
-    currency: 'MXN',
+    currency: 'BOB',
     minimumFractionDigits: 0,
   }).format(price);
 };

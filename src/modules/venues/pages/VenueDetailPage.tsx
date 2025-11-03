@@ -229,7 +229,7 @@ const SedeDetailPage: React.FC = () => {
                             <span className="text-xs text-gray-600">({field.reviews})</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-lg font-extrabold text-blue-600">${field.price}</span>
+                            <span className="text-lg font-extrabold text-blue-600">Bs {field.price}</span>
                             <span className="text-xs text-gray-600">/hora</span>
                           </div>
                         </div>

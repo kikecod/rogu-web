@@ -340,10 +340,10 @@ const SportFieldDetailPage: React.FC = () => {
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 mb-5">
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-3xl font-extrabold text-gray-900">
-                    {selectedTimeSlots.length > 0 ? `$${totalPrice}` : `$${field.price}`}
+                    {selectedTimeSlots.length > 0 ? `Bs ${totalPrice}` : `Bs ${field.price}`}
                   </span>
                   <span className="text-base text-gray-600">
-                    {selectedTimeSlots.length > 0 ? 'MXN total' : 'MXN / hora'}
+                    {selectedTimeSlots.length > 0 ? 'total' : '/ hora'}
                   </span>
                 </div>
                 {selectedTimeSlots.length > 0 && (
@@ -596,7 +596,7 @@ const SportFieldDetailPage: React.FC = () => {
                           </div>
                           {slot.available && slot.price && (
                             <div className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
-                              ${slot.price}
+                              Bs {slot.price}
                             </div>
                           )}
                         </button>
@@ -616,16 +616,16 @@ const SportFieldDetailPage: React.FC = () => {
                 <div className="mb-4 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-gray-600">Subtotal ({selectedTimeSlots.length} hora{selectedTimeSlots.length > 1 ? 's' : ''})</span>
-                    <span className="font-bold text-gray-900">${totalPrice}</span>
+                    <span className="font-bold text-gray-900">Bs {totalPrice}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="text-gray-600">Comisión (10%)</span>
-                    <span className="font-bold text-gray-900">${Math.round(totalPrice * 0.1)}</span>
+                    <span className="font-bold text-gray-900">Bs {Math.round(totalPrice * 0.1)}</span>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-blue-200">
                     <span className="font-bold text-sm text-gray-900">Total</span>
                     <span className="font-extrabold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                      ${totalPrice + Math.round(totalPrice * 0.1)}
+                      Bs {totalPrice + Math.round(totalPrice * 0.1)}
                     </span>
                   </div>
                 </div>
@@ -719,7 +719,7 @@ const SportFieldDetailPage: React.FC = () => {
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-xl text-white">
                 <p className="text-sm text-blue-100">Total a pagar</p>
                 <p className="font-extrabold text-3xl">
-                  ${totalPrice + Math.round(totalPrice * 0.1)} MXN
+                  Bs {totalPrice + Math.round(totalPrice * 0.1)}
                 </p>
                 <p className="text-xs text-blue-200 mt-1">
                   Incluye comisión de servicio (10%)

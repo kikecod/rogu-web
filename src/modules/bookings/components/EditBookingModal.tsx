@@ -400,21 +400,21 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Precio base:</span>
-                <span className="font-medium">${(pricePerHour * totalHours).toFixed(2)}</span>
+                <span className="font-medium">Bs {(pricePerHour * totalHours).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Cargo extra (10%):</span>
-                <span className="font-medium">${(pricePerHour * totalHours * 0.10).toFixed(2)}</span>
+                <span className="font-medium">Bs {(pricePerHour * totalHours * 0.10).toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-300 pt-2 flex justify-between">
                 <span className="font-semibold text-gray-900">Nuevo total:</span>
-                <span className="font-bold text-green-600 text-lg">${newTotal.toFixed(2)}</span>
+                <span className="font-bold text-green-600 text-lg">Bs {newTotal.toFixed(2)}</span>
               </div>
               {newTotal !== booking.totalPaid && (
                 <p className="text-xs text-gray-500 text-center">
                   {newTotal > booking.totalPaid 
-                    ? `Se cobrará la diferencia de $${(newTotal - booking.totalPaid).toFixed(2)}`
-                    : `Se reembolsará la diferencia de $${(booking.totalPaid - newTotal).toFixed(2)}`
+                    ? `Se cobrará la diferencia de Bs ${(newTotal - booking.totalPaid).toFixed(2)}`
+                    : `Se reembolsará la diferencia de Bs ${(booking.totalPaid - newTotal).toFixed(2)}`
                   }
                 </p>
               )}

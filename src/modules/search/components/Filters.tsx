@@ -174,7 +174,7 @@ const Filters: React.FC<FiltersProps> = ({ onFiltersChange }) => {
                         className="flex-1 accent-primary-600"
                       />
                       <span className="text-sm text-neutral-600 min-w-0 w-16">
-                        ${filters.priceRange[0]}
+                        Bs {filters.priceRange[0]}
                       </span>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -189,7 +189,7 @@ const Filters: React.FC<FiltersProps> = ({ onFiltersChange }) => {
                         className="flex-1 accent-primary-600"
                       />
                       <span className="text-sm text-neutral-600 min-w-0 w-16">
-                        ${filters.priceRange[1]}
+                        Bs {filters.priceRange[1]}
                       </span>
                     </div>
                   </div>

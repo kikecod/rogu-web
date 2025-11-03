@@ -371,7 +371,7 @@ const CheckoutPage: React.FC = () => {
                           Escanea este código QR con tu app de banco
                         </p>
                         <p className="text-lg font-bold text-blue-600 mt-2">
-                          ${bookingDetails.price.toFixed(2)} MXN
+                          Bs {bookingDetails.price.toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -507,19 +507,19 @@ const CheckoutPage: React.FC = () => {
                 <h4 className="font-bold text-gray-900">Información del precio</h4>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Costo por hora</span>
-                  <span className="font-semibold">${bookingDetails.price.toFixed(2)} MXN</span>
+                  <span className="font-semibold">Bs {bookingDetails.price.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Tarifa de servicio</span>
-                  <span className="font-semibold">${(bookingDetails.price * 0.1).toFixed(2)} MXN</span>
+                  <span className="font-semibold">Bs {(bookingDetails.price * 0.1).toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-bold text-gray-900">Total (MXN)</span>
+                <span className="text-lg font-bold text-gray-900">Total (Bs)</span>
                 <span className="text-2xl font-extrabold text-blue-600">
-                  ${(bookingDetails.price * 1.1).toFixed(2)}
+                  Bs {(bookingDetails.price * 1.1).toFixed(2)}
                 </span>
               </div>
 

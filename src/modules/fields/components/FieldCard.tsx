@@ -109,7 +109,7 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
         {/* Price */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline">
-            <span className="text-base sm:text-lg font-bold text-neutral-900">${field.price}</span>
+            <span className="text-base sm:text-lg font-bold text-neutral-900">Bs {field.price}</span>
             <span className="text-neutral-600 text-xs sm:text-sm ml-1">/ hora</span>
           </div>
         </div>
