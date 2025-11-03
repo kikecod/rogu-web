@@ -31,6 +31,29 @@ interface Booking {
   paymentMethod: 'card' | 'qr';
 }
 
+/**
+ * Parsea una fecha en formato ISO sin conversión de zona horaria
+ * Asume que la fecha viene en hora de Bolivia (GMT-4)
+ */
+const parseDateAsLocal = (dateString: string): Date => {
+  // Si la fecha viene como "2025-11-03", la parseamos directamente como fecha local
+  const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
+ * Formatea una fecha como string legible en español
+ */
+const formatDateLocal = (dateString: string): string => {
+  const date = parseDateAsLocal(dateString);
+  return date.toLocaleDateString('es-BO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/La_Paz'
+  });
+};
+
 const MyBookingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -60,6 +83,7 @@ const MyBookingsPage: React.FC = () => {
         console.log('👤 Usuario completo:', user);
         
         const reservasData = await fetchReservasByUserId(user.idUsuario);
+        console.log('✅ Reservas obtenidas del API:', reservasData);
         
         // Cargar las imágenes de todas las canchas en paralelo
         console.log('🖼️ Cargando imágenes de las canchas...');
@@ -73,8 +97,10 @@ const MyBookingsPage: React.FC = () => {
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
           // Determinar el estado de la reserva
           let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
+          const fechaReserva = parseDateAsLocal(reserva.fecha);
+          console.log('📅 Procesando reserva ID:', reserva.idReserva, 'Fecha:', fechaReserva);
           const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
           
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
@@ -91,11 +117,7 @@ const MyBookingsPage: React.FC = () => {
             fieldImage: images[index], // Usar la imagen cargada correspondiente
             sedeName: reserva.cancha.sede.nombre,
             address: '', // El API no proporciona dirección
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
+            date: formatDateLocal(reserva.fecha),
             timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
             participants: reserva.cantidadPersonas,
             price: reserva.montoTotal,
@@ -182,8 +204,9 @@ const MyBookingsPage: React.FC = () => {
         
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
           let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
+          const fechaReserva = parseDateAsLocal(reserva.fecha);
           const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
           
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
@@ -200,11 +223,7 @@ const MyBookingsPage: React.FC = () => {
             fieldImage: images[index],
             sedeName: reserva.cancha.sede.nombre,
             address: '',
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
+            date: formatDateLocal(reserva.fecha),
             timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
             participants: reserva.cantidadPersonas,
             price: reserva.montoTotal,
@@ -250,8 +269,9 @@ const MyBookingsPage: React.FC = () => {
         
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
           let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = new Date(reserva.fecha);
+          const fechaReserva = parseDateAsLocal(reserva.fecha);
           const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
           
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
@@ -268,11 +288,7 @@ const MyBookingsPage: React.FC = () => {
             fieldImage: images[index],
             sedeName: reserva.cancha.sede.nombre,
             address: '',
-            date: new Date(reserva.fecha).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }),
+            date: formatDateLocal(reserva.fecha),
             timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
             participants: reserva.cantidadPersonas,
             price: reserva.montoTotal,
