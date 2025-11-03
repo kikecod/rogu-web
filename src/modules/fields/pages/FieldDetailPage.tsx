@@ -507,6 +507,10 @@ const SportFieldDetailPage: React.FC = () => {
                       onDateSelect={(date) => {
                         setSelectedDate(date);
                         setShowCalendar(false);
+                        // Scroll suave hacia la sección de horarios disponibles
+                        setTimeout(() => {
+                          window.scrollTo({ top: 300, behavior: 'smooth' });
+                        }, 100);
                       }}
                     />
                   </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   QrCode, CheckCircle, Download, Share2, Calendar, 
@@ -27,6 +27,11 @@ const BookingConfirmationPage: React.FC = () => {
   const paymentMethod = location.state?.paymentMethod as 'card' | 'qr';
 
   const [copied, setCopied] = useState(false);
+
+  // Scroll hacia arriba al montar el componente
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!bookingDetails) {
     return (

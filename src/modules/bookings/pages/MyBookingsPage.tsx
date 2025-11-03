@@ -67,6 +67,11 @@ const MyBookingsPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
 
+  // Scroll hacia arriba al montar el componente
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Cargar reservas del usuario
   useEffect(() => {
     const loadBookings = async () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, CreditCard, QrCode, Star, MapPin, 
@@ -41,6 +41,11 @@ const CheckoutPage: React.FC = () => {
   const [cardName, setCardName] = useState('');
   const [showErrors, setShowErrors] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Scroll hacia arriba al montar el componente
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!bookingDetails) {
     return (
