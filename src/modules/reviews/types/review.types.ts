@@ -54,6 +54,7 @@ export interface PendingReview {
   idCancha: number;
   iniciaEn: string;
   terminaEn: string;
+  completadaEn: string; // ⭐ CAMBIADO: Ahora usa completadaEn para calcular días restantes
   estado: string;
   cancha: {
     idCancha: number;

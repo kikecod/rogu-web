@@ -20,7 +20,8 @@ export interface ApiReservaUsuario {
   fecha: string;
   horaInicio: string;
   horaFin: string;
-  estado: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  estado: 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Completada'; // ⭐ Agregado 'Completada'
+  completadaEn: string | null; // Fecha en que se completó la reserva
   cancha: {
     idCancha: number;
     nombre: string;

@@ -13,7 +13,7 @@ import { fetchReservasByUserId, fetchCanchaImage } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { reviewService } from '@/reviews/services/reviewService';
 import type { ApiReservaUsuario } from '../types/booking.types';
-import type { PendingReview } from '@/reviews/types/review.types';
+
 
 interface Booking {
   id: string;
@@ -27,11 +27,12 @@ interface Booking {
   participants: number;
   price: number;
   totalPaid: number;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'active' | 'completed' | 'cancelled' | 'pending';
   bookingCode: string;
   rating?: number;
   reviews?: number;
   paymentMethod: 'card' | 'qr';
+  completadaEn?: string | null;
 }
 
 /**
@@ -63,7 +64,7 @@ const MyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -108,20 +109,21 @@ const MyBookingsPage: React.FC = () => {
         
         // Convertir las reservas del API al formato del componente
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          // Determinar el estado de la reserva
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = parseDateAsLocal(reserva.fecha);
-          console.log('📅 Procesando reserva ID:', reserva.idReserva, 'Fecha:', fechaReserva);
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
+          // Mapear estados del backend a estados del frontend SIN LÓGICA ADICIONAL
+          let status: 'active' | 'completed' | 'cancelled' | 'pending' = 'active';
           
+          // Usar DIRECTAMENTE el estado que viene del backend
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
-          } else if (fechaReserva <= hoy) {
+          } else if (reserva.completadaEn) {
             status = 'completed';
-          } else {
+          } else if (reserva.estado === 'Pendiente') {
+            status = 'pending';
+          } else if (reserva.estado === 'Confirmada') {
             status = 'active';
           }
+
+          console.log('📊 Reserva ID:', reserva.idReserva, '| Estado Backend:', reserva.estado, '| CompletadaEn:', reserva.completadaEn, '| Estado Frontend:', status);
 
           return {
             id: reserva.idReserva.toString(),
@@ -137,7 +139,8 @@ const MyBookingsPage: React.FC = () => {
             totalPaid: reserva.montoTotal,
             status,
             bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
+            paymentMethod: 'card' as const,
+            completadaEn: reserva.completadaEn
           };
         });
         
@@ -179,17 +182,25 @@ const MyBookingsPage: React.FC = () => {
     return matchesStatus && matchesSearch;
   });
 
+  const pendingBookings = bookings.filter(b => b.status === 'pending').length;
   const activeBookings = bookings.filter(b => b.status === 'active').length;
   const completedBookings = bookings.filter(b => b.status === 'completed').length;
   const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">
+            <AlertCircle className="h-3.5 w-3.5" />
+            Pendiente
+          </span>
+        );
       case 'active':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
             <CheckCircle className="h-3.5 w-3.5" />
-            Activa
+            Confirmada
           </span>
         );
       case 'completed':
@@ -233,16 +244,18 @@ const MyBookingsPage: React.FC = () => {
         const images = await Promise.all(imagePromises);
         
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = parseDateAsLocal(reserva.fecha);
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
+          // Determinar el estado de la reserva basado en el backend
+          let status: 'active' | 'completed' | 'cancelled' | 'pending' = 'active';
           
+          // Mapear estados del backend a estados del frontend
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
-          } else if (fechaReserva < hoy) {
+          } else if (reserva.completadaEn) {
+            // Si tiene completadaEn, está completada (independiente del estado)
             status = 'completed';
-          } else {
+          } else if (reserva.estado === 'Pendiente') {
+            status = 'pending';
+          } else if (reserva.estado === 'Confirmada') {
             status = 'active';
           }
 
@@ -260,7 +273,8 @@ const MyBookingsPage: React.FC = () => {
             totalPaid: reserva.montoTotal,
             status,
             bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
+            paymentMethod: 'card' as const,
+            completadaEn: reserva.completadaEn
           };
         });
         
@@ -298,16 +312,18 @@ const MyBookingsPage: React.FC = () => {
         const images = await Promise.all(imagePromises);
         
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          let status: 'active' | 'completed' | 'cancelled' = 'active';
-          const fechaReserva = parseDateAsLocal(reserva.fecha);
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0); // Normalizar la hora de hoy para comparación
+          // Determinar el estado de la reserva basado en el backend
+          let status: 'active' | 'completed' | 'cancelled' | 'pending' = 'active';
           
+          // Mapear estados del backend a estados del frontend
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
-          } else if (fechaReserva < hoy) {
+          } else if (reserva.completadaEn) {
+            // Si tiene completadaEn, está completada (independiente del estado)
             status = 'completed';
-          } else {
+          } else if (reserva.estado === 'Pendiente') {
+            status = 'pending';
+          } else if (reserva.estado === 'Confirmada') {
             status = 'active';
           }
 
@@ -325,7 +341,8 @@ const MyBookingsPage: React.FC = () => {
             totalPaid: reserva.montoTotal,
             status,
             bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-            paymentMethod: 'card' as const
+            paymentMethod: 'card' as const,
+            completadaEn: reserva.completadaEn
           };
         });
         
@@ -430,11 +447,23 @@ const MyBookingsPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-5 shadow-lg border-2 border-yellow-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Pendientes</p>
+                <p className="text-3xl font-extrabold text-yellow-600">{pendingBookings}</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <AlertCircle className="h-8 w-8 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl p-5 shadow-lg border-2 border-green-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Activas</p>
+                <p className="text-sm text-gray-600 mb-1">Confirmadas</p>
                 <p className="text-3xl font-extrabold text-green-600">{activeBookings}</p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
@@ -498,6 +527,16 @@ const MyBookingsPage: React.FC = () => {
                   Todas
                 </button>
                 <button
+                  onClick={() => setFilterStatus('pending')}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    filterStatus === 'pending'
+                      ? 'bg-yellow-600 text-white shadow-lg'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Pendientes
+                </button>
+                <button
                   onClick={() => setFilterStatus('active')}
                   className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                     filterStatus === 'active'
@@ -505,7 +544,7 @@ const MyBookingsPage: React.FC = () => {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  Activas
+                  Confirmadas
                 </button>
                 <button
                   onClick={() => setFilterStatus('completed')}

@@ -499,7 +499,7 @@ export const fetchCanchaImage = async (canchaId: number): Promise<string> => {
  * @param userId - ID del usuario
  * @returns Promise con la lista de reservas del usuario
  */
-export const fetchReservasByUserId = async (userId: number): Promise<ApiReservaUsuario[]> => {
+export const  fetchReservasByUserId = async (userId: number): Promise<ApiReservaUsuario[]> => {
   try {
     const token = localStorage.getItem('token');
     

@@ -4,7 +4,8 @@ export interface ApiReservaUsuario {
   fecha: string;
   horaInicio: string;
   horaFin: string;
-  estado: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  estado: 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Completada'; // ⭐ Agregado 'Completada'
+  completadaEn: string | null; // Fecha en que se completó la reserva
   cancha: {
     idCancha: number;
     nombre: string;
@@ -58,9 +59,10 @@ export interface Booking {
   participants: number;
   price: number;
   totalPaid: number;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'active' | 'completed' | 'cancelled' | 'pending'; // Agregado 'pending'
   bookingCode: string;
   rating?: number;
   reviews?: number;
   paymentMethod: 'card' | 'qr';
+  completadaEn?: string | null; // ⭐ NUEVO: Para mostrar info adicional
 }
