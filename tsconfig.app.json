@@ -35,6 +35,7 @@
       "@/user-profile/*": ["src/modules/user-profile/*"],
       "@/search/*": ["src/modules/search/*"],
       "@/admin/*": ["src/modules/admin/*"],
+      "@/reviews/*": ["src/modules/reviews/*"],
       "@/assets/*": ["src/assets/*"],
       "@/components/*": ["src/components/*"]
     }

@@ -220,7 +220,10 @@ export const fetchCanchaById = async (id: string): Promise<SportField> => {
     try {
       const resenasResponse = await fetch(getApiUrl(`/califica-cancha/cancha/${id}`));
       if (resenasResponse.ok) {
-        resenasData = await resenasResponse.json();
+        const resenasResult = await resenasResponse.json();
+        // El endpoint devuelve un objeto con { resenas: [], ratingPromedio, etc. }
+        // Extraemos solo el array de reseñas
+        resenasData = resenasResult.resenas || [];
         console.log('✅ Reseñas obtenidas:', resenasData);
       }
     } catch (error) {
@@ -308,20 +311,22 @@ export const convertApiCanchaDetalleToSportField = (
   );
 
   // Convertir reseñas al formato Review
-  const reviewsList: Review[] = resenas.map(resena => ({
-    id: resena.idResena,
-    user: {
-      name: resena.usuario?.nombre || 'Usuario',
-      avatar: resena.usuario?.avatar ? getImageUrl(resena.usuario.avatar) : generateAvatarUrl('Usuario')
-    },
-    rating: resena.calificacion,
-    date: new Date(resena.fecha).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }),
-    comment: resena.comentario
-  }));
+  const reviewsList: Review[] = Array.isArray(resenas) 
+    ? resenas.map(resena => ({
+        id: resena.idResena,
+        user: {
+          name: resena.usuario?.nombre || 'Usuario',
+          avatar: resena.usuario?.avatar ? getImageUrl(resena.usuario.avatar) : generateAvatarUrl('Usuario')
+        },
+        rating: resena.calificacion,
+        date: new Date(resena.fecha).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        comment: resena.comentario
+      }))
+    : [];
 
   // Convertir precio de string a número
   const price = parseFloat(cancha.precio) || 0;

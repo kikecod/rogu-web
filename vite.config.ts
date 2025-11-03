@@ -15,6 +15,7 @@ export default defineConfig({
       '@/search': '/src/modules/search',
       '@/admin': '/src/modules/admin',
       '@/analytics': '/src/modules/analytics',
+      '@/reviews': '/src/modules/reviews',
       '@/assets': '/src/assets',
       '@/components': '/src/components',
     }

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import CustomCalendar from '@/bookings/components/CustomCalendar';
+import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
 import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
@@ -418,57 +419,13 @@ const SportFieldDetailPage: React.FC = () => {
             </div>
 
             {/* Reviews Section */}
-            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                  {field.rating} · {field.reviews} reseñas
-                </h2>
-              </div>
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm" id="reviews">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                Reseñas y Calificaciones
+              </h2>
               
-              {/* Sample Reviews */}
-              <div className="space-y-3">
-                {field.reviewsList && field.reviewsList.length > 0 ? (
-                  field.reviewsList.slice(0, 5).map((review) => (
-                    <div key={review.id} className="border-b border-gray-100 last:border-0 pb-3">
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <img
-                          src={review.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.user.name)}&background=random&size=128`}
-                          alt={review.user.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm">{review.user.name}</p>
-                          <div className="flex items-center gap-2">
-                            <div className="flex">
-                              {[...Array(5)].map((_, idx) => (
-                                <Star 
-                                  key={idx} 
-                                  className={`h-3 w-3 ${
-                                    idx < review.rating 
-                                      ? 'fill-yellow-500 text-yellow-500' 
-                                      : 'fill-gray-200 text-gray-200'
-                                  }`} 
-                                />
-                              ))}
-                            </div>
-                            <span className="text-xs text-gray-500">{review.date}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700 text-sm">
-                        {review.comment}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-gray-50 p-6 rounded-xl text-center">
-                    <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600 font-medium">No hay reseñas todavía</p>
-                    <p className="text-gray-500 text-sm mt-1">Sé el primero en dejar una reseña</p>
-                  </div>
-                )}
-              </div>
+              {id && <ReviewList idCancha={parseInt(id)} />}
             </div>
           </div>
 

@@ -8,9 +8,12 @@ import {
 import Footer from '@/components/Footer';
 import EditBookingModal from '../components/EditBookingModal';
 import CancelBookingModal from '../components/CancelBookingModal';
+import CreateReviewModal from '@/reviews/components/CreateReviewModal';
 import { fetchReservasByUserId, fetchCanchaImage } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
+import { reviewService } from '@/reviews/services/reviewService';
 import type { ApiReservaUsuario } from '../types/booking.types';
+import type { PendingReview } from '@/reviews/types/review.types';
 
 interface Booking {
   id: string;
@@ -66,6 +69,11 @@ const MyBookingsPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
+  
+  // Estados para sistema de reseñas
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [bookingToReview, setBookingToReview] = useState<Booking | null>(null);
+  const [pendingReviews, setPendingReviews] = useState<Set<string>>(new Set());
 
   // Scroll hacia arriba al montar el componente
   useEffect(() => {
@@ -109,7 +117,7 @@ const MyBookingsPage: React.FC = () => {
           
           if (reserva.estado === 'Cancelada') {
             status = 'cancelled';
-          } else if (fechaReserva < hoy) {
+          } else if (fechaReserva <= hoy) {
             status = 'completed';
           } else {
             status = 'active';
@@ -145,6 +153,23 @@ const MyBookingsPage: React.FC = () => {
 
     loadBookings();
   }, [user?.idUsuario]);
+
+  // Cargar reservas pendientes de reseñar
+  useEffect(() => {
+    const loadPendingReviews = async () => {
+      try {
+        const pending = await reviewService.getPendingBookingsToReview();
+        const pendingIds = new Set(pending.map(p => p.idReserva.toString()));
+        setPendingReviews(pendingIds);
+      } catch (err) {
+        console.error('Error loading pending reviews:', err);
+      }
+    };
+
+    if (user) {
+      loadPendingReviews();
+    }
+  }, [user, bookings]); // Recargar cuando cambien las reservas
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -335,6 +360,30 @@ const MyBookingsPage: React.FC = () => {
     } else {
       alert('Función de compartir no disponible en este navegador');
     }
+  };
+
+  // Funciones para sistema de reseñas
+  const handleLeaveReview = (booking: Booking) => {
+    setBookingToReview(booking);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSuccess = async () => {
+    setShowReviewModal(false);
+    setBookingToReview(null);
+    
+    // Recargar reservas pendientes
+    try {
+      const pending = await reviewService.getPendingBookingsToReview();
+      const pendingIds = new Set(pending.map(p => p.idReserva.toString()));
+      setPendingReviews(pendingIds);
+    } catch (err) {
+      console.error('Error reloading pending reviews:', err);
+    }
+  };
+
+  const canLeaveReview = (booking: Booking): boolean => {
+    return booking.status === 'completed' && pendingReviews.has(booking.id);
   };
 
   // Estados de loading y error
@@ -567,7 +616,7 @@ const MyBookingsPage: React.FC = () => {
                           <p className="text-2xl font-extrabold text-blue-600">{booking.totalPaid} BS</p>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <button
                             onClick={() => handleViewDetails(booking)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-all flex items-center gap-2"
@@ -576,6 +625,22 @@ const MyBookingsPage: React.FC = () => {
                             <ChevronRight className="h-4 w-4" />
                           </button>
 
+                          {/* Botón Dejar Reseña - Solo para reservas completadas pendientes */}
+                          {canLeaveReview(booking) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLeaveReview(booking);
+                              }}
+                              className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold text-sm hover:bg-yellow-600 transition-all flex items-center gap-2"
+                              title="Dejar reseña"
+                            >
+                              <Star className="h-4 w-4 fill-white" />
+                              Dejar Reseña
+                            </button>
+                          )}
+
+                          {/* Botones para reservas activas */}
                           {booking.status === 'active' && (
                             <>
                               <button
@@ -790,6 +855,19 @@ const MyBookingsPage: React.FC = () => {
           }}
           onSuccess={handleEditSuccess}
           userId={user.idUsuario}
+        />
+      )}
+
+      {/* Modal de reseña */}
+      {showReviewModal && bookingToReview && (
+        <CreateReviewModal
+          idReserva={parseInt(bookingToReview.id)}
+          nombreCancha={bookingToReview.fieldName}
+          onSuccess={handleReviewSuccess}
+          onClose={() => {
+            setShowReviewModal(false);
+            setBookingToReview(null);
+          }}
         />
       )}
 
