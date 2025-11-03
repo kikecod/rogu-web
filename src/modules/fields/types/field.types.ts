@@ -57,6 +57,8 @@ export interface ApiCancha {
   iluminacion: string;
   estado: string;
   precio: string;
+  horaApertura: string; // Formato: "HH:mm:ss" o "HH:mm"
+  horaCierre: string;   // Formato: "HH:mm:ss" o "HH:mm"
   creadoEn: string;
   actualizadoEn: string;
   eliminadoEn: string | null;

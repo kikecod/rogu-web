@@ -15,6 +15,8 @@ interface Cancha {
   iluminacion: string;
   estado: string;
   precio: number;
+  horaApertura: string;
+  horaCierre: string;
   fotos?: any[];
   parte?: any[];
 }
@@ -29,6 +31,8 @@ interface CanchaFormData {
   iluminacion: string;
   estado: string;
   precio: number;
+  horaApertura: string;
+  horaCierre: string;
 }
 
 interface Disciplina {
@@ -70,7 +74,9 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     reglasUso: '',
     iluminacion: '',
     estado: 'Disponible',
-    precio: 0
+    precio: 0,
+    horaApertura: '06:00',
+    horaCierre: '23:00'
   });
 
   // Cargar canchas de la sede
@@ -157,7 +163,9 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       reglasUso: '',
       iluminacion: '',
       estado: 'Disponible',
-      precio: 0
+      precio: 0,
+      horaApertura: '06:00',
+      horaCierre: '23:00'
     });
     setEditingCancha(null);
     setShowForm(false);
@@ -168,6 +176,13 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     setSubmitting(true);
 
     try {
+      // Validación local de horarios
+      if (formData.horaApertura >= formData.horaCierre) {
+        alert('⚠️ La hora de apertura debe ser menor que la hora de cierre');
+        setSubmitting(false);
+        return;
+      }
+
       const url = editingCancha 
         ? `http://localhost:3000/api/cancha/${editingCancha.idCancha}`
         : 'http://localhost:3000/api/cancha';
@@ -212,7 +227,9 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       reglasUso: cancha.reglasUso,
       iluminacion: cancha.iluminacion,
       estado: cancha.estado,
-      precio: cancha.precio
+      precio: cancha.precio,
+      horaApertura: cancha.horaApertura || '06:00',
+      horaCierre: cancha.horaCierre || '23:00'
     });
     setEditingCancha(cancha);
     setShowForm(true);
@@ -614,6 +631,36 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hora de Apertura *
+                  </label>
+                  <input
+                    type="time"
+                    name="horaApertura"
+                    value={formData.horaApertura}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Hora de apertura de la cancha</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hora de Cierre *
+                  </label>
+                  <input
+                    type="time"
+                    name="horaCierre"
+                    value={formData.horaCierre}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Hora de cierre de la cancha</p>
                 </div>
 
                 <div className="flex items-center">

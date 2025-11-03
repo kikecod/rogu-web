@@ -296,9 +296,13 @@ export const convertApiCanchaDetalleToSportField = (
   }
 
   // Generar horarios disponibles basados en horario de apertura/cierre y reservas
+  // Usar horarios de la cancha si existen, sino usar los de la sede como fallback
+  const horaApertura = cancha.horaApertura || cancha.sede.horarioApertura || '06:00';
+  const horaCierre = cancha.horaCierre || cancha.sede.horarioCierre || '23:00';
+  
   const availability = generateAvailabilitySlots(
-    cancha.sede.horarioApertura,
-    cancha.sede.horarioCierre,
+    horaApertura,
+    horaCierre,
     reservas,
     parseFloat(cancha.precio)
   );
@@ -351,8 +355,8 @@ export const convertApiCanchaDetalleToSportField = (
     rules: cancha.reglasUso ? cancha.reglasUso.split(',').map((r: string) => r.trim()) : [],
     capacity: cancha.aforoMax,
     openingHours: {
-      open: cancha.sede.horarioApertura,
-      close: cancha.sede.horarioCierre
+      open: cancha.horaApertura || cancha.sede.horarioApertura || '06:00',
+      close: cancha.horaCierre || cancha.sede.horarioCierre || '23:00'
     },
     reviewsList
   };
@@ -433,7 +437,16 @@ export const createReserva = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      
+      // Mejorar el mensaje de error del backend si viene el nuevo formato
+      if (errorData.detalles?.problema) {
+        const horarioCancha = `${errorData.detalles.horarioCancha.apertura.substring(0, 5)} - ${errorData.detalles.horarioCancha.cierre.substring(0, 5)}`;
+        throw new Error(
+          `${errorData.error}\nHorario disponible: ${horarioCancha}`
+        );
+      }
+      
+      throw new Error(errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`);
     }
 
     const data: CreateReservaResponse = await response.json();
@@ -560,9 +573,21 @@ export const updateReserva = async (
       let errorMessage = `Error ${response.status}: ${response.statusText}`;
       try {
         const errorData = await response.json();
+        
+        // Mejorar el mensaje de error del backend si viene el nuevo formato
+        if (errorData.detalles?.problema) {
+          const horarioCancha = `${errorData.detalles.horarioCancha.apertura.substring(0, 5)} - ${errorData.detalles.horarioCancha.cierre.substring(0, 5)}`;
+          throw new Error(
+            `${errorData.error}\nHorario disponible: ${horarioCancha}`
+          );
+        }
+        
         errorMessage = errorData.error || errorData.message || errorMessage;
         console.error('📝 Detalle del error:', errorData);
       } catch (e) {
+        if (e instanceof Error && e.message.includes('Horario disponible')) {
+          throw e;
+        }
         console.error('❌ No se pudo parsear el error como JSON');
       }
       throw new Error(errorMessage);
