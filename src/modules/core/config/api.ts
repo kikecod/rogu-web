@@ -15,15 +15,23 @@ export const API_CONFIG = {
 
 // Helper para construir URLs completas de endpoints API
 export const getApiUrl = (endpoint: string): string => {
-  return `${API_CONFIG.baseURL}${endpoint}`;
+  const base = API_CONFIG.baseURL.replace(/\/$/, ''); // sin barra al final
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`; // con barra al inicio
+  return `${base}${path}`;
 };
 
 // Helper para obtener URL de imagen (las imágenes están en el servidor, no en /api)
 export const getImageUrl = (path: string): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  // Las imágenes están directamente en el servidor, no bajo /api
-  return `${API_CONFIG.serverURL}${path}`;
+  // Normalización de rutas servidas por Nest estático:
+  // El backend sirve el directorio 'uploads' en '/uploads',
+  // pero algunos endpoints devuelven paths como '/avatars/...'.
+  // En ese caso, debemos anteponer '/uploads' para evitar 404.
+  const base = API_CONFIG.serverURL.replace(/\/$/, '');
+  const p = path.startsWith('/') ? path : `/${path}`;
+  const normalized = p.startsWith('/uploads/') ? p : p.startsWith('/avatars/') ? `/uploads${p}` : p;
+  return `${base}${normalized}`;
 };
 
 // Helper para obtener el token de autenticación
