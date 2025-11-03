@@ -29,9 +29,18 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     });
   };
 
-  const avatarUrl = review.cliente.avatar 
-    ? getImageUrl(review.cliente.avatar)
+  // Validar y construir la URL del avatar
+  const hasAvatar = review.cliente.avatar && review.cliente.avatar.trim() !== '';
+  const avatarUrl = hasAvatar
+    ? getImageUrl(review.cliente.avatar!) // Non-null assertion porque ya validamos arriba
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(review.cliente.nombre)}&background=3B82F6&color=fff&size=128`;
+
+  console.log('🖼️ Avatar info:', {
+    nombre: review.cliente.nombre,
+    avatarOriginal: review.cliente.avatar,
+    hasAvatar,
+    avatarUrl
+  });
 
   const isLongComment = review.comentario && review.comentario.length > 200;
   const displayComment = showFullComment || !isLongComment

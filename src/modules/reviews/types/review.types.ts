@@ -6,7 +6,7 @@ export interface Review {
   idReserva: number;
   cliente: {
     nombre: string;
-    avatar: string;
+    avatar: string | null; // ⭐ Puede ser null si no tiene foto
   };
   puntaje: number;
   comentario: string | null;
