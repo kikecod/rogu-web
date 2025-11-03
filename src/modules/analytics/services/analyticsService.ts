@@ -10,7 +10,7 @@ import type {
   AnalyticsFiltros
 } from '../types/analytics.types';
 
-import { API_URL } from '@/core/config/api';
+import { API_CONFIG } from '@/core/config/api';
 
 /**
  * Obtener el token de autorización
@@ -43,7 +43,7 @@ const buildQueryParams = (filtros: AnalyticsFiltros): string => {
  */
 export const getDashboard = async (filtros: AnalyticsFiltros = {}): Promise<DashboardData> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/analytics/dashboard${queryParams ? '?' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/analytics/dashboard${queryParams ? '?' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -65,7 +65,7 @@ export const getEstadisticasCancha = async (
   mes?: string
 ): Promise<EstadisticasCanchaData> => {
   const queryParams = mes ? `?mes=${mes}` : '';
-  const url = `${API_URL}/analytics/cancha/${idCancha}${queryParams}`;
+  const url = `${API_CONFIG.baseURL}/analytics/cancha/${idCancha}${queryParams}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -87,7 +87,7 @@ export const getCalendario = async (
   filtros: AnalyticsFiltros = {}
 ): Promise<any> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/analytics/calendario?mes=${mes}${queryParams ? '&' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/analytics/calendario?mes=${mes}${queryParams ? '&' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -109,7 +109,7 @@ export const getIngresosMensuales = async (
 ): Promise<IngresosMensualesResponse> => {
   const queryParams = buildQueryParams(filtros);
   const limite = filtros.limite || 12;
-  const url = `${API_URL}/analytics/ingresos?periodo=mes&limite=${limite}${queryParams ? '&' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/analytics/ingresos?periodo=mes&limite=${limite}${queryParams ? '&' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -131,7 +131,7 @@ export const getCalendarioDisponibilidad = async (
   filtros: AnalyticsFiltros = {}
 ): Promise<CalendarioData> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/analytics/calendario?mes=${mes}${queryParams ? '&' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/analytics/calendario?mes=${mes}${queryParams ? '&' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -152,7 +152,7 @@ export const getResumenResenas = async (
   filtros: AnalyticsFiltros = {}
 ): Promise<ResumenResenasData> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/analytics/resenas${queryParams ? '?' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/analytics/resenas${queryParams ? '?' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -171,7 +171,7 @@ export const getResumenResenas = async (
  */
 export const descargarReporteDashboard = async (filtros: AnalyticsFiltros = {}): Promise<void> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/reportes/dashboard/csv${queryParams ? '?' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/reportes/dashboard/csv${queryParams ? '?' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -202,7 +202,7 @@ export const descargarReporteIngresos = async (
 ): Promise<void> => {
   const queryParams = buildQueryParams(filtros);
   const limite = filtros.limite || 12;
-  const url = `${API_URL}/reportes/ingresos/csv?limite=${limite}${queryParams ? '&' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/reportes/ingresos/csv?limite=${limite}${queryParams ? '&' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -232,7 +232,7 @@ export const descargarReporteCancha = async (
   mes?: string
 ): Promise<void> => {
   const queryParams = mes ? `?mes=${mes}` : '';
-  const url = `${API_URL}/reportes/cancha/${idCancha}/csv${queryParams}`;
+  const url = `${API_CONFIG.baseURL}/reportes/cancha/${idCancha}/csv${queryParams}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -261,7 +261,7 @@ export const descargarReporteConsolidado = async (
   filtros: AnalyticsFiltros = {}
 ): Promise<void> => {
   const queryParams = buildQueryParams(filtros);
-  const url = `${API_URL}/reportes/consolidado/csv${queryParams ? '?' + queryParams : ''}`;
+  const url = `${API_CONFIG.baseURL}/reportes/consolidado/csv${queryParams ? '?' + queryParams : ''}`;
   
   const response = await fetch(url, {
     method: 'GET',
