@@ -10,7 +10,7 @@ import type {
   AnalyticsFiltros
 } from '../types/analytics.types';
 
-const API_URL = 'http://localhost:3000/api';
+import { API_URL } from '@/core/config/api';
 
 /**
  * Obtener el token de autorización
