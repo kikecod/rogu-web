@@ -1,32 +1,36 @@
 import React from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
-import { useAuth } from '@/auth/hooks/useAuth';
 import { resolveRoleVariant, type RoleVariant } from '@/auth/lib/roles';
-import { type AppRole, type UserProfileData } from '../types/profile.types';
+import { type AppRole } from '../types/profile.types';
 import useUserProfile from '../hooks/useUserProfile';
-import {
-  PROFILE_VARIANT_COMPONENTS,
-  type ProfileVariantComponentProps,
-} from '../components/profileVariants';
+import { PROFILE_VARIANT_COMPONENTS, type ProfileVariantComponentProps } from '../components/profileVariants';
+import { useAuth } from '@/auth/hooks/useAuth';
+import { getAuthToken } from '@/core/config/api';
 
-// Eliminado: no mostramos loading en pantalla para el perfil
-
-const renderError = (message: string, onRetry: () => void) => (
-  <div className="min-h-[60vh] flex items-center justify-center bg-neutral-50 px-4 py-8 sm:py-12">
+/** UI-only: usa utilidades del kit (card, btn, text-muted-foreground, etc.) */
+const renderError = (message: string, onRetry: () => void, debugInfo?: string | null) => (
+  <div className="min-h-[60vh] flex items-center justify-center bg-bg px-4 py-8 sm:py-12">
     <div
-      className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-sm p-6 sm:p-8 text-center transition-shadow duration-200 hover:shadow-md"
+      className="card max-w-md w-full text-center"
       role="alert"
       aria-live="assertive"
     >
-      <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-50 mx-auto mb-4">
-        <AlertTriangle className="h-6 w-6 text-red-500" />
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+        <AlertTriangle className="h-6 w-6 text-destructive" />
       </div>
-      <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">No se pudo cargar el perfil</h2>
-      <p className="text-neutral-600 text-sm leading-relaxed mb-6 break-words">{message}</p>
+      <h2 className="text-lg sm:text-xl font-semibold">No se pudo cargar el perfil</h2>
+      <p className="mt-2 text-sm text-muted-foreground leading-relaxed break-words">{message}</p>
+
+      {debugInfo ? (
+        <pre className="mt-4 max-h-40 overflow-auto rounded-xl border bg-card p-3 text-left text-xs text-muted-foreground whitespace-pre-wrap">
+          {debugInfo}
+        </pre>
+      ) : null}
+
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium shadow-sm hover:bg-blue-600/90 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 transition disabled:opacity-70"
+        className="btn btn-primary mt-5 inline-flex items-center justify-center gap-2"
       >
         <RefreshCcw className="h-4 w-4" />
         Reintentar
@@ -42,53 +46,56 @@ const getVariantComponent = (
 };
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
-  const { data, loading: _loading, error, refresh } = useUserProfile();
+  const { data, error, debugInfo, loading, refresh } = useUserProfile();
+  const { isLoading: authLoading, isLoggedIn } = useAuth();
 
   if (error) {
     return renderError(error, () => {
       void refresh();
-    });
+    }, debugInfo);
   }
 
-  const userRoles = (Array.isArray(user?.roles) ? user?.roles : []) as AppRole[];
-  
+  if (loading && !data) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-bg px-4 py-8 sm:py-12">
+        <div className="card max-w-md w-full text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <RefreshCcw className="h-6 w-6 animate-spin text-primary" />
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold">Cargando tu perfil</h2>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Estamos obteniendo tu información. Si tarda demasiado, prueba nuevamente con Reintentar.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // En vez de esperar silenciosamente, mostrar un error explicativo inmediato si no hay datos
+  if (!data) {
+    const hasToken = Boolean(getAuthToken());
+    const message = authLoading
+      ? 'La autenticación aún se está inicializando (authLoading=true). Si no avanza, recarga la página o vuelve a iniciar sesión.'
+      : (!isLoggedIn && !hasToken)
+        ? 'No has iniciado sesión. Inicia sesión para cargar tu perfil.'
+        : 'No recibimos respuesta del backend para /api/profile todavía. Revisa la pestaña Network y la consola (VITE_DEBUG_PROFILE=true).';
+
+    return renderError(message, () => { void refresh(); }, debugInfo);
+  }
+
   // Si tenemos datos del backend, usarlos directamente
   if (data) {
     const effectiveRoles = data.usuario.roles.filter((role): role is AppRole =>
       ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'].includes(role)
     );
-    
+
     const variant = resolveRoleVariant(effectiveRoles);
     const VariantComponent = getVariantComponent(variant);
-    
-    return <VariantComponent data={data} />;
+
+    return <VariantComponent data={data} onRefresh={refresh} />;
   }
 
-  // Fallback con datos del usuario en memoria
-  const baseUsuario = {
-    correo: user?.correo ?? '',
-    usuario: user?.usuario ?? '',
-    idPersona: user?.idPersona ?? 0,
-    idUsuario: user?.idUsuario ?? 0,
-    correoVerificado: false,
-    roles: userRoles,
-    avatar: user?.avatar ?? undefined,
-  };
-  
-  const basePersona = null;
-  const sanitizedData: UserProfileData = {
-    persona: basePersona,
-    usuario: baseUsuario,
-    cliente: null,
-    duenio: null,
-    controlador: null,
-  };
-
-  const variant = resolveRoleVariant(userRoles);
-  const VariantComponent = getVariantComponent(variant);
-
-  return <VariantComponent data={sanitizedData} />;
+  return null;
 };
 
 export default ProfilePage;
