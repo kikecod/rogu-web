@@ -44,9 +44,19 @@ interface ReservaManagementProps {
 
 const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack }) => {
   const [reservas, setReservas] = useState<ApiReservaCancha[]>([]);
+  const [reservasFiltradas, setReservasFiltradas] = useState<ApiReservaCancha[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReserva, setSelectedReserva] = useState<ApiReservaCancha | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  // Obtener fecha actual en zona horaria local (sin UTC)
+  const [fechaFiltro, setFechaFiltro] = useState<string>(() => {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
+  const [showFiltroModal, setShowFiltroModal] = useState(false);
 
   // Cargar reservas de la cancha
   const loadReservas = async () => {
@@ -96,6 +106,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
         );
         
         setReservas(reservasConUsuario);
+        filtrarReservasPorFecha(reservasConUsuario, fechaFiltro);
       } else {
         console.error('Error al cargar reservas');
       }
@@ -104,6 +115,52 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filtrar reservas por fecha
+  const filtrarReservasPorFecha = (reservasData: ApiReservaCancha[], fecha: string) => {
+    const filtradas = reservasData.filter(reserva => {
+      return reserva.fecha === fecha;
+    });
+    setReservasFiltradas(filtradas);
+  };
+
+  // Cambiar filtro de fecha (solo actualiza el estado, no cierra el modal)
+  const handleFechaInputChange = (nuevaFecha: string) => {
+    setFechaFiltro(nuevaFecha);
+    filtrarReservasPorFecha(reservas, nuevaFecha);
+  };
+
+  // Aplicar filtro y cerrar modal
+  const aplicarFiltro = (nuevaFecha: string) => {
+    setFechaFiltro(nuevaFecha);
+    filtrarReservasPorFecha(reservas, nuevaFecha);
+    setShowFiltroModal(false);
+  };
+
+  // Mostrar todas las reservas
+  const mostrarTodasReservas = () => {
+    setReservasFiltradas(reservas);
+    setFechaFiltro('');
+  };
+
+  // Obtener fecha actual en formato YYYY-MM-DD (zona horaria local)
+  const getFechaHoy = () => {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Obtener fecha de mañana en formato YYYY-MM-DD (zona horaria local)
+  const getFechaManana = () => {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    const year = manana.getFullYear();
+    const month = String(manana.getMonth() + 1).padStart(2, '0');
+    const day = String(manana.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   useEffect(() => {
@@ -192,28 +249,56 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
               Reservas de {cancha.nombre}
             </h2>
             <p className="text-gray-600">
-              Gestiona las reservas de esta cancha
+              {fechaFiltro 
+                ? `Reservas del ${(() => {
+                    const [year, month, day] = fechaFiltro.split('-');
+                    return `${day}/${month}/${year}`;
+                  })()}`
+                : 'Todas las reservas'
+              }
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Total de reservas</p>
-          <p className="text-2xl font-bold text-blue-600">{reservas.length}</p>
+        <div className="flex items-center space-x-4">
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Reservas mostradas</p>
+            <p className="text-2xl font-bold text-blue-600">{reservasFiltradas.length}</p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowFiltroModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Filtrar por fecha</span>
+            </button>
+            {fechaFiltro && (
+              <button
+                onClick={mostrarTodasReservas}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Mostrar todas
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Lista de reservas */}
-      {reservas.length === 0 ? (
+      {reservasFiltradas.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
           <Calendar className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No hay reservas</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Esta cancha no tiene reservas registradas.
+            {fechaFiltro 
+              ? 'No hay reservas para la fecha seleccionada.'
+              : 'Esta cancha no tiene reservas registradas.'
+            }
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {reservas.map((reserva) => {
+          {reservasFiltradas.map((reserva) => {
             // Combinar fecha y hora para los formatos esperados
             const iniciaEn = combinarFechaHora(reserva.fecha, reserva.horaInicio);
             const terminaEn = combinarFechaHora(reserva.fecha, reserva.horaFin);
@@ -290,7 +375,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                     <Users className="h-4 w-4 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {reserva.cantidadPersonas} personas
+                        {reserva.cantidadPersonas} Persona/s
                       </p>
                       <p className="text-xs text-gray-500">Asistentes</p>
                     </div>
@@ -495,6 +580,75 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de filtro por fecha */}
+      {showFiltroModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-medium text-gray-900">
+                Filtrar por Fecha
+              </h3>
+              <button
+                onClick={() => setShowFiltroModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selecciona una fecha
+                </label>
+                <input
+                  type="date"
+                  value={fechaFiltro || ''}
+                  onChange={(e) => handleFechaInputChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => aplicarFiltro(getFechaHoy())}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Hoy
+                </button>
+                <button
+                  onClick={() => aplicarFiltro(getFechaManana())}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  Mañana
+                </button>
+              </div>
+              
+              <div>
+                <button
+                  onClick={() => setShowFiltroModal(false)}
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Aplicar filtro
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    mostrarTodasReservas();
+                    setShowFiltroModal(false);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Mostrar todas las reservas
+                </button>
+              </div>
             </div>
           </div>
         </div>

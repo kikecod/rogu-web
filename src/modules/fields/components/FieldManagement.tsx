@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-react';
 import PhotoManagement from './PhotoManagement';
-import ReservationManagement from './ReservationManagement';
+import CalendarioReservasPage from '../../analytics/pages/CalendarioReservasPage';
 import { getApiUrl } from '@/core/config/api';
 
 interface Cancha {
@@ -322,10 +322,10 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     );
   }
 
-  // Si se está mostrando las reservas, renderizar el componente ReservationManagement
+  // Si se está mostrando las reservas, renderizar el componente CalendarioReservasPage
   if (showReservas && reservaCancha) {
     return (
-      <ReservationManagement
+      <CalendarioReservasPage
         cancha={reservaCancha}
         onBack={() => {
           setShowReservas(false);
@@ -473,7 +473,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
                     className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    Ver Reservas
+                    Calendario de Reservas
                   </button>
                 </div>
               </div>
