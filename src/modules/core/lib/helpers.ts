@@ -28,7 +28,7 @@ import type {
 import { getApiUrl, getImageUrl } from '../config/api';
 
 export const generatePlaceholderImage = (width: number, height: number, text?: string) => {
-  const baseUrl = 'https://via.placeholder.com';
+  const baseUrl = 'https://placehold.co';
   const textParam = text ? `?text=${encodeURIComponent(text)}` : '';
   return `${baseUrl}/${width}x${height}/22c55e/ffffff${textParam}`;
 };

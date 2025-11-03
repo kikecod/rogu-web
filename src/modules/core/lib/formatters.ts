@@ -49,7 +49,7 @@ export const formatDateTime = (value: string | Date | null | undefined): string 
 };
 
 export const generatePlaceholderImage = (width: number, height: number, text?: string): string => {
-  const baseUrl = 'https://via.placeholder.com';
+  const baseUrl = 'https://placehold.co';
   const textParam = text ? `?text=${encodeURIComponent(text)}` : '';
   return `${baseUrl}/${width}x${height}/22c55e/ffffff${textParam}`;
 };

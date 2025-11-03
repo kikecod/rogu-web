@@ -46,7 +46,7 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
           onError={(e) => {
             // Si la imagen falla al cargar, usar un placeholder
             console.error('❌ Error al cargar imagen:', field.images[0]);
-            e.currentTarget.src = 'https://via.placeholder.com/400x300/22c55e/ffffff?text=Cancha';
+            e.currentTarget.src = 'https://placehold.co/400x300/22c55e/ffffff?text=Cancha';
           }}
         />
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm">

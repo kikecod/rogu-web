@@ -135,8 +135,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ selectedDate, onDateSel
 
       {/* Day names */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {dayNames.map((day) => (
-          <div key={day} className="text-center text-xs font-bold text-gray-400 p-1">
+        {dayNames.map((day, index) => (
+          <div key={`day-${index}`} className="text-center text-xs font-bold text-gray-400 p-1">
             {day}
           </div>
         ))}
