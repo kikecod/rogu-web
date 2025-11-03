@@ -31,6 +31,11 @@ const SportFieldDetailPage: React.FC = () => {
   const [participants, setParticipants] = useState(1);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Cargar datos de la cancha
   useEffect(() => {
     const loadField = async () => {
