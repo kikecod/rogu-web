@@ -346,7 +346,11 @@ export const convertApiCanchaDetalleToSportField = (
     location: {
       address: cancha.sede.direccion,
       city: cancha.sede.ciudad !== 'N/A' ? cancha.sede.ciudad : '',
-      coordinates: { lat: 0, lng: 0 }
+      coordinates: {
+        // Intentar obtener coordenadas de la cancha o sede
+        lat: (cancha as any).latitud || (cancha.sede as any).latitud || -17.7833,
+        lng: (cancha as any).longitud || (cancha.sede as any).longitud || -63.1821
+      }
     },
     owner: {
       id: cancha.id_Sede.toString(),

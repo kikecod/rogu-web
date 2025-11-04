@@ -6,6 +6,7 @@ import {
   MessageCircle, Phone, Users, Plus, Minus
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import MapView from '@/components/MapView';
 import CustomCalendar from '@/bookings/components/CustomCalendar';
 import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
@@ -613,19 +614,51 @@ const SportFieldDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Location Map Placeholder */}
+        {/* Location Map */}
         <div className="mt-10 bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <MapPin className="h-5 w-5 text-blue-600" />
             Ubicación
           </h2>
-          <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-              <p className="text-gray-700 font-medium text-base">{field.location?.address || ""}</p>
-              <p className="text-gray-600 text-sm">{field.location?.city || ""}</p>
+          
+          {/* Si tiene coordenadas, mostrar el mapa */}
+          {field.location?.coordinates?.lat && field.location?.coordinates?.lng ? (
+            <div className="mb-4">
+              <MapView
+                lat={field.location.coordinates.lat}
+                lng={field.location.coordinates.lng}
+                title={field.name}
+                height="400px"
+                zoom={15}
+              />
             </div>
-          </div>
+          ) : (
+            /* Placeholder si no hay coordenadas */
+            <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center mb-4">
+              <div className="text-center">
+                <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                <p className="text-gray-700 font-medium text-base">Ubicación no disponible</p>
+                <p className="text-gray-600 text-sm">Coordenadas no configuradas</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Información de dirección */}
+          {(field.location?.address || field.location?.city) && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  {field.location.address && (
+                    <p className="text-gray-900 font-medium">{field.location.address}</p>
+                  )}
+                  {field.location.city && (
+                    <p className="text-gray-600 text-sm mt-1">{field.location.city}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
