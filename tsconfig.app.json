@@ -22,7 +22,23 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path aliases for Screaming Architecture */
+    "baseUrl": ".",
+    "paths": {
+      "@/core/*": ["src/modules/core/*"],
+      "@/auth/*": ["src/modules/auth/*"],
+      "@/bookings/*": ["src/modules/bookings/*"],
+      "@/fields/*": ["src/modules/fields/*"],
+      "@/venues/*": ["src/modules/venues/*"],
+      "@/user-profile/*": ["src/modules/user-profile/*"],
+      "@/search/*": ["src/modules/search/*"],
+      "@/admin/*": ["src/modules/admin/*"],
+      "@/reviews/*": ["src/modules/reviews/*"],
+      "@/assets/*": ["src/assets/*"],
+      "@/components/*": ["src/components/*"]
+    }
   },
   "include": ["src"]
 }

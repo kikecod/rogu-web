@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import AuthModal from './components/AuthModal';
-import HomePage from './pages/HomePage';
-import HostSpacePage from './pages/HostSpacePage';
-import AdminSpacesPage from './pages/AdminSpacesPage';
-import TestRolesPage from './pages/TestRolesPage';
-import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
-import AboutUsPage from './pages/AboutUsPage';
-import SportFieldDetailPage from './pages/SportFieldDetailPage';
-import SedeDetailPage from './pages/SedeDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
-import BookingConfirmationPage from './pages/BookingConfirmationPage';
-import MyBookingsPage from './pages/MyBookingsPage';
+import AuthModal from '@/auth/components/AuthModal';
+import HomePage from '@/search/pages/HomePage';
+import HostSpacePage from '@/admin/pages/HostSpacePage';
+import AdminSpacesPage from '@/admin/pages/AdminSpacesPage';
+import TestRolesPage from '@/core/pages/TestRolesPage';
+import ProfilePage from '@/user-profile/pages/ProfilePage';
+import { AuthProvider } from '@/auth/states/AuthProvider';
+import { useAuth, type User } from '@/auth/hooks/useAuth';
+import AboutUsPage from '@/core/pages/AboutUsPage';
+import FieldDetailPage from '@/fields/pages/FieldDetailPage';
+import VenueDetailPage from '@/venues/pages/VenueDetailPage';
+import CheckoutPage from '@/bookings/pages/CheckoutPage';
+import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
+import MyBookingsPage from '@/bookings/pages/MyBookingsPage';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -71,12 +73,12 @@ const AppContent = () => {
 
           <Route path="/test-roles" element={<TestRolesPage />} />
           <Route path="/about" element={<AboutUsPage />} />
-          <Route path="/field/:id" element={<SportFieldDetailPage />} />
-          <Route path="/sede/:id" element={<SedeDetailPage />} />
+          <Route path="/field/:id" element={<FieldDetailPage />} />
+          <Route path="/sede/:id" element={<VenueDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
-          <Route path="/profile" element={<div className="p-8 text-center">Perfil de usuario - Próximamente</div>} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>

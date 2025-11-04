@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Search, Menu, User, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import roguLogo from '../assets/rogu_logo.png';
-import { useAuth } from '../contexts/AuthContext';
+import roguLogo from '@/assets/rogu_logo.png';
+import { useAuth } from '@/auth/hooks/useAuth';
+import { getImageUrl } from '@/core/config/api';
 
 interface HeaderProps {
   onLoginClick: () => void;
@@ -73,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-600" />
                 {isLoggedIn && user ? (
                   user.avatar ? (
-                    <img src={user.avatar} alt={user.correo} className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" />
+                    <img src={user.avatar.startsWith('http') ? user.avatar : getImageUrl(user.avatar)} alt={user.correo} className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" />
                   ) : (
                     <div className="h-5 w-5 sm:h-6 sm:w-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
                       {user.correo.charAt(0).toUpperCase()}
