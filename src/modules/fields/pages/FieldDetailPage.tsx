@@ -10,7 +10,7 @@ import MapView from '@/components/MapView';
 import CustomCalendar from '@/bookings/components/CustomCalendar';
 import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
-import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots } from '@/core/lib/helpers';
+import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots, formatDateLocal } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 
 const SportFieldDetailPage: React.FC = () => {
@@ -80,7 +80,7 @@ const SportFieldDetailPage: React.FC = () => {
 
       try {
         setLoadingSlots(true);
-        console.log('🔄 Actualizando horarios para fecha:', selectedDate.toISOString().split('T')[0]);
+        console.log('🔄 Actualizando horarios para fecha:', formatDateLocal(selectedDate), '(hora local Bolivia)');
         
         // Obtener reservas para la fecha seleccionada
         const reservasPorFecha = await fetchReservasByFecha(id, selectedDate);

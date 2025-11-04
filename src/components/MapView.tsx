@@ -33,11 +33,11 @@ const MapView: React.FC<MapViewProps> = ({
   zoom = 15,
 }) => {
   return (
-    <div className="relative rounded-lg overflow-hidden border-2 border-gray-200" style={{ height }}>
+    <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 z-0" style={{ height }}>
       <MapContainer
         center={[lat, lng]}
         zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
         scrollWheelZoom={false}
         dragging={true}
         zoomControl={true}

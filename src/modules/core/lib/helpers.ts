@@ -27,6 +27,19 @@ import type {
 } from '@/fields/types/field.types';
 import { getApiUrl, getImageUrl } from '../config/api';
 
+/**
+ * Convierte una fecha a formato YYYY-MM-DD usando la zona horaria local
+ * Esto evita problemas de desfase de días al usar toISOString() que convierte a UTC
+ * @param date - Fecha a convertir
+ * @returns String en formato YYYY-MM-DD (zona horaria local)
+ */
+export const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const generatePlaceholderImage = (width: number, height: number, text?: string) => {
   const baseUrl = 'https://placehold.co';
   const textParam = text ? `?text=${encodeURIComponent(text)}` : '';
@@ -241,20 +254,64 @@ export const fetchCanchaById = async (id: string): Promise<SportField> => {
 // Obtener reservas de una cancha filtradas por fecha específica
 export const fetchReservasByFecha = async (canchaId: string, fecha: Date): Promise<ApiReserva[]> => {
   try {
-    // Formatear fecha a YYYY-MM-DD
-    const fechaStr = fecha.toISOString().split('T')[0];
-    console.log(`🔍 Fetching reservas for cancha ${canchaId} on ${fechaStr}`);
+    // Formatear fecha a YYYY-MM-DD usando zona horaria local (no UTC)
+    const fechaStr = formatDateLocal(fecha);
+    console.log(`🔍 Fetching reservas for cancha ${canchaId} on ${fechaStr} (hora local Bolivia)`);
     
-    const response = await fetch(getApiUrl(`/reservas/cancha/${canchaId}?fecha=${fechaStr}`));
+    // Primero intentar obtener con el parámetro de fecha
+    const urlConFecha = getApiUrl(`/reservas/cancha/${canchaId}?fecha=${fechaStr}`);
+    console.log('🌐 URL con fecha:', urlConFecha);
     
+    let response = await fetch(urlConFecha);
+    console.log('📄 Response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`Error al obtener reservas: ${response.statusText}`);
+      console.warn(`⚠️ Error al obtener reservas con fecha: ${response.statusText}`);
+      return [];
     }
     
-    const reservasData: ApiReserva[] = await response.json();
-    console.log('✅ Reservas obtenidas para fecha:', reservasData);
+    let reservasData: ApiReserva[] = await response.json();
+    console.log(`📦 Reservas obtenidas con parámetro fecha:`, reservasData.length);
     
-    return reservasData;
+    // Si no devuelve reservas con el parámetro fecha, obtener todas y filtrar en el frontend
+    if (reservasData.length === 0) {
+      console.log('🔄 Obteniendo todas las reservas y filtrando en frontend...');
+      const urlSinFecha = getApiUrl(`/reservas/cancha/${canchaId}`);
+      response = await fetch(urlSinFecha);
+      
+      if (response.ok) {
+        const todasLasReservas: ApiReserva[] = await response.json();
+        console.log(`📦 Total de reservas obtenidas: ${todasLasReservas.length}`);
+        
+        // Filtrar por fecha en el frontend
+        reservasData = todasLasReservas.filter(reserva => {
+          const reservaFecha = reserva.fecha.split('T')[0]; // Obtener solo YYYY-MM-DD
+          return reservaFecha === fechaStr;
+        });
+        
+        console.log(`✅ Reservas filtradas para ${fechaStr}: ${reservasData.length}`);
+      }
+    }
+    
+    // Log detallado de cada reserva
+    reservasData.forEach((reserva, index) => {
+      console.log(`  📋 Reserva ${index + 1}:`, {
+        id: reserva.idReserva,
+        estado: reserva.estado,
+        horaInicio: reserva.horaInicio,
+        horaFin: reserva.horaFin,
+        fecha: reserva.fecha
+      });
+    });
+    
+    // Filtrar solo las reservas que están confirmadas o pendientes
+    const reservasActivas = reservasData.filter(r => 
+      r.estado !== 'Cancelada'
+    );
+    
+    console.log(`✅ Reservas activas (no canceladas): ${reservasActivas.length} de ${reservasData.length}`);
+    
+    return reservasActivas;
   } catch (error) {
     console.error('❌ Error al obtener reservas por fecha:', error);
     return [];
@@ -264,7 +321,7 @@ export const fetchReservasByFecha = async (canchaId: string, fecha: Date): Promi
 // Convertir ApiCanchaDetalle completo a SportField
 export const convertApiCanchaDetalleToSportField = (
   cancha: ApiCanchaDetalle,
-  reservas: ApiReserva[],
+  _reservas: ApiReserva[], // No se usa aquí, los slots se generan en el componente con fecha específica
   resenas: ApiResena[]
 ): SportField => {
   // Determinar el tipo de deporte basado en la superficie
@@ -303,12 +360,10 @@ export const convertApiCanchaDetalleToSportField = (
   const horaApertura = cancha.horaApertura || cancha.sede.horarioApertura || '06:00';
   const horaCierre = cancha.horaCierre || cancha.sede.horarioCierre || '23:00';
   
-  const availability = generateAvailabilitySlots(
-    horaApertura,
-    horaCierre,
-    reservas,
-    parseFloat(cancha.precio)
-  );
+  // NO generamos los slots aquí porque no tenemos una fecha específica
+  // Los slots se generarán en el componente cuando se seleccione una fecha
+  // Esto evita mezclar reservas de diferentes fechas
+  const availability: TimeSlot[] = [];
 
   // Convertir reseñas al formato Review
   const reviewsList: Review[] = Array.isArray(resenas) 
@@ -364,8 +419,8 @@ export const convertApiCanchaDetalleToSportField = (
     rules: cancha.reglasUso ? cancha.reglasUso.split(',').map((r: string) => r.trim()) : [],
     capacity: cancha.aforoMax,
     openingHours: {
-      open: cancha.horaApertura || cancha.sede.horarioApertura || '06:00',
-      close: cancha.horaCierre || cancha.sede.horarioCierre || '23:00'
+      open: horaApertura,
+      close: horaCierre
     },
     reviewsList
   };
@@ -382,6 +437,14 @@ export const generateAvailabilitySlots = (
   const slots: TimeSlot[] = [];
   const targetDate = fecha || new Date();
   
+  // Usar fecha local en lugar de UTC
+  const fechaStr = formatDateLocal(targetDate);
+  
+  console.log('🔧 Generando slots de disponibilidad...');
+  console.log('📅 Fecha objetivo:', fechaStr, '(hora local Bolivia)');
+  console.log('⏰ Horario:', horarioApertura, '-', horarioCierre);
+  console.log('📋 Reservas recibidas:', reservas.length);
+  
   // Parsear horas de apertura y cierre
   const [openHour] = horarioApertura.split(':').map(Number);
   const [closeHour] = horarioCierre.split(':').map(Number);
@@ -394,22 +457,40 @@ export const generateAvailabilitySlots = (
     // Verificar si este horario está reservado
     const isReserved = reservas.some(reserva => {
       // Solo considerar reservadas si están Confirmadas o Pendientes
-      if (reserva.estado === 'Cancelada') return false;
+      if (reserva.estado === 'Cancelada') {
+        console.log(`⏭️ Ignorando reserva cancelada:`, reserva.idReserva);
+        return false;
+      }
       
-      const reservaStart = reserva.horaInicio.substring(0, 5);
-      const reservaEnd = reserva.horaFin.substring(0, 5);
+      // Normalizar los horarios a formato HH:mm
+      const reservaStart = reserva.horaInicio.substring(0, 5); // "HH:mm"
+      const reservaEnd = reserva.horaFin.substring(0, 5); // "HH:mm"
       
-      return startTime >= reservaStart && startTime < reservaEnd;
+      // Verificar si el slot está dentro del rango de la reserva
+      // Un slot está ocupado si su hora de inicio está entre el inicio y fin de la reserva
+      const slotOverlaps = startTime >= reservaStart && startTime < reservaEnd;
+      
+      if (slotOverlaps) {
+        console.log(`🔒 Slot ${startTime}-${endTime} ocupado por reserva ${reserva.idReserva} (${reservaStart}-${reservaEnd})`);
+      }
+      
+      return slotOverlaps;
     });
     
-    slots.push({
-      date: targetDate.toISOString().split('T')[0],
+    const slotData = {
+      date: fechaStr, // Usar fecha local en lugar de UTC
       startTime,
       endTime,
       available: !isReserved,
       price: precio
-    });
+    };
+    
+    console.log(`${isReserved ? '❌' : '✅'} Slot ${startTime}-${endTime}:`, slotData.available ? 'Disponible' : 'Ocupado');
+    
+    slots.push(slotData);
   }
+  
+  console.log(`✅ ${slots.length} slots generados. Disponibles: ${slots.filter(s => s.available).length}, Ocupados: ${slots.filter(s => !s.available).length}`);
   
   return slots;
 };
