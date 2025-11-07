@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Calendar, Clock } from 'lucide-react';
+import { Sparkles, Trophy, Users, Star } from 'lucide-react';
 import FieldCard from '@/fields/components/FieldCard';
 import Filters from '../components/Filters';
 import Footer from '@/components/Footer';
+import SearchBar, { type SearchParams } from '../components/SearchBar';
 import { fetchCanchas } from '@/core/lib/helpers';
 import type { SportField } from '@/fields/types/field.types';
 import type { FilterState } from '../components/Filters';
@@ -12,7 +13,6 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [allFields, setAllFields] = useState<SportField[]>([]);
   const [filteredFields, setFilteredFields] = useState<SportField[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,72 +73,95 @@ const HomePage: React.FC = () => {
     navigate(`/field/${field.id}`);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Searching for:', searchQuery);
+  const handleSearch = (params: SearchParams) => {
+    console.log('Searching with params:', params);
+    let filtered = [...allFields];
+
+    // Filter by location (nombre de cancha o ciudad)
+    if (params.location) {
+      filtered = filtered.filter(field => 
+        field.name.toLowerCase().includes(params.location.toLowerCase()) ||
+        field.location?.city?.toLowerCase().includes(params.location.toLowerCase()) ||
+        field.location?.address?.toLowerCase().includes(params.location.toLowerCase())
+      );
+    }
+
+    // Filter by sport
+    if (params.sport) {
+      filtered = filtered.filter(field => field.sport === params.sport);
+    }
+
+    // TODO: Implementar filtros de fecha y hora cuando estén disponibles en la API
+    
+    setFilteredFields(filtered);
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Search Section - Simplified like Airbnb */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-neutral-900 mb-3 sm:mb-4">
-              Encuentra espacios deportivos increíbles
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-blue-50">
+      {/* Hero Section - Moderno y llamativo */}
+      <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 overflow-hidden">
+        {/* Elementos decorativos animados */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-300 opacity-10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-blue-300 opacity-10 rounded-full blur-3xl animate-bounce"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          {/* Badge */}
+          <div className="flex justify-center mb-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+              <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
+              <span className="text-white font-medium text-sm">Tu plataforma deportiva favorita</span>
+            </div>
+          </div>
+
+          {/* Heading */}
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white mb-4 sm:mb-6 leading-tight animate-slide-up">
+              Reserva tu cancha
+              <br />
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 text-transparent bg-clip-text animate-gradient">
+                en segundos
+              </span>
             </h1>
-            <p className="text-base sm:text-lg text-neutral-600 px-4 mb-4">
-              Reserva la cancha perfecta para tu próximo partido
+            <p className="text-lg sm:text-xl lg:text-2xl text-blue-100 max-w-3xl mx-auto px-4 animate-slide-up-delay">
+              Encuentra y reserva los mejores espacios deportivos cerca de ti. 
+              <br className="hidden sm:block" />
+              Rápido, fácil y seguro. ⚡
             </p>
           </div>
 
-          {/* Responsive Search Bar */}
-          <div className="max-w-4xl mx-auto">
-            <form onSubmit={handleSearch} className="bg-white border border-neutral-300 rounded-2xl sm:rounded-full shadow-lg p-3 sm:p-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-2 items-center">
-                <div className="relative">
-                  <MapPin className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <input
-                    type="text"
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent placeholder-neutral-500 focus:outline-none text-neutral-900 text-sm sm:text-base"
-                    placeholder="¿Dónde?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="relative">
-                  <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <input
-                    type="date"
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent text-neutral-900 focus:outline-none text-sm sm:text-base"
-                  />
-                </div>
-                <div className="relative">
-                  <Clock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <select className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent text-neutral-900 focus:outline-none appearance-none text-sm sm:text-base">
-                    <option>Hora</option>
-                    <option>08:00</option>
-                    <option>10:00</option>
-                    <option>12:00</option>
-                    <option>14:00</option>
-                    <option>16:00</option>
-                    <option>18:00</option>
-                    <option>20:00</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl sm:rounded-full transition-colors flex items-center justify-center min-h-[48px] font-medium"
-                >
-                  <Search className="h-4 w-4 sm:mr-0 mr-2" />
-                  <span className="sm:hidden">Buscar</span>
-                </button>
-              </div>
-            </form>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-6 max-w-3xl mx-auto mb-8 animate-fade-in-up">
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <Trophy className="h-8 w-8 text-yellow-300 mx-auto mb-2" />
+              <p className="text-2xl sm:text-3xl font-bold text-white">500+</p>
+              <p className="text-xs sm:text-sm text-blue-100">Canchas</p>
+            </div>
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <Users className="h-8 w-8 text-green-300 mx-auto mb-2" />
+              <p className="text-2xl sm:text-3xl font-bold text-white">10K+</p>
+              <p className="text-xs sm:text-sm text-blue-100">Usuarios</p>
+            </div>
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <Star className="h-8 w-8 text-pink-300 mx-auto mb-2" />
+              <p className="text-2xl sm:text-3xl font-bold text-white">4.8</p>
+              <p className="text-xs sm:text-sm text-blue-100">Rating</p>
+            </div>
           </div>
         </div>
+
+        {/* Wave separator */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
+          </svg>
+        </div>
       </div>
+
+      {/* SearchBar Sticky Component */}
+      <SearchBar onSearch={handleSearch} />
 
       {/* Listings Section - Like Airbnb main content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">

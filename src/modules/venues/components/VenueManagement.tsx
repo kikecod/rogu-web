@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail } from 'lucide-react';
+import type { SedeFormData } from '../types/venue.types';
+import { 
+  getDepartments, 
+  getCitiesByDepartment, 
+  getDistrictsByCity,
+  getFullAddress
+} from '../lib/boliviaData';
 
 interface Sede {
   idSede: number;
   nombre: string;
   descripcion: string;
-  direccion: string;
-  latitud: string;
-  longitud: string;
+  // Nuevos campos
+  country?: string;
+  countryCode?: string;
+  stateProvince?: string;
+  city?: string;
+  district?: string;
+  addressLine?: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  // Campos legacy para compatibilidad
+  direccion?: string;
+  latitud?: string;
+  longitud?: string;
+  // Otros campos
   telefono: string;
   email: string;
   politicas: string;
@@ -15,20 +35,6 @@ interface Sede {
   NIT: string;
   LicenciaFuncionamiento: string;
   canchas?: any[];
-}
-
-interface SedeFormData {
-  nombre: string;
-  descripcion: string;
-  direccion: string;
-  latitud: string;
-  longitud: string;
-  telefono: string;
-  email: string;
-  politicas: string;
-  estado: string;
-  NIT: string;
-  LicenciaFuncionamiento: string;
 }
 
 interface SedeManagementProps {
@@ -43,12 +49,24 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   const [editingSede, setEditingSede] = useState<Sede | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Estados para selectores geográficos
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+
   const [formData, setFormData] = useState<SedeFormData>({
     nombre: '',
     descripcion: '',
-    direccion: '',
-    latitud: '',
-    longitud: '',
+    country: 'Bolivia',
+    countryCode: 'BO',
+    stateProvince: '',
+    city: '',
+    district: '',
+    addressLine: '',
+    postalCode: '00000',
+    latitude: null,
+    longitude: null,
+    timezone: 'America/La_Paz',
     telefono: '',
     email: '',
     politicas: '',
@@ -87,9 +105,16 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
     setFormData({
       nombre: '',
       descripcion: '',
-      direccion: '',
-      latitud: '',
-      longitud: '',
+      country: 'Bolivia',
+      countryCode: 'BO',
+      stateProvince: '',
+      city: '',
+      district: '',
+      addressLine: '',
+      postalCode: '00000',
+      latitude: null,
+      longitude: null,
+      timezone: 'America/La_Paz',
       telefono: '',
       email: '',
       politicas: '',
@@ -97,6 +122,9 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       NIT: '',
       LicenciaFuncionamiento: ''
     });
+    setSelectedDepartment('');
+    setSelectedCity('');
+    setSelectedDistrict('');
     setEditingSede(null);
     setShowForm(false);
   };
@@ -112,9 +140,12 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       
       const method = editingSede ? 'PATCH' : 'POST';
       
+      // Preparar payload según la nueva estructura del backend
       const payload = editingSede 
         ? formData 
         : { ...formData, idPersonaD };
+
+      console.log('📤 Enviando payload a', url, ':', payload);
 
       const response = await fetch(url, {
         method,
@@ -126,14 +157,17 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Sede guardada exitosamente:', result);
         await loadSedes();
         resetForm();
       } else {
         const error = await response.json();
+        console.error('❌ Error del servidor:', error);
         alert('Error: ' + (error.message || 'Error al guardar la sede'));
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error de red:', error);
       alert('Error al guardar la sede');
     } finally {
       setSubmitting(false);
@@ -141,12 +175,20 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   };
 
   const handleEdit = (sede: Sede) => {
+    // Convertir datos legacy a nueva estructura
     setFormData({
       nombre: sede.nombre,
       descripcion: sede.descripcion,
-      direccion: sede.direccion,
-      latitud: sede.latitud,
-      longitud: sede.longitud,
+      country: sede.country || 'Bolivia',
+      countryCode: sede.countryCode || 'BO',
+      stateProvince: sede.stateProvince || '',
+      city: sede.city || '',
+      district: sede.district || '',
+      addressLine: sede.addressLine || sede.direccion || '',
+      postalCode: sede.postalCode || '00000',
+      latitude: sede.latitude || (sede.latitud ? parseFloat(sede.latitud) : null),
+      longitude: sede.longitude || (sede.longitud ? parseFloat(sede.longitud) : null),
+      timezone: sede.timezone || 'America/La_Paz',
       telefono: sede.telefono,
       email: sede.email,
       politicas: sede.politicas,
@@ -154,6 +196,32 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       NIT: sede.NIT,
       LicenciaFuncionamiento: sede.LicenciaFuncionamiento
     });
+
+    // Inicializar selectores geográficos si hay datos
+    if (sede.stateProvince) {
+      const departments = getDepartments();
+      const foundDept = departments.find(dept => dept.name === sede.stateProvince);
+      if (foundDept) {
+        setSelectedDepartment(foundDept.id);
+        
+        if (sede.city) {
+          const cities = getCitiesByDepartment(foundDept.id);
+          const foundCity = cities.find(city => city.name === sede.city);
+          if (foundCity) {
+            setSelectedCity(foundCity.id);
+            
+            if (sede.district) {
+              const districts = getDistrictsByCity(foundCity.id);
+              const foundDistrict = districts.find(district => district.name === sede.district);
+              if (foundDistrict) {
+                setSelectedDistrict(foundDistrict.id);
+              }
+            }
+          }
+        }
+      }
+    }
+
     setEditingSede(sede);
     setShowForm(true);
   };
@@ -186,6 +254,49 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleDepartmentChange = (departmentId: string) => {
+    setSelectedDepartment(departmentId);
+    setSelectedCity('');
+    setSelectedDistrict('');
+    
+    const departmentData = getDepartments().find(dep => dep.id === departmentId);
+    if (departmentData) {
+      const addressData = getFullAddress(departmentId, '', '');
+      setFormData(prev => ({
+        ...prev,
+        stateProvince: addressData.stateProvince,
+        city: '',
+        district: ''
+      }));
+    }
+  };
+
+  const handleCityChange = (cityId: string) => {
+    setSelectedCity(cityId);
+    setSelectedDistrict('');
+    
+    if (selectedDepartment && cityId) {
+      const addressData = getFullAddress(selectedDepartment, cityId, '');
+      setFormData(prev => ({
+        ...prev,
+        city: addressData.city,
+        district: ''
+      }));
+    }
+  };
+
+  const handleDistrictChange = (districtId: string) => {
+    setSelectedDistrict(districtId);
+    
+    if (selectedDepartment && selectedCity && districtId) {
+      const addressData = getFullAddress(selectedDepartment, selectedCity, districtId);
+      setFormData(prev => ({
+        ...prev,
+        district: addressData.district
+      }));
+    }
   };
 
   if (loading) {
@@ -355,18 +466,132 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                   />
                 </div>
 
+                {/* Sección de Ubicación Geográfica */}
                 <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Ubicación Geográfica
+                  </h4>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dirección *
+                    País *
                   </label>
                   <input
                     type="text"
-                    name="direccion"
-                    value={formData.direccion}
+                    name="country"
+                    value={formData.country}
                     onChange={handleInputChange}
                     required
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Departamento *
+                  </label>
+                  <select
+                    value={selectedDepartment}
+                    onChange={(e) => handleDepartmentChange(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar departamento</option>
+                    {getDepartments().map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ciudad *
+                  </label>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    required
+                    disabled={!selectedDepartment}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  >
+                    <option value="">Seleccionar ciudad</option>
+                    {selectedDepartment && getCitiesByDepartment(selectedDepartment).map(city => (
+                      <option key={city.id} value={city.id}>{city.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Distrito/Zona *
+                  </label>
+                  <select
+                    value={selectedDistrict}
+                    onChange={(e) => handleDistrictChange(e.target.value)}
+                    required
+                    disabled={!selectedCity}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  >
+                    <option value="">Seleccionar distrito</option>
+                    {selectedCity && getDistrictsByCity(selectedCity).map(district => (
+                      <option key={district.id} value={district.id}>{district.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dirección Específica *
+                  </label>
+                  <input
+                    type="text"
+                    name="addressLine"
+                    value={formData.addressLine}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Ej: Av. Saavedra #2540 esq. Calle 18"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Código Postal *
+                  </label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="00000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Zona Horaria *
+                  </label>
+                  <input
+                    type="text"
+                    name="timezone"
+                    value={formData.timezone}
+                    onChange={handleInputChange}
+                    required
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                  />
+                </div>
+
+                {/* Sección de Coordenadas */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 mt-4">
+                    📍 Coordenadas Geográficas
+                  </h4>
                 </div>
 
                 <div>
@@ -374,12 +599,16 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                     Latitud *
                   </label>
                   <input
-                    type="text"
-                    name="latitud"
-                    value={formData.latitud}
-                    onChange={handleInputChange}
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    value={formData.latitude || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev, 
+                      latitude: e.target.value ? parseFloat(e.target.value) : null
+                    }))}
                     required
-                    placeholder="Ej: -16.5000"
+                    placeholder="Ej: -16.5124789"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -389,14 +618,26 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                     Longitud *
                   </label>
                   <input
-                    type="text"
-                    name="longitud"
-                    value={formData.longitud}
-                    onChange={handleInputChange}
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    value={formData.longitude || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev, 
+                      longitude: e.target.value ? parseFloat(e.target.value) : null
+                    }))}
                     required
-                    placeholder="Ej: -68.1500"
+                    placeholder="Ej: -68.0897456"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                {/* Sección de Contacto */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 mt-4 flex items-center">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Información de Contacto
+                  </h4>
                 </div>
 
                 <div>
@@ -409,6 +650,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                     value={formData.telefono}
                     onChange={handleInputChange}
                     required
+                    placeholder="+591 70000000"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -423,8 +665,16 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    placeholder="contacto@sede.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                {/* Sección Legal y Regulatoria */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 mt-4 flex items-center">
+                    📄 Información Legal
+                  </h4>
                 </div>
 
                 <div>
@@ -437,6 +687,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                     value={formData.NIT}
                     onChange={handleInputChange}
                     required
+                    placeholder="123456789"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
