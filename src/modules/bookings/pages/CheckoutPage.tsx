@@ -7,6 +7,7 @@ import {
 import Footer from '@/components/Footer';
 import { createReserva } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
+import { getAuthToken } from '@/core/config/api';
 import type { CreateReservaRequest } from '../types/booking.types';
 
 interface BookingDetails {
@@ -232,11 +233,21 @@ const CheckoutPage: React.FC = () => {
 
       console.log('💰 [Checkout] Datos de transacción:', transaccionData);
 
+      // Obtener token de autenticación
+      const token = getAuthToken();
+      console.log('🔑 [Checkout] Token present:', !!token);
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const transaccionResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transacciones`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(transaccionData),
       });
 

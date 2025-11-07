@@ -36,8 +36,9 @@ export const useAccessPass = (idReserva: number | null): UseAccessPassReturn => 
       
       setPass(passData);
       
-      const imageUrl = getQRImageUrl(passData.idPaseAcceso);
-      console.log('🖼️ [useAccessPass] QR Image URL:', imageUrl);
+      // Cargar la imagen QR (ahora es async)
+      const imageUrl = await getQRImageUrl(passData.idPaseAcceso);
+      console.log('🖼️ [useAccessPass] QR Image Data URL loaded');
       setQrImageUrl(imageUrl);
       
       setError(null);

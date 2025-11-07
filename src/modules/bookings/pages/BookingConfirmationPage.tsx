@@ -142,20 +142,22 @@ const BookingConfirmationPage: React.FC = () => {
                 <p className="text-gray-600 text-sm">{passError}</p>
               </div>
             ) : qrImageUrl ? (
-              <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg">
-                <img 
-                  src={qrImageUrl} 
-                  alt="QR de acceso" 
-                  className="h-64 w-64 mx-auto"
-                  onError={(e) => {
-                    console.error('❌ [BookingConfirmation] QR image failed to load:', qrImageUrl);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-64 w-64 flex items-center justify-center bg-gray-100 rounded"><p class="text-red-500">Error al cargar QR</p></div>');
-                  }}
-                  onLoad={() => {
-                    console.log('✅ [BookingConfirmation] QR image loaded successfully');
-                  }}
-                />
+              <div className="flex justify-center">
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                  <img 
+                    src={qrImageUrl} 
+                    alt="QR de acceso" 
+                    className="h-64 w-64"
+                    onError={(e) => {
+                      console.error('❌ [BookingConfirmation] QR image failed to load:', qrImageUrl);
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-64 w-64 flex items-center justify-center bg-gray-100 rounded"><p class="text-red-500">Error al cargar QR</p></div>');
+                    }}
+                    onLoad={() => {
+                      console.log('✅ [BookingConfirmation] QR image loaded successfully');
+                    }}
+                  />
+                </div>
               </div>
             ) : (
               <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg">
