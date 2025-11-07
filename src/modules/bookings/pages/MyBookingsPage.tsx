@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, Clock, MapPin, Users, QrCode, Edit, Trash2, 
   CheckCircle, XCircle, AlertCircle, ChevronRight, Star,
-  Download, Share2, Filter, Search
+  Download, Share2, Filter, Search, CreditCard
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import EditBookingModal from '../components/EditBookingModal';
@@ -12,6 +12,7 @@ import CreateReviewModal from '@/reviews/components/CreateReviewModal';
 import { fetchReservasByUserId, fetchCanchaImage } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { reviewService } from '@/reviews/services/reviewService';
+import { useAccessPass } from '../hooks/useAccessPass';
 import type { ApiReservaUsuario } from '../types/booking.types';
 
 
@@ -295,6 +296,64 @@ const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const handlePayPending = (bookingId: string) => {
+    console.log('💳 [MyBookings] Iniciando pago de reserva pendiente:', bookingId);
+    
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) {
+      console.error('❌ [MyBookings] Reserva no encontrada:', bookingId);
+      return;
+    }
+
+    // Reconstruir bookingDetails para el checkout
+    const bookingDetails = {
+      fieldName: booking.fieldName,
+      fieldImage: booking.fieldImage,
+      sedeName: booking.sedeName,
+      address: booking.address,
+      date: booking.date,
+      participants: booking.participants,
+      timeSlot: booking.timeSlot,
+      price: booking.price,
+      rating: booking.rating || 0,
+      reviews: booking.reviews || 0
+    };
+
+    // Parsear timeSlot para obtener fecha y horarios
+    const selectedTimeSlots = [booking.timeSlot];
+
+    // Parsear la fecha
+    const dateParts = booking.date.split(' de ');
+    const months: { [key: string]: number } = {
+      'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
+      'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+    };
+    const day = parseInt(dateParts[0]);
+    const month = months[dateParts[1].toLowerCase()];
+    const year = parseInt(dateParts[2]);
+    const selectedDate = new Date(year, month, day);
+
+    console.log('📋 [MyBookings] Datos para checkout:', {
+      idReserva: booking.id,
+      bookingDetails,
+      selectedDate,
+      selectedTimeSlots
+    });
+
+    // Navegar al checkout CON el idReserva existente
+    navigate('/checkout', {
+      state: {
+        bookingDetails,
+        idReserva: parseInt(booking.id),  // ← IMPORTANTE: pasar el ID existente
+        fieldId: booking.fieldId,
+        selectedDate,
+        selectedTimeSlots,
+        participants: booking.participants,
+        totalPrice: booking.price
+      }
+    });
+  };
+
   const handleCancelSuccess = async () => {
     setShowDeleteModal(false);
     setSelectedBooking(null);
@@ -305,6 +364,7 @@ const MyBookingsPage: React.FC = () => {
       try {
         const reservasData = await fetchReservasByUserId(user.idUsuario);
         
+        console.log('Estas son las reservas backend manda', reservasData);
         // Cargar las imágenes de todas las canchas en paralelo
         const imagePromises = reservasData.map(reserva => 
           fetchCanchaImage(reserva.cancha.idCancha)
@@ -359,24 +419,137 @@ const MyBookingsPage: React.FC = () => {
     setSelectedBooking(booking);
   };
 
-  const handleDownloadQR = (booking: Booking) => {
-    alert(`Descargando QR para: ${booking.bookingCode}`);
-  };
+  // Componente para mostrar QR en modal de detalles
+  const QRSection: React.FC<{ booking: Booking }> = ({ booking }) => {
+    const { pass, loading, error, qrImageUrl, downloadQR, shareQR } = useAccessPass(
+      booking.status === 'active' ? parseInt(booking.id) : null
+    );
 
-  const handleShareBooking = async (booking: Booking) => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Reserva ROGU - ${booking.fieldName}`,
-          text: `Reserva confirmada: ${booking.fieldName}\nFecha: ${booking.date}\nCódigo: ${booking.bookingCode}`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Error sharing:', err);
-      }
-    } else {
-      alert('Función de compartir no disponible en este navegador');
+    if (loading) {
+      return (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-600">Cargando código QR...</p>
+          </div>
+        </div>
+      );
     }
+
+    if (error) {
+      return (
+        <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200">
+          <div className="flex flex-col items-center justify-center py-8">
+            <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+            <p className="text-red-600 font-semibold mb-2">Error al cargar el QR</p>
+            <p className="text-gray-600 text-sm text-center">{error}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!qrImageUrl || !pass) {
+      return (
+        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 border-2 border-gray-200">
+          <div className="flex flex-col items-center justify-center py-8">
+            <QrCode className="h-16 w-16 text-gray-300 mb-4" />
+            <p className="text-gray-600">QR no disponible</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
+          Código QR de acceso
+        </h3>
+        
+        {/* QR Image from Backend */}
+        <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg w-full flex justify-center">
+          <img 
+            src={qrImageUrl} 
+            alt="QR de acceso" 
+            className="h-48 w-48"
+            onError={(e) => {
+              console.error('❌ Error al cargar imagen QR:', qrImageUrl);
+              e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {
+              console.log('✅ QR cargado exitosamente');
+            }}
+          />
+        </div>
+
+        {/* Código y validez */}
+        <div className="mt-4 space-y-3">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">Código de reserva</p>
+            <p className="text-xl font-mono font-bold text-gray-900">{booking.bookingCode}</p>
+          </div>
+
+          {pass && (
+            <>
+              <div className="bg-white rounded-lg p-3 text-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600">Estado:</span>
+                  <span className={`font-bold ${
+                    pass.estado === 'activo' ? 'text-green-600' : 
+                    pass.estado === 'pendiente' ? 'text-yellow-600' : 
+                    pass.estado === 'usado' ? 'text-blue-600' : 'text-gray-600'
+                  }`}>
+                    {pass.estado.charAt(0).toUpperCase() + pass.estado.slice(1)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600">Usos:</span>
+                  <span className="font-bold">{pass.vecesUsado} / {pass.usoMaximo}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Válido hasta:</span>
+                  <span className="font-bold">{new Date(pass.validoHasta).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Botones */}
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <button
+            onClick={async () => {
+              try {
+                await downloadQR();
+                console.log('✅ QR descargado exitosamente');
+              } catch (error) {
+                console.error('❌ Error al descargar QR:', error);
+                alert('Error al descargar el QR. Por favor intenta de nuevo.');
+              }
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all"
+          >
+            <Download className="h-4 w-4" />
+            Descargar
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await shareQR(booking.fieldName);
+              } catch (error) {
+                console.error('❌ Error al compartir:', error);
+                if (error instanceof Error) {
+                  alert(error.message);
+                }
+              }
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all"
+          >
+            <Share2 className="h-4 w-4" />
+            Compartir
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Funciones para sistema de reseñas
@@ -656,6 +829,21 @@ const MyBookingsPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2 flex-wrap">
+                          {/* Botón Pagar Ahora - Solo para reservas pendientes */}
+                          {booking.status === 'pending' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePayPending(booking.id);
+                              }}
+                              className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold text-sm hover:bg-yellow-600 transition-all flex items-center gap-2"
+                              title="Completar pago"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              Pagar Ahora
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleViewDetails(booking)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-all flex items-center gap-2"
@@ -744,34 +932,7 @@ const MyBookingsPage: React.FC = () => {
 
               {/* QR Code for Active Bookings */}
               {selectedBooking.status === 'active' && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                    Código QR de acceso
-                  </h3>
-                  <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg w-full flex justify-center">
-                    <QrCode className="h-48 w-48 text-gray-800" />
-                  </div>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600 mb-2">Código de reserva</p>
-                    <p className="text-xl font-mono font-bold text-gray-900">{selectedBooking.bookingCode}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <button
-                      onClick={() => handleDownloadQR(selectedBooking)}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all"
-                    >
-                      <Download className="h-4 w-4" />
-                      Descargar
-                    </button>
-                    <button
-                      onClick={() => handleShareBooking(selectedBooking)}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all"
-                    >
-                      <Share2 className="h-4 w-4" />
-                      Compartir
-                    </button>
-                  </div>
-                </div>
+                <QRSection booking={selectedBooking} />
               )}
 
               {/* Booking Info */}
