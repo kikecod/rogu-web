@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Globe, Loader2, MoonStar, ToggleLeft } from 'lucide-react';
+import { Bell, Globe, Loader2, ToggleLeft } from 'lucide-react';
 import type { UsuarioPreferencias } from '../types/profile.types';
 import profileService from '../services/profileService';
 
@@ -200,13 +200,7 @@ const ProfilePreferencesForm: React.FC<Props> = ({ preferencias, onUpdated }) =>
 
         {/* Apariencia y firma */}
         <section className="space-y-3">
-          <ToggleSwitch
-            label="Activar modo oscuro"
-            description="Aplicar tema oscuro automáticamente en la interfaz."
-            icon={MoonStar}
-            checked={state.modoOscuro}
-            onChange={() => handleToggle('modoOscuro')}
-          />
+          
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-600">
               Firma para reservas (opcional)

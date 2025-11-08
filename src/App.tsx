@@ -15,6 +15,8 @@ import VenueDetailPage from '@/venues/pages/VenueDetailPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
 import MyBookingsPage from '@/bookings/pages/MyBookingsPage';
+import FavoritesPage from './modules/favorites/pages/FavoritesPage';
+import ProtectedRoute from '@/core/routing/ProtectedRoute';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -79,6 +81,7 @@ const AppContent = () => {
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/favoritos" element={<ProtectedRoute redirectTo="/" showUnauthorized={false}><FavoritesPage /></ProtectedRoute>} />
         </Routes>
       </div>
     </Router>
