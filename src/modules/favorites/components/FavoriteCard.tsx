@@ -1,8 +1,10 @@
 // File: components/FavoriteCard.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { FavoriteRecord } from '../types/favorite.types';
 import FavoriteButton from './FavoriteButton';
 import { getImageUrl } from '@/core/config/api';
+import type { FavoriteFoto } from '../types/favorite.types';
+import { fetchCanchaImage } from '@/core/lib/helpers';
 
 interface Props {
   favorite: FavoriteRecord;
@@ -13,27 +15,60 @@ interface Props {
 const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
   const c = favorite.cancha;
 
+  // Resolver foto: primero usar la que venga en favorite.cancha; si no hay, llamar API /cancha/:id para obtenerla
+  const [imgSrc, setImgSrc] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    const resolveCanchaFotoPath = (f: any): string => {
+      if (!f) return '';
+      return (
+        f.urlFoto?.trim?.() || f.url?.trim?.() || f.path?.trim?.() || f.ruta?.trim?.() || ''
+      );
+    };
+
+    const init = async () => {
+      const rawFoto: FavoriteFoto | undefined = c?.fotos?.[0];
+      const fotoPath = resolveCanchaFotoPath(rawFoto);
+      if (fotoPath) {
+        const url = fotoPath.startsWith('http') ? fotoPath : getImageUrl(fotoPath);
+        if (mounted) setImgSrc(url);
+        return;
+      }
+      // No vino foto en el favorito: traerla desde el backend
+      try {
+        const url = await fetchCanchaImage(favorite.idCancha);
+        if (mounted) setImgSrc(url);
+      } catch {
+        if (mounted) setImgSrc('');
+      }
+    };
+
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, [favorite.idCancha, c?.fotos]);
+
   return (
     <div className="rounded-2xl bg-gradient-to-tr from-rose-500/30 via-fuchsia-500/30 to-indigo-500/30 p-[1.2px] transition hover:from-rose-500/50 hover:to-indigo-500/50">
       <div className="group relative h-full overflow-hidden rounded-[14px] bg-white shadow-sm transition hover:shadow-xl">
-        {/* Imagen */}
-        {c?.fotos?.[0] && (
-          <div className="relative h-44 w-full overflow-hidden bg-gray-100 sm:h-48">
+        {/* Imagen principal (sólo desde backend); si no llega, se mantiene el fondo gris */}
+        <div className="relative h-44 w-full overflow-hidden bg-gray-100 sm:h-48">
+          {imgSrc && (
             <img
-              src={getImageUrl((c.fotos[0] as any).urlFoto || (c.fotos[0] as any).url || '')}
+              src={imgSrc}
               alt={c?.nombre || `Cancha ${favorite.idCancha}`}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = getImageUrl('/uploads/placeholder.png');
-              }}
+              onError={() => setImgSrc('')}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-transparent opacity-60 transition group-hover:opacity-70" />
-            <div className="absolute right-2 top-2">
-              <FavoriteButton idCancha={favorite.idCancha} className="bg-white/70 backdrop-blur hover:bg-white" />
-            </div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-transparent opacity-60 transition group-hover:opacity-70" />
+          <div className="absolute right-2 top-2">
+            <FavoriteButton idCancha={favorite.idCancha} className="bg-white/70 backdrop-blur hover:bg-white" />
           </div>
-        )}
+        </div>
 
         {/* Contenido */}
         <div className="p-4 space-y-3">
@@ -51,6 +86,24 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
                   {typeof c?.aforoMax === 'number' && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100">
                       Aforo {c.aforoMax}
+                    </span>
+                  )}
+                </div>
+              )}
+              {/* Disciplinas chips si vienen en cancha.parte.disciplina */}
+              {Array.isArray((c as any)?.parte) && (c as any).parte.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1 max-h-12 overflow-hidden">
+                  {(c as any).parte.slice(0,3).map((p: any, idx: number) => (
+                    <span
+                      key={p.idDisciplina + '-' + idx}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm"
+                    >
+                      {p?.disciplina?.nombre || 'Disciplina'}
+                    </span>
+                  ))}
+                  {(c as any).parte.length > 3 && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-white border border-gray-200 text-gray-600">
+                      +{(c as any).parte.length - 3}
                     </span>
                   )}
                 </div>
@@ -107,3 +160,4 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
 };
 
 export default FavoriteCard;
+ 

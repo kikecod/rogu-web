@@ -155,6 +155,12 @@ export const convertApiCanchaToSportField = (apiCancha: ApiCancha): SportField =
   // Convertir precio de string a número
   const price = parseFloat(apiCancha.precio) || 0;
 
+  const disciplinas: string[] = Array.isArray((apiCancha as any).parte)
+    ? (apiCancha as any).parte
+        .map((p: any) => p?.disciplina?.nombre)
+        .filter((n: any) => typeof n === 'string' && n.trim().length > 0)
+    : [];
+
   return {
     id: apiCancha.idCancha.toString(),
     sedeId: apiCancha.id_Sede.toString(),
@@ -176,7 +182,8 @@ export const convertApiCanchaToSportField = (apiCancha: ApiCancha): SportField =
       id: apiCancha.id_Sede.toString(),
       name: 'Sede ' + apiCancha.id_Sede,
       avatar: generateAvatarUrl('Sede ' + apiCancha.id_Sede)
-    }
+    },
+    disciplinas,
   };
 };
 
@@ -324,8 +331,15 @@ export const convertApiCanchaDetalleToSportField = (
   _reservas: ApiReserva[], // No se usa aquí, los slots se generan en el componente con fecha específica
   resenas: ApiResena[]
 ): SportField => {
-  // Determinar el tipo de deporte basado en la superficie
+  // Determinar el tipo de deporte basado en la superficie (legacy)
   const sport = mapSuperficieToSport(cancha.superficie);
+
+  // Disciplinas normalizadas desde partes (si vienen eager)
+  const disciplinas: string[] = Array.isArray((cancha as any).parte)
+    ? (cancha as any).parte
+        .map((p: any) => p?.disciplina?.nombre)
+        .filter((n: any) => typeof n === 'string' && n.trim().length > 0)
+    : [];
 
   // Convertir fotos a URLs completas
   const images = cancha.fotos && cancha.fotos.length > 0
@@ -422,7 +436,8 @@ export const convertApiCanchaDetalleToSportField = (
       open: horaApertura,
       close: horaCierre
     },
-    reviewsList
+    reviewsList,
+    disciplinas,
   };
 };
 

@@ -1,3 +1,10 @@
+export interface FavoriteFoto {
+  idFoto?: number;
+  urlFoto: string; // backend principal field
+  descripcion?: string | null;
+  creadoEn?: string;
+}
+
 export interface FavoriteCancha {
   idCancha: number;
   nombre: string;
@@ -6,9 +13,14 @@ export interface FavoriteCancha {
   cubierta?: boolean;
   iluminacion?: string;
   aforoMax?: number;
-  fotos?: { url: string; descripcion?: string }[];
+  fotos?: FavoriteFoto[]; // backend returns {urlFoto}
   rating?: number;
   numReviews?: number;
+  parte?: Array<{
+    idParte?: number;
+    idDisciplina?: number;
+    disciplina?: { idDisciplina: number; nombre: string };
+  }>;
 }
 
 export interface FavoriteRecord {

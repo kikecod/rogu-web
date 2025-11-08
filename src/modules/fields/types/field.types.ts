@@ -150,6 +150,8 @@ export interface SportField {
     close: string;
   };
   reviewsList?: Review[];
+  // Lista normalizada de nombres de disciplinas asociadas (derivada de partes)
+  disciplinas?: string[];
 }
 
 export interface TimeSlot {

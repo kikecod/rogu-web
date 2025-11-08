@@ -179,17 +179,7 @@ const SportFieldDetailPage: React.FC = () => {
     });
   };
 
-  const getSportIcon = (sport: string) => {
-    const icons: { [key: string]: string } = {
-      football: '⚽',
-      basketball: '🏀',
-      tennis: '🎾',
-      volleyball: '🏐',
-      paddle: '🏓',
-      hockey: '🏒',
-    };
-    return icons[sport] || '⚽';
-  };
+  // Sport icon ya no se usa en el badge; mantenido si se requiere en otro lugar
 
   // Calcular precio total de todos los horarios seleccionados
   const totalPrice = field ? selectedTimeSlots.reduce((sum, timeSlot) => {
@@ -283,10 +273,24 @@ const SportFieldDetailPage: React.FC = () => {
                 {currentImageIndex + 1} / {field.images.length}
               </div>
 
-              {/* Sport Badge */}
-              <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10">
-                {getSportIcon(field.sport)} {field.sport.charAt(0).toUpperCase() + field.sport.slice(1)}
-              </div>
+              {/* Disciplinas Badge (dinámicas) */}
+              {Array.isArray(field.disciplinas) && field.disciplinas.length > 0 && (
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[70%] z-10">
+                  {field.disciplinas.slice(0, 3).map((disc, idx) => (
+                    <span
+                      key={disc + idx}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow"
+                    >
+                      {disc}
+                    </span>
+                  ))}
+                  {field.disciplinas.length > 3 && (
+                    <span className="bg-white/80 backdrop-blur-sm text-gray-700 px-3 py-1 rounded-full text-xs font-medium shadow border border-gray-200">
+                      +{field.disciplinas.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Grid */}
