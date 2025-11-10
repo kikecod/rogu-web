@@ -13,16 +13,17 @@
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@types/react-router-dom": "^5.3.3",
+    "axios": "^1.13.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
     "moment": "^2.30.1",
     "react": "^19.1.1",
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.1.1",
+    "react-easy-crop": "^5.1.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.3",
-    "recharts": "^3.3.0",
-    "react-easy-crop": "^5.1.0"
+    "recharts": "^3.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
