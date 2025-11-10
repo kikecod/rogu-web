@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  Star, MapPin, Share2, Heart, ChevronLeft, ChevronRight,
+  Star, MapPin, Share2, ChevronLeft, ChevronRight,
   Clock, Calendar, Shield, Sparkles, Check, X,
   MessageCircle, Phone, Users, Plus, Minus
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
 import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots, formatDateLocal } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
+import FavoriteButton from '../../favorites/components/FavoriteButton';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +24,6 @@ const SportFieldDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -179,17 +179,7 @@ const SportFieldDetailPage: React.FC = () => {
     });
   };
 
-  const getSportIcon = (sport: string) => {
-    const icons: { [key: string]: string } = {
-      football: '⚽',
-      basketball: '🏀',
-      tennis: '🎾',
-      volleyball: '🏐',
-      paddle: '🏓',
-      hockey: '🏒',
-    };
-    return icons[sport] || '⚽';
-  };
+  // Sport icon ya no se usa en el badge; mantenido si se requiere en otro lugar
 
   // Calcular precio total de todos los horarios seleccionados
   const totalPrice = field ? selectedTimeSlots.reduce((sum, timeSlot) => {
@@ -243,16 +233,8 @@ const SportFieldDetailPage: React.FC = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className={`p-2 rounded-full transition-all ${
-                isFavorite 
-                  ? 'bg-red-50 text-red-500' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
-            </button>
+            {/* Botón de favoritos funcional */}
+            {id && <FavoriteButton idCancha={Number(id)} size="sm" />}
             <button className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
               <Share2 className="h-5 w-5" />
             </button>
@@ -291,10 +273,24 @@ const SportFieldDetailPage: React.FC = () => {
                 {currentImageIndex + 1} / {field.images.length}
               </div>
 
-              {/* Sport Badge */}
-              <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10">
-                {getSportIcon(field.sport)} {field.sport.charAt(0).toUpperCase() + field.sport.slice(1)}
-              </div>
+              {/* Disciplinas Badge (dinámicas) */}
+              {Array.isArray(field.disciplinas) && field.disciplinas.length > 0 && (
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[70%] z-10">
+                  {field.disciplinas.slice(0, 3).map((disc, idx) => (
+                    <span
+                      key={disc + idx}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow"
+                    >
+                      {disc}
+                    </span>
+                  ))}
+                  {field.disciplinas.length > 3 && (
+                    <span className="bg-white/80 backdrop-blur-sm text-gray-700 px-3 py-1 rounded-full text-xs font-medium shadow border border-gray-200">
+                      +{field.disciplinas.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Grid */}
@@ -326,9 +322,12 @@ const SportFieldDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-5">
             {/* Title and Rating */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">
-                {field.name}
-              </h1>
+              <div className="flex items-start justify-between mb-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                  {field.name}
+                </h1>
+                <FavoriteButton idCancha={Number(field.id)} size="md" />
+              </div>
               
               <div className="flex flex-wrap items-center gap-3 text-gray-600 mb-5">
                 <div className="flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full">

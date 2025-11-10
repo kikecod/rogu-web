@@ -116,6 +116,14 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                       >
                         Mis reservas
                       </Link>
+
+                      <Link
+                        to="/favoritos"
+                        className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Mis canchas favoritas
+                      </Link>
                       
                       {/* Solo mostrar para dueños y admins */}
                       {user?.roles && (user.roles.includes('DUENIO') || user.roles.includes('ADMIN')) && (
