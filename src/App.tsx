@@ -76,6 +76,7 @@ const AppContent = () => {
           <Route path="/field/:id" element={<FieldDetailPage />} />
           <Route path="/sede/:id" element={<VenueDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/booking-confirmation/:id" element={<BookingConfirmationPage />} />
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />

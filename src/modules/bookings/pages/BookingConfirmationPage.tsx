@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { 
   QrCode, CheckCircle, Download, Share2, Calendar, 
   Clock, Users, MapPin, AlertCircle, Home, Trophy,
-  Star, Copy, Check
+  Star, Copy, Check, Loader2
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { useAccessPass } from '../hooks/useAccessPass';
 
 interface BookingDetails {
   fieldName: string;
@@ -23,8 +24,20 @@ interface BookingDetails {
 const BookingConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams<{ id: string }>();
+  
   const bookingDetails = location.state?.bookingDetails as BookingDetails;
   const paymentMethod = location.state?.paymentMethod as 'card' | 'qr';
+  const reservaId = id ? parseInt(id) : location.state?.reservaId;
+
+  console.log('🎫 [BookingConfirmation] Component mounted:', {
+    reservaId,
+    idFromParams: id,
+    idFromState: location.state?.reservaId,
+    bookingDetails
+  });
+
+  const { pass, loading: passLoading, error: passError, qrImageUrl, downloadQR: handleDownloadQR, shareQR: handleShareQR } = useAccessPass(reservaId);
 
   const [copied, setCopied] = useState(false);
 
@@ -50,32 +63,31 @@ const BookingConfirmationPage: React.FC = () => {
     );
   }
 
-  // Generar código de reserva único
-  const bookingCode = `ROGU-${Date.now().toString().slice(-8)}`;
+  // Código de reserva: usar idReserva (más simple y directo)
+  const bookingCode = reservaId ? `ROGU-${reservaId}` : pass?.codigoQR || 'ROGU-TEMP';
   
   // Calcular tiempo de validez (desde 30 minutos antes hasta el fin del horario)
   const [startTime] = bookingDetails.timeSlot.split(' - ');
   const validFrom = `30 minutos antes (${startTime})`;
   const validUntil = bookingDetails.timeSlot.split(' - ')[1];
 
-  const handleDownloadQR = () => {
-    // Simular descarga del QR
-    alert('QR descargado exitosamente. En producción, esto generaría un archivo PNG.');
+  const onDownloadQR = async () => {
+    try {
+      await handleDownloadQR();
+    } catch (error) {
+      console.error('Error downloading QR:', error);
+      alert('Error al descargar el QR. Por favor intenta de nuevo.');
+    }
   };
 
-  const handleShareQR = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Mi Reserva ROGU',
-          text: `Reserva confirmada: ${bookingDetails.fieldName}\nCódigo: ${bookingCode}`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Error sharing:', err);
+  const onShareQR = async () => {
+    try {
+      await handleShareQR(bookingDetails.fieldName);
+    } catch (error) {
+      console.error('Error sharing QR:', error);
+      if (error instanceof Error) {
+        alert(error.message);
       }
-    } else {
-      alert('Tu navegador no soporta compartir. Puedes copiar el código o descargar el QR.');
     }
   };
 
@@ -118,9 +130,41 @@ const BookingConfirmationPage: React.FC = () => {
 
           {/* QR Code Display */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mb-6">
-            <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg">
-              <QrCode className="h-64 w-64 text-gray-800 mx-auto" />
-            </div>
+            {passLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-16 w-16 text-blue-600 animate-spin mb-4" />
+                <p className="text-gray-600">Generando tu código QR...</p>
+              </div>
+            ) : passError ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+                <p className="text-red-600 font-semibold mb-2">Error al cargar el QR</p>
+                <p className="text-gray-600 text-sm">{passError}</p>
+              </div>
+            ) : qrImageUrl ? (
+              <div className="flex justify-center">
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                  <img 
+                    src={qrImageUrl} 
+                    alt="QR de acceso" 
+                    className="h-64 w-64"
+                    onError={(e) => {
+                      console.error('❌ [BookingConfirmation] QR image failed to load:', qrImageUrl);
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-64 w-64 flex items-center justify-center bg-gray-100 rounded"><p class="text-red-500">Error al cargar QR</p></div>');
+                    }}
+                    onLoad={() => {
+                      console.log('✅ [BookingConfirmation] QR image loaded successfully');
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-lg">
+                <QrCode className="h-64 w-64 text-gray-300 mx-auto" />
+                <p className="text-center text-gray-500 mt-4">Código QR no disponible</p>
+              </div>
+            )}
             
             {/* Booking Code */}
             <div className="mt-6 flex items-center justify-center gap-3">
@@ -141,15 +185,17 @@ const BookingConfirmationPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <button
-              onClick={handleDownloadQR}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+              onClick={onDownloadQR}
+              disabled={passLoading || !pass}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="h-5 w-5" />
               Descargar QR
             </button>
             <button
-              onClick={handleShareQR}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-blue-600 text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-all"
+              onClick={onShareQR}
+              disabled={passLoading || !pass}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-blue-600 text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Share2 className="h-5 w-5" />
               Compartir
