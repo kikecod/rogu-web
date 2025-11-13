@@ -182,7 +182,7 @@ class VenueService {
 
   /**
    * Obtener detalle completo de una sede
-   * GET /api/sedes/:id
+   * GET /api/sede/:id
    */
   async getVenueById(idSede: number): Promise<SedeDetalleResponse> {
     try {
@@ -198,7 +198,27 @@ class VenueService {
         throw new Error(`Error al obtener sede: ${response.statusText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      
+      // Transformar coordenadas de string a number si es necesario
+      if (data.sede) {
+        data.sede.latitude = typeof data.sede.latitude === 'string' 
+          ? parseFloat(data.sede.latitude) 
+          : data.sede.latitude;
+        data.sede.longitude = typeof data.sede.longitude === 'string' 
+          ? parseFloat(data.sede.longitude) 
+          : data.sede.longitude;
+          
+        // Transformar fotos con URLs completas
+        if (data.sede.fotos && Array.isArray(data.sede.fotos)) {
+          data.sede.fotos = data.sede.fotos.map((foto: any) => ({
+            ...foto,
+            urlFoto: getImageUrl(foto.url || foto.urlFoto),
+          }));
+        }
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error en getVenueById:', error);
       throw error;

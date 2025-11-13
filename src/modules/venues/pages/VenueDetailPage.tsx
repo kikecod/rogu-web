@@ -5,6 +5,7 @@ import {
   Clock, Users, Building2, AlertCircle, Loader2
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import MapView from '@/components/MapView';
 import { venueService } from '../services/venueService';
 import type { SedeDetalle, CanchaResumen, CalificacionSede } from '../types/venue-search.types';
 
@@ -17,6 +18,10 @@ const VenueDetailPage: React.FC = () => {
   const [reviews, setReviews] = useState<CalificacionSede[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
 
   useEffect(() => {
     const loadVenueData = async () => {
@@ -262,18 +267,39 @@ const VenueDetailPage: React.FC = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 Ubicación
               </h2>
-              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center">
-                <div className="text-center p-4">
-                  <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-                  <p className="text-gray-700 font-medium text-base">
-                    {venue.addressLine}
-                  </p>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {venue.district}, {venue.city}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-2">
-                    Coordenadas: {venue.latitude}, {venue.longitude}
-                  </p>
+              
+              {/* Mapa */}
+              {venue.latitude && venue.longitude ? (
+                <div className="mb-4">
+                  <MapView
+                    lat={venue.latitude}
+                    lng={venue.longitude}
+                    title={venue.nombre}
+                    height="400px"
+                    zoom={15}
+                  />
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center mb-4">
+                  <div className="text-center p-4">
+                    <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                    <p className="text-gray-700 font-medium text-base">Ubicación no disponible</p>
+                    <p className="text-gray-600 text-sm">Coordenadas no configuradas</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Información de dirección */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-gray-900 font-medium">{venue.addressLine}</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {venue.district}, {venue.city}, {venue.stateProvince}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">{venue.country}</p>
+                  </div>
                 </div>
               </div>
             </div>
