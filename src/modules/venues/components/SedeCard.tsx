@@ -99,14 +99,14 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
 
           {/* Precio */}
           <div className="flex items-center gap-1 text-gray-900">
-            <DollarSign className="h-4 w-4" />
+            <span className="text-s text-black-500">Bs</span>
             <span className="text-sm font-medium">
               {estadisticas.precioDesde}
               {estadisticas.precioDesde !== estadisticas.precioHasta && 
-                ` - ${estadisticas.precioHasta}`
+                `${estadisticas.precioHasta}`
               }
             </span>
-            <span className="text-xs text-gray-500">/hora</span>
+            <span className="text-s text-gray-500">/ hora</span>
           </div>
         </div>
       </div>
