@@ -8,6 +8,7 @@ import SedeCard from '../../venues/components/SedeCard';
 import Filters from '../components/Filters';
 import Footer from '@/components/Footer';
 import { venueService } from '../../venues/services/venueService';
+import { searchApiService } from '../services/searchApi.service';
 import type { SedeCard as SedeCardType } from '../../venues/types/venue-search.types';
 import type { FilterState } from '../components/Filters';
 
@@ -18,6 +19,18 @@ const HomePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSearchBarSticky, setIsSearchBarSticky] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  // Estado compartido del SearchBar
+  const [searchValues, setSearchValues] = useState<SportSearchParams>({
+    venue: '',
+    venueId: undefined,
+    date: '',
+    startTime: '',
+    endTime: '',
+    discipline: '',
+    disciplineId: undefined,
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -74,26 +87,66 @@ const HomePage: React.FC = () => {
     setFilteredVenues(filtered);
   };
 
-  const handleSportSearch = (params: SportSearchParams) => {
+  const handleSportSearch = async (params: SportSearchParams) => {
     console.log('Searching with sports params:', params);
-    let filtered = [...allVenues];
+    
+    // Actualizar el estado compartido para mantener sincronizados ambos SearchBars
+    setSearchValues(params);
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      setHasSearched(true);
 
-    if (params.venue) {
-      filtered = filtered.filter(venue => 
-        venue.nombre.toLowerCase().includes(params.venue.toLowerCase()) ||
-        venue.city.toLowerCase().includes(params.venue.toLowerCase()) ||
-        venue.district.toLowerCase().includes(params.venue.toLowerCase()) ||
-        venue.addressLine.toLowerCase().includes(params.venue.toLowerCase())
-      );
+      // Construir parámetros para la API
+      const searchParams: any = {
+        page: 1,
+        limit: 50,
+      };
+
+      // Agregar parámetros opcionales solo si tienen valor
+      // Solo agregar IDs si fueron seleccionados del dropdown (tienen ID válido)
+      if (params.venueId && params.venueId > 0) {
+        searchParams.idSede = params.venueId;
+      }
+      
+      if (params.date) {
+        searchParams.fecha = params.date;
+      }
+      
+      if (params.startTime) {
+        searchParams.horaInicio = params.startTime;
+      }
+      
+      if (params.endTime) {
+        searchParams.horaFin = params.endTime;
+      }
+      
+      if (params.disciplineId && params.disciplineId > 0) {
+        searchParams.idDisciplina = params.disciplineId;
+      }
+
+      // Llamar al endpoint de búsqueda
+      const sedes = await searchApiService.searchMain(searchParams);
+      
+      console.log('Resultados de búsqueda:', sedes);
+      
+      // Si el array está vacío, no mostrar mensaje de error, solo mostrar el estado vacío
+      if (Array.isArray(sedes)) {
+        setFilteredVenues(sedes as any);
+        setAllVenues(sedes as any);
+      } else {
+        setFilteredVenues([]);
+        setAllVenues([]);
+      }
+      
+    } catch (err) {
+      console.error('Error en búsqueda:', err);
+      setError('No se pudieron cargar los resultados. Por favor, intenta de nuevo.');
+      setFilteredVenues([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (params.discipline) {
-      filtered = filtered.filter(venue => 
-        venue.estadisticas.deportesDisponibles.includes(params.discipline)
-      );
-    }
-
-    setFilteredVenues(filtered);
   };
 
   return (
@@ -112,7 +165,16 @@ const HomePage: React.FC = () => {
       {/* Search Bar - Normal position (below hero) */}
       <div className="relative -mt-8 mb-6 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SportsSearchBar onSearch={handleSportSearch} />
+          <SportsSearchBar 
+            onSearch={handleSportSearch}
+            initialVenue={searchValues.venue}
+            initialVenueId={searchValues.venueId}
+            initialDate={searchValues.date}
+            initialStartTime={searchValues.startTime}
+            initialEndTime={searchValues.endTime}
+            initialDiscipline={searchValues.discipline}
+            initialDisciplineId={searchValues.disciplineId}
+          />
         </div>
       </div>
 
@@ -122,7 +184,16 @@ const HomePage: React.FC = () => {
       }`}>
         <div className="bg-gradient-to-r from-primary-50 to-secondary-50 shadow-xl border-b-2 border-primary-500">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <SportsSearchBar onSearch={handleSportSearch} />
+            <SportsSearchBar 
+              onSearch={handleSportSearch}
+              initialVenue={searchValues.venue}
+              initialVenueId={searchValues.venueId}
+              initialDate={searchValues.date}
+              initialStartTime={searchValues.startTime}
+              initialEndTime={searchValues.endTime}
+              initialDiscipline={searchValues.discipline}
+              initialDisciplineId={searchValues.disciplineId}
+            />
           </div>
         </div>
       </div>
@@ -176,20 +247,17 @@ const HomePage: React.FC = () => {
                   />
                 ))}
               </div>
-            ) : (
+            ) : hasSearched ? (
               <div className="text-center py-16 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border-2 border-primary-200">
-                <div className="text-6xl mb-4">⚽🏀🎾</div>
+                <div className="text-6xl mb-4">🔍</div>
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600 mb-3">
-                  No se encontraron espacios
+                  No se encontraron resultados
                 </h3>
                 <p className="text-gray-600 max-w-md mx-auto">
-                  {allVenues.length === 0 
-                    ? '¡Pronto tendremos más espacios disponibles para ti!'
-                    : 'Prueba ajustando tus filtros o busca en otra ubicación'
-                  }
+                  No hay espacios disponibles con los criterios de búsqueda seleccionados. Intenta con otros parámetros.
                 </p>
               </div>
-            )}
+            ) : null}
 
             {/* Load More Button */}
             {filteredVenues.length > 0 && filteredVenues.length >= 12 && (

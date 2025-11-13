@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Star, DollarSign, Building2, CheckCircle } from 'lucide-react';
+import { MapPin, Star, Building2, CheckCircle } from 'lucide-react';
+import { getImageUrl } from '@/core/config/api';
 import type { SedeCard as SedeCardType } from '../types/venue-search.types';
 
 interface Props {
@@ -19,7 +20,11 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
   } = sede;
 
   // Usar la foto principal o la primera foto disponible
-  const imagenPrincipal = fotoPrincipal || fotos[0]?.urlFoto || '/placeholder-venue.jpg';
+  // Procesar la URL de la imagen para manejar rutas relativas del backend
+  const imagenPath = fotoPrincipal || fotos?.[0]?.urlFoto;
+  const imagenPrincipal = imagenPath 
+    ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
+    : '/placeholder-venue.jpg';
 
   return (
     <div

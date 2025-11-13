@@ -6,14 +6,24 @@ import { searchApiService } from '../services/searchApi.service';
 
 export interface SportSearchParams {
   venue: string;
+  venueId?: number;
   date: string;
   startTime: string;
   endTime: string;
   discipline: string;
+  disciplineId?: number;
 }
 
 interface SportsSearchBarProps {
   onSearch: (params: SportSearchParams) => void;
+  // Props opcionales para valores controlados
+  initialVenue?: string;
+  initialVenueId?: number;
+  initialDate?: string;
+  initialStartTime?: string;
+  initialEndTime?: string;
+  initialDiscipline?: string;
+  initialDisciplineId?: number;
 }
 
 interface Discipline {
@@ -26,12 +36,23 @@ interface Venue {
   nombre: string;
 }
 
-export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
-  const [venue, setVenue] = useState('');
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [discipline, setDiscipline] = useState('');
+export default function SportsSearchBar({ 
+  onSearch,
+  initialVenue = '',
+  initialVenueId,
+  initialDate = '',
+  initialStartTime = '',
+  initialEndTime = '',
+  initialDiscipline = '',
+  initialDisciplineId
+}: SportsSearchBarProps) {
+  const [venue, setVenue] = useState(initialVenue);
+  const [venueId, setVenueId] = useState<number | undefined>(initialVenueId);
+  const [date, setDate] = useState(initialDate);
+  const [startTime, setStartTime] = useState(initialStartTime);
+  const [endTime, setEndTime] = useState(initialEndTime);
+  const [discipline, setDiscipline] = useState(initialDiscipline);
+  const [disciplineId, setDisciplineId] = useState<number | undefined>(initialDisciplineId);
   const [showDisciplineDropdown, setShowDisciplineDropdown] = useState(false);
   const [showVenueDropdown, setShowVenueDropdown] = useState(false);
   
@@ -45,18 +66,42 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
   const disciplineRef = useRef<HTMLDivElement>(null);
   const venueRef = useRef<HTMLDivElement>(null);
 
+  // Sincronizar con valores iniciales cuando cambien (para sticky bar)
+  useEffect(() => {
+    setVenue(initialVenue);
+    setVenueId(initialVenueId);
+    setDate(initialDate);
+    setStartTime(initialStartTime);
+    setEndTime(initialEndTime);
+    setDiscipline(initialDiscipline);
+    setDisciplineId(initialDisciplineId);
+  }, [initialVenue, initialVenueId, initialDate, initialStartTime, initialEndTime, initialDiscipline, initialDisciplineId]);
+
   // Efecto para buscar disciplinas con debounce
   useEffect(() => {
     const searchDisciplines = async () => {
-      if (discipline.length >= 2) {
+      if (discipline.length >= 1) {
         setIsDisciplineLoading(true);
-        const results = await searchApiService.searchDisciplines(discipline);
-        setDisciplineResults(results);
-        setIsDisciplineLoading(false);
-        setShowDisciplineDropdown(true);
+        setShowDisciplineDropdown(true); // Mostrar mientras carga
+        try {
+          const results = await searchApiService.searchDisciplines(discipline);
+          console.log('Disciplinas encontradas:', results);
+          setDisciplineResults(results);
+          // Mantener el dropdown abierto si hay resultados o si está buscando
+          if (results.length === 0) {
+            console.log('No se encontraron disciplinas');
+          }
+        } catch (error) {
+          console.error('Error buscando disciplinas:', error);
+          setDisciplineResults([]);
+        } finally {
+          setIsDisciplineLoading(false);
+        }
       } else {
         setDisciplineResults([]);
-        setShowDisciplineDropdown(false);
+        if (discipline.length === 0) {
+          setShowDisciplineDropdown(false);
+        }
       }
     };
 
@@ -67,7 +112,7 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
   // Efecto para buscar sedes con debounce
   useEffect(() => {
     const searchVenues = async () => {
-      if (venue.length >= 2) {
+      if (venue.length >= 1) {
         setIsVenueLoading(true);
         const results = await searchApiService.searchVenues(venue);
         setVenueResults(results);
@@ -102,10 +147,12 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
     e.preventDefault();
     onSearch({
       venue,
+      venueId,
       date,
       startTime,
       endTime,
       discipline,
+      disciplineId,
     });
   };
 
@@ -126,8 +173,14 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
                 type="text"
                 placeholder="Buscar sede..."
                 value={venue}
-                onChange={(e) => setVenue(e.target.value)}
-                onFocus={() => venue.length >= 2 && setShowVenueDropdown(true)}
+                onChange={(e) => {
+                  setVenue(e.target.value);
+                  // Resetear ID si el usuario modifica el texto manualmente
+                  if (e.target.value === '') {
+                    setVenueId(undefined);
+                  }
+                }}
+                onFocus={() => venue.length >= 1 && setShowVenueDropdown(true)}
                 className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
               />
               
@@ -143,6 +196,7 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
                         type="button"
                         onClick={() => {
                           setVenue(v.nombre);
+                          setVenueId(v.idSede);
                           setShowVenueDropdown(false);
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm transition-colors border-b border-gray-100 last:border-b-0"
@@ -219,23 +273,30 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
                 type="text"
                 placeholder="Buscar deporte..."
                 value={discipline}
-                onChange={(e) => setDiscipline(e.target.value)}
-                onFocus={() => discipline.length >= 2 && setShowDisciplineDropdown(true)}
+                onChange={(e) => {
+                  setDiscipline(e.target.value);
+                  // Resetear ID si el usuario modifica el texto manualmente
+                  if (e.target.value === '') {
+                    setDisciplineId(undefined);
+                  }
+                }}
+                onFocus={() => discipline.length >= 1 && setShowDisciplineDropdown(true)}
                 className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
               />
 
               {/* Dropdown de Disciplinas */}
-              {showDisciplineDropdown && (disciplineResults.length > 0 || isDisciplineLoading) && (
+              {showDisciplineDropdown && discipline.length >= 1 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                   {isDisciplineLoading ? (
                     <div className="px-3 py-2 text-sm text-gray-500">Buscando...</div>
-                  ) : (
+                  ) : disciplineResults.length > 0 ? (
                     disciplineResults.map((disc) => (
                       <button
                         key={disc.idDisciplina}
                         type="button"
                         onClick={() => {
                           setDiscipline(disc.nombre);
+                          setDisciplineId(disc.idDisciplina);
                           setShowDisciplineDropdown(false);
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-primary-50 text-sm transition-colors border-b border-gray-100 last:border-b-0"
@@ -243,6 +304,8 @@ export default function SportsSearchBar({ onSearch }: SportsSearchBarProps) {
                         {disc.nombre}
                       </button>
                     ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">No se encontraron deportes</div>
                   )}
                 </div>
               )}
