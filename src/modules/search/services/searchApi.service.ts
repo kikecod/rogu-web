@@ -212,6 +212,42 @@ class SearchApiService {
   }
 
   /**
+   * 🔎 AUTOCOMPLETADO DE DISCIPLINAS
+   * GET /api/disciplina/search?q=term
+   */
+  async searchDisciplines(query: string): Promise<Array<{ idDisciplina: number; nombre: string }>> {
+    try {
+      if (!query || query.length < 2) {
+        return [];
+      }
+      
+      const response = await apiClient.get(`/disciplina/search?q=${encodeURIComponent(query)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error buscando disciplinas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🏢 AUTOCOMPLETADO DE SEDES
+   * GET /api/search/sedes?q=term
+   */
+  async searchVenues(query: string): Promise<Array<{ idSede: number; nombre: string }>> {
+    try {
+      if (!query || query.length < 2) {
+        return [];
+      }
+      
+      const response = await apiClient.get(`/search/sedes?q=${encodeURIComponent(query)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error buscando sedes:', error);
+      return [];
+    }
+  }
+
+  /**
    * 📊 OBTENER ESTADÍSTICAS DE BÚSQUEDA
    * Método auxiliar para obtener información general
    */

@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import AuthModal from '@/auth/components/AuthModal';
 import HomePage from '@/search/pages/HomePage';
-import SearchDemoPage from '@/search/pages/SearchDemoPage';
 import HostSpacePage from '@/admin/pages/HostSpacePage';
 import AdminSpacesPage from '@/admin/pages/AdminSpacesPage';
 import TestRolesPage from '@/core/pages/TestRolesPage';
@@ -71,7 +70,6 @@ const AppContent = () => {
 
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/search-demo" element={<SearchDemoPage />} />
           <Route path="/host" element={<HostSpacePage />} />
           <Route path="/admin-spaces" element={<AdminSpacesPage />} />
 
