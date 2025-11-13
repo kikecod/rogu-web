@@ -6,7 +6,6 @@ import {
   MessageCircle, Phone, Users, Plus, Minus
 } from 'lucide-react';
 import Footer from '@/components/Footer';
-import MapView from '@/components/MapView';
 import CustomCalendar from '@/bookings/components/CustomCalendar';
 import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
@@ -16,8 +15,11 @@ import FavoriteButton from '../../favorites/components/FavoriteButton';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id, idCancha } = useParams<{ id?: string; idCancha?: string; idSede?: string }>();
   const { user, isLoggedIn } = useAuth();
+  
+  // Usar idCancha si está disponible, sino usar id (para rutas legacy)
+  const canchaId = idCancha || id;
   
   // Estados
   const [field, setField] = useState<SportField | null>(null);
@@ -40,7 +42,7 @@ const SportFieldDetailPage: React.FC = () => {
   // Cargar datos de la cancha
   useEffect(() => {
     const loadField = async () => {
-      if (!id) {
+      if (!canchaId) {
         setError('ID de cancha no válido');
         setLoading(false);
         return;
@@ -49,9 +51,9 @@ const SportFieldDetailPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Cargando cancha con ID:', id);
+        console.log('🔍 Cargando cancha con ID:', canchaId);
         
-        const fieldData = await fetchCanchaById(id);
+        const fieldData = await fetchCanchaById(canchaId);
         setField(fieldData);
         console.log('✅ Cancha cargada:', fieldData);
       } catch (err) {
@@ -63,7 +65,7 @@ const SportFieldDetailPage: React.FC = () => {
     };
 
     loadField();
-  }, [id]);
+  }, [canchaId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,14 +78,14 @@ const SportFieldDetailPage: React.FC = () => {
   // Actualizar horarios disponibles cuando cambie la fecha seleccionada
   useEffect(() => {
     const updateAvailability = async () => {
-      if (!field || !id) return;
+      if (!field || !canchaId) return;
 
       try {
         setLoadingSlots(true);
         console.log('🔄 Actualizando horarios para fecha:', formatDateLocal(selectedDate), '(hora local Bolivia)');
         
         // Obtener reservas para la fecha seleccionada
-        const reservasPorFecha = await fetchReservasByFecha(id, selectedDate);
+        const reservasPorFecha = await fetchReservasByFecha(canchaId, selectedDate);
         
         // Generar nuevos slots de disponibilidad
         const newAvailability = generateAvailabilitySlots(
@@ -109,7 +111,7 @@ const SportFieldDetailPage: React.FC = () => {
     };
 
     updateAvailability();
-  }, [selectedDate, field?.id, id]); // Se ejecuta cuando cambia la fecha o el ID de la cancha
+  }, [selectedDate, field?.id, canchaId]); // Se ejecuta cuando cambia la fecha o el ID de la cancha
 
   // Handlers
   const nextImage = () => {
@@ -152,7 +154,7 @@ const SportFieldDetailPage: React.FC = () => {
     // Navegar al checkout con los detalles de la reserva
     navigate('/checkout', {
       state: {
-        fieldId: id,
+        fieldId: canchaId,
         fieldData: field,
         selectedDate: selectedDate,
         selectedTimeSlots: selectedTimeSlots,
@@ -225,7 +227,7 @@ const SportFieldDetailPage: React.FC = () => {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/venues/${field.id}`)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -611,53 +613,6 @@ const SportFieldDetailPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Location Map */}
-        <div className="mt-10 bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-blue-600" />
-            Ubicación
-          </h2>
-          
-          {/* Si tiene coordenadas, mostrar el mapa */}
-          {field.location?.coordinates?.lat && field.location?.coordinates?.lng ? (
-            <div className="mb-4">
-              <MapView
-                lat={field.location.coordinates.lat}
-                lng={field.location.coordinates.lng}
-                title={field.name}
-                height="400px"
-                zoom={15}
-              />
-            </div>
-          ) : (
-            /* Placeholder si no hay coordenadas */
-            <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center mb-4">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-                <p className="text-gray-700 font-medium text-base">Ubicación no disponible</p>
-                <p className="text-gray-600 text-sm">Coordenadas no configuradas</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Información de dirección */}
-          {(field.location?.address || field.location?.city) && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  {field.location.address && (
-                    <p className="text-gray-900 font-medium">{field.location.address}</p>
-                  )}
-                  {field.location.city && (
-                    <p className="text-gray-600 text-sm mt-1">{field.location.city}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

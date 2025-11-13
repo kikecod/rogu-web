@@ -67,8 +67,11 @@ const CheckoutPage: React.FC = () => {
       // Validar que tengamos todos los datos necesarios
       if (!user || !fieldId || !selectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
         console.error('❌ [Checkout] Faltan datos para crear reserva');
+        console.log('🆕 [Checkout] Creando reserva PENDIENTE para campo:', fieldId, user, selectedTimeSlots);
         return;
       }
+
+      
 
       // Validar que el usuario tenga el rol de CLIENTE
       if (!user.roles?.includes('CLIENTE')) {
