@@ -78,7 +78,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   // Cargar sedes del dueño
   const loadSedes = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sede`, {
+      const response = await fetch(`http://localhost:3000/api/sede/duenio/${idPersonaD}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

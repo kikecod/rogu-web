@@ -77,8 +77,15 @@ const AppContent = () => {
 
           <Route path="/test-roles" element={<TestRolesPage />} />
           <Route path="/about" element={<AboutUsPage />} />
+          
+          {/* Venue routes - Búsqueda por sedes */}
+          <Route path="/venues/:idSede" element={<VenueDetailPage />} />
+          <Route path="/venues/:idSede/fields/:idCancha" element={<FieldDetailPage />} />
+          
+          {/* Legacy routes - mantener compatibilidad */}
           <Route path="/field/:id" element={<FieldDetailPage />} />
           <Route path="/sede/:id" element={<VenueDetailPage />} />
+          
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/booking-confirmation/:id" element={<BookingConfirmationPage />} />
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />

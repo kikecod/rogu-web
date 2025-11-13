@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Trophy, Users, Star } from 'lucide-react';
-import FieldCard from '@/fields/components/FieldCard';
+import { Sparkles } from 'lucide-react';
+import SedeCard from '../../venues/components/SedeCard';
 import Filters from '../components/Filters';
 import Footer from '@/components/Footer';
 import SearchBar, { type SearchParams } from '../components/SearchBar';
-import { fetchCanchas } from '@/core/lib/helpers';
-import type { SportField } from '@/fields/types/field.types';
+import { venueService } from '../../venues/services/venueService';
+import type { SedeCard as SedeCardType } from '../../venues/types/venue-search.types';
 import type { FilterState } from '../components/Filters';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [allFields, setAllFields] = useState<SportField[]>([]);
-  const [filteredFields, setFilteredFields] = useState<SportField[]>([]);
+  const [allVenues, setAllVenues] = useState<SedeCardType[]>([]);
+  const [filteredVenues, setFilteredVenues] = useState<SedeCardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,79 +21,81 @@ const HomePage: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Cargar canchas al montar el componente
+  // Cargar sedes al montar el componente
   useEffect(() => {
-    const loadCanchas = async () => {
+    const loadSedes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const canchas = await fetchCanchas();
-        setAllFields(canchas);
-        setFilteredFields(canchas);
+        // findVenues devuelve un array directo de sedes
+        const sedes = await venueService.findVenues();
+        console.log('Sedes cargadas:', sedes);
+        setAllVenues(sedes);
+        setFilteredVenues(sedes);
       } catch (err) {
-        console.error('Error al cargar canchas:', err);
-        setError('No se pudieron cargar las canchas. Por favor, intenta de nuevo.');
+        console.error('Error al cargar sedes:', err);
+        setError('No se pudieron cargar las sedes. Por favor, intenta de nuevo.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCanchas();
+    loadSedes();
   }, []);
 
   const handleFiltersChange = (filters: FilterState) => {
-    let filtered = [...allFields];
+    let filtered = [...allVenues];
 
-    // Filter by sport
+    // Filter by sport - buscar en deportesDisponibles
     if (filters.sport.length > 0) {
-      filtered = filtered.filter(field => filters.sport.includes(field.sport));
-    }
-
-    // Filter by price range
-    filtered = filtered.filter(field => 
-      field.price >= filters.priceRange[0] && field.price <= filters.priceRange[1]
-    );
-
-    // Filter by rating
-    if (filters.rating > 0) {
-      filtered = filtered.filter(field => field.rating >= filters.rating);
-    }
-
-    // Filter by amenities
-    if (filters.amenities.length > 0) {
-      filtered = filtered.filter(field =>
-        filters.amenities.every(amenity => field.amenities.includes(amenity))
+      filtered = filtered.filter(venue => 
+        filters.sport.some(sport => venue.estadisticas.deportesDisponibles.includes(sport))
       );
     }
 
-    setFilteredFields(filtered);
-  };
+    // Filter by price range - usar precioDesde y precioHasta
+    filtered = filtered.filter(venue => 
+      venue.estadisticas.precioDesde >= filters.priceRange[0] && 
+      venue.estadisticas.precioDesde <= filters.priceRange[1]
+    );
 
-  const handleFieldClick = (field: SportField) => {
-    navigate(`/field/${field.id}`);
+    // Filter by rating - usar ratingFinal
+    if (filters.rating > 0) {
+      filtered = filtered.filter(venue => venue.estadisticas.ratingFinal >= filters.rating);
+    }
+
+    // Filter by amenities - si existe en SedeDetalle
+    if (filters.amenities.length > 0) {
+      // TODO: Implementar cuando tengamos amenities en SedeCard
+    }
+
+    setFilteredVenues(filtered);
   };
 
   const handleSearch = (params: SearchParams) => {
     console.log('Searching with params:', params);
-    let filtered = [...allFields];
+    let filtered = [...allVenues];
 
-    // Filter by location (nombre de cancha o ciudad)
+    // Filter by location (nombre de sede o ciudad)
     if (params.location) {
-      filtered = filtered.filter(field => 
-        field.name.toLowerCase().includes(params.location.toLowerCase()) ||
-        field.location?.city?.toLowerCase().includes(params.location.toLowerCase()) ||
-        field.location?.address?.toLowerCase().includes(params.location.toLowerCase())
+      filtered = filtered.filter(venue => 
+        venue.nombre.toLowerCase().includes(params.location.toLowerCase()) ||
+        venue.city.toLowerCase().includes(params.location.toLowerCase()) ||
+        venue.district.toLowerCase().includes(params.location.toLowerCase()) ||
+        venue.addressLine.toLowerCase().includes(params.location.toLowerCase())
       );
     }
 
     // Filter by sport
     if (params.sport) {
-      filtered = filtered.filter(field => field.sport === params.sport);
+      filtered = filtered.filter(venue => 
+        venue.estadisticas.deportesDisponibles.includes(params.sport)
+      );
     }
 
     // TODO: Implementar filtros de fecha y hora cuando estén disponibles en la API
     
-    setFilteredFields(filtered);
+    setFilteredVenues(filtered);
   };
 
   return (
@@ -119,37 +121,20 @@ const HomePage: React.FC = () => {
           {/* Heading */}
           <div className="text-center mb-8 sm:mb-12">
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white mb-4 sm:mb-6 leading-tight animate-slide-up">
-              Reserva tu cancha
+              Encuentra tu espacio deportivo
               <br />
               <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 text-transparent bg-clip-text animate-gradient">
-                en segundos
+                ideal
               </span>
             </h1>
             <p className="text-lg sm:text-xl lg:text-2xl text-blue-100 max-w-3xl mx-auto px-4 animate-slide-up-delay">
-              Encuentra y reserva los mejores espacios deportivos cerca de ti. 
+              Descubre sedes deportivas con múltiples canchas en un solo lugar. 
               <br className="hidden sm:block" />
-              Rápido, fácil y seguro. ⚡
+              Compara, elige y reserva. ⚡
             </p>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-6 max-w-3xl mx-auto mb-8 animate-fade-in-up">
-            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <Trophy className="h-8 w-8 text-yellow-300 mx-auto mb-2" />
-              <p className="text-2xl sm:text-3xl font-bold text-white">500+</p>
-              <p className="text-xs sm:text-sm text-blue-100">Canchas</p>
-            </div>
-            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <Users className="h-8 w-8 text-green-300 mx-auto mb-2" />
-              <p className="text-2xl sm:text-3xl font-bold text-white">10K+</p>
-              <p className="text-xs sm:text-sm text-blue-100">Usuarios</p>
-            </div>
-            <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-              <Star className="h-8 w-8 text-pink-300 mx-auto mb-2" />
-              <p className="text-2xl sm:text-3xl font-bold text-white">4.8</p>
-              <p className="text-xs sm:text-sm text-blue-100">Rating</p>
-            </div>
-          </div>
+          
         </div>
 
         {/* Wave separator */}
@@ -188,7 +173,7 @@ const HomePage: React.FC = () => {
                   Espacios deportivos
                 </h2>
                 <p className="text-neutral-600 text-sm sm:text-base">
-                  {filteredFields.length > 0 ? `${filteredFields.length} canchas disponibles` : 'No hay canchas disponibles'}
+                  {filteredVenues.length > 0 ? `${filteredVenues.length} sedes disponibles` : 'No hay sedes disponibles'}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
@@ -201,61 +186,37 @@ const HomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Carrusel horizontal - Airbnb style */}
-            {filteredFields.length > 0 && (
-              <div className="relative group">
-                <div 
-                  className="overflow-x-auto scrollbar-hide scroll-smooth"
-                  style={{ scrollBehavior: 'smooth' }}
-                >
-                  <div className="flex gap-4 sm:gap-6 pb-4 px-1" style={{ width: 'max-content' }}>
-                    {filteredFields.map((field) => (
-                      <div key={field.id} className="flex-none w-72 sm:w-80 lg:w-72">
-                        <FieldCard
-                          field={field}
-                          onClick={handleFieldClick}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Indicador de scroll para móvil */}
-                <div className="flex justify-center mt-2 sm:hidden">
-                  <div className="flex space-x-1">
-                    {[...Array(Math.ceil(filteredFields.length / 1))].map((_, i) => (
-                      <div key={i} className="w-1.5 h-1.5 bg-neutral-300 rounded-full"></div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Indicador de scroll para desktop */}
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-neutral-400 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
-                  Desliza horizontalmente para ver más →
-                </div>
+            {/* Grid de Sedes */}
+            {filteredVenues.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredVenues.map((sede) => (
+                  <SedeCard 
+                    key={sede.idSede} 
+                    sede={sede} 
+                    onClick={() => navigate(`/venues/${sede.idSede}`)} 
+                  />
+                ))}
               </div>
-            )}
-
-            {filteredFields.length === 0 && !error && (
+            ) : (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">🏟️</div>
                 <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                  No se encontraron canchas
+                  No se encontraron sedes
                 </h3>
                 <p className="text-neutral-600">
-                  {allFields.length === 0 
-                    ? 'No hay canchas disponibles en este momento'
+                  {allVenues.length === 0 
+                    ? 'No hay sedes disponibles en este momento'
                     : 'Prueba ajustando tus filtros o busca en otra ubicación'
                   }
                 </p>
               </div>
             )}
 
-            {/* Load more button - Solo mostrar si hay canchas */}
-            {filteredFields.length > 0 && (
+            {/* Load more button - Solo mostrar si hay sedes */}
+            {filteredVenues.length > 0 && filteredVenues.length >= 12 && (
               <div className="text-center mt-12">
                 <button className="bg-neutral-900 text-white px-8 py-3 rounded-lg hover:bg-neutral-800 transition-colors">
-                  Mostrar más canchas
+                  Mostrar más sedes
                 </button>
               </div>
             )}
