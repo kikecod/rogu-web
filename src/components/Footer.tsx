@@ -2,6 +2,7 @@ import React from 'react';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '../assets/rogu_logo.png';
+import { ROUTES } from '@/config/routes';
 
 const Footer: React.FC = () => {
   return (
@@ -40,34 +41,29 @@ const Footer: React.FC = () => {
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Enlaces rápidos</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                <Link to={ROUTES.home} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Buscar canchas
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                <Link to={ROUTES.owner.hostSpace} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Ofrece tu espacio
-                </a>
+                </Link>
               </li>
               <li>
-                <Link to="/about" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                <Link to={ROUTES.about} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Sobre nosotros
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                <Link to={ROUTES.howItWorks} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Cómo funciona
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
+                <Link to={ROUTES.faq} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
                   Preguntas frecuentes
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
-                  Ayuda
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -99,14 +95,11 @@ const Footer: React.FC = () => {
               © 2025 ROGU. Todos los derechos reservados.
             </div>
             <div className="flex flex-wrap justify-center sm:justify-end space-x-4 sm:space-x-6 text-xs sm:text-sm">
-              <a href="#" className="text-neutral-400 hover:text-blue-400 transition-colors">
-                Términos de servicio
-              </a>
+              <Link to={ROUTES.terms} className="text-neutral-400 hover:text-blue-400 transition-colors">
+                Términos y Condiciones
+              </Link>
               <a href="#" className="text-neutral-400 hover:text-blue-400 transition-colors">
                 Política de privacidad
-              </a>
-              <a href="#" className="text-neutral-400 hover:text-blue-400 transition-colors">
-                Cookies
               </a>
             </div>
           </div>

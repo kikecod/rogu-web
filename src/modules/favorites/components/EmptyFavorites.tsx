@@ -1,6 +1,7 @@
 // File: components/EmptyFavorites.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/config/routes';
 
 const EmptyFavorites: React.FC = () => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ const EmptyFavorites: React.FC = () => {
 
           <div className="mt-6 flex justify-center">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.home)}
               className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-black/5 transition hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2"
             >
               <span className="transition group-hover:scale-110">🔍</span>

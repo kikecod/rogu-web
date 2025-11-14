@@ -7,6 +7,7 @@ import {
 import { useAuth } from '@/auth/hooks/useAuth';
 import MapPicker from '@/components/MapPicker';
 import { DEFAULT_COORDINATES } from '../../../config/map.config';
+import { ROUTES } from '@/config/routes';
 
 interface SedeFormData {
   nombre: string;
@@ -217,7 +218,7 @@ const CreateSedePage: React.FC = () => {
             Debes iniciar sesión para crear una sede
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
             Volver al inicio

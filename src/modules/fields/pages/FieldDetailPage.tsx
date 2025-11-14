@@ -12,6 +12,7 @@ import type { SportField } from '../types/field.types';
 import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots, formatDateLocal } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import FavoriteButton from '../../favorites/components/FavoriteButton';
+import { ROUTES } from '@/config/routes';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ const SportFieldDetailPage: React.FC = () => {
     }, 0);
     
     // Navegar al checkout con los detalles de la reserva
-    navigate('/checkout', {
+    navigate(ROUTES.checkout, {
       state: {
         fieldId: canchaId,
         fieldData: field,
@@ -209,7 +210,7 @@ const SportFieldDetailPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Cancha no encontrada</h2>
           <p className="text-gray-600 mb-6">{error || 'No se pudo cargar la información de esta cancha'}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Volver al inicio

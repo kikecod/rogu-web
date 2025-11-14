@@ -9,6 +9,7 @@ import { createReserva } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { getAuthToken } from '@/core/config/api';
 import type { CreateReservaRequest } from '../types/booking.types';
+import { ROUTES } from '@/config/routes';
 
 interface BookingDetails {
   fieldName: string;
@@ -180,7 +181,7 @@ const CheckoutPage: React.FC = () => {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">No hay información de reserva</h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Volver al inicio
