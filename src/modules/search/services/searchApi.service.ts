@@ -87,14 +87,16 @@ class SearchApiService {
   /**
    * 🔍 BÚSQUEDA PRINCIPAL
    * GET /api/search/main
+   * Nota: Este endpoint devuelve directamente un array de sedes, no la estructura ApiResponse
    */
-  async searchMain(params: SearchMainParams): Promise<SearchResponse> {
+  async searchMain(params: SearchMainParams): Promise<any[]> {
     try {
       const queryString = buildQueryString(params);
       const url = `/search/main${queryString ? `?${queryString}` : ''}`;
       
-      const response = await apiClient.get<ApiResponse<SearchResponse>>(url);
-      return handleApiResponse(response);
+      const response = await apiClient.get(url);
+      // El endpoint devuelve directamente un array, no usa ApiResponse
+      return response.data;
     } catch (error) {
       console.error('Error en búsqueda principal:', error);
       throw error;
@@ -208,6 +210,44 @@ class SearchApiService {
       return this.searchWithFilters(params as SearchFiltersParams);
     } else {
       return this.searchMain(params as SearchMainParams);
+    }
+  }
+
+  /**
+   * 🔎 AUTOCOMPLETADO DE DISCIPLINAS
+   * GET /api/disciplina/search?q=term
+   */
+  async searchDisciplines(query: string): Promise<Array<{ idDisciplina: number; nombre: string }>> {
+    try {
+      if (!query || query.length < 1) {
+        return [];
+      }
+      
+      console.log('Buscando disciplinas con query:', query);
+      const response = await apiClient.get(`/disciplina/search?q=${encodeURIComponent(query)}`);
+      console.log('Respuesta del servidor:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error buscando disciplinas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🏢 AUTOCOMPLETADO DE SEDES
+   * GET /api/search/sedes?q=term
+   */
+  async searchVenues(query: string): Promise<Array<{ idSede: number; nombre: string }>> {
+    try {
+      if (!query || query.length < 1) {
+        return [];
+      }
+      
+      const response = await apiClient.get(`/search/sedes?q=${encodeURIComponent(query)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error buscando sedes:', error);
+      return [];
     }
   }
 

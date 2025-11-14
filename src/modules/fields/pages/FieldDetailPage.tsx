@@ -433,7 +433,7 @@ const SportFieldDetailPage: React.FC = () => {
                 Reseñas y Calificaciones
               </h2>
               
-              {id && <ReviewList idCancha={parseInt(id)} />}
+              {canchaId && <ReviewList idCancha={parseInt(canchaId)} />}
             </div>
           </div>
 
