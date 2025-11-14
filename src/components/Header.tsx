@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu, User, Globe } from 'lucide-react';
+import { Menu, User, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import roguLogo from '@/assets/rogu_logo.png';
 import { useAuth } from '@/auth/hooks/useAuth';
@@ -14,56 +14,49 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isLoggedIn, isDuenio } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white shadow-md border-b-2 border-primary-500 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-        <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center min-w-0">
+        <div className="flex justify-between items-center h-16 sm:h-20">
+          {/* Logo - Más grande y con estilo */}
+          <Link to="/" className="flex items-center min-w-0 group">
             <img 
               src={roguLogo} 
               alt="ROGU" 
-              className="h-8 sm:h-10 w-auto"
+              className="h-10 sm:h-14 w-auto transition-transform group-hover:scale-105"
             />
-            <span className="hidden sm:block ml-2 text-xs sm:text-sm text-neutral-600 truncate">
-              ROGÜ
-            </span>
+            <div className="hidden sm:block ml-3">
+              <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
+                ROGÜ
+              </span>
+              <p className="text-xs text-gray-500 -mt-1">Tu cancha ideal</p>
+            </div>
           </Link>
 
-          {/* Search Bar - Hidden on mobile, shown on tablet+ */}
-          <div className="hidden lg:flex flex-1 max-w-sm xl:max-w-md mx-4 xl:mx-8">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 xl:h-5 xl:w-5 text-neutral-400" />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-9 xl:pl-10 pr-3 py-2 text-sm border border-neutral-300 rounded-full leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:placeholder-neutral-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Buscar canchas deportivas..."
-              />
-            </div>
-          </div>
-
           {/* Right side */}
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-            {/* Host your space link */}
+          <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
+            {/* Host your space link - Con más estilo */}
             {!isDuenio() && (
               <Link
                 to="/host"
-                className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+                className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-600 hover:text-primary-700 border-2 border-primary-500 rounded-full hover:bg-primary-50 transition-all whitespace-nowrap"
               >
+                <Sparkles className="h-4 w-4" />
                 Ofrece tu espacio
               </Link>
             )}
 
-            {/* Language selector - hidden on small screens */}
-            <button className="hidden sm:block p-2 text-neutral-500 hover:text-neutral-700 transition-colors">
-              <Globe className="h-4 w-4" />
-            </button>
+            {/* Login button - Visible cuando NO está logueado */}
+            {!isLoggedIn && (
+              <button
+                onClick={onLoginClick}
+                className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-full hover:from-primary-600 hover:to-secondary-600 transition-all shadow-md hover:shadow-lg"
+              >
+                <User className="h-4 w-4" />
+                Iniciar Sesión
+              </button>
+            )}
 
             {/* User menu */}
             <div className="relative">
@@ -201,22 +194,6 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Mobile search bar */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500"
-              placeholder="Buscar canchas deportivas..."
-            />
           </div>
         </div>
       </div>

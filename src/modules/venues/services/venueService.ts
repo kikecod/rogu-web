@@ -12,7 +12,6 @@ import type {
   PuedeCalificarResponse,
   VenueSearchResponse,
   VenueSearchFilters,
-  SedeApiResponse,
   SedeCard,
 } from '../types/venue-search.types';
 
@@ -25,105 +24,14 @@ class VenueService {
     };
   }
 
-  /**
-   * Transforma la respuesta cruda de la API al formato SedeCard
-   */
-  private transformSedeApiToCard(sede: SedeApiResponse): SedeCard {
-    // Extraer deportes únicos de las canchas
-    const deportesSet = new Set<string>();
-    let precioMin = Infinity;
-    let precioMax = 0;
-    let totalRatingCanchas = 0;
-    let totalResenasCanchas = 0;
-    const fotosCancha: any[] = [];
-
-    if (sede.canchas && Array.isArray(sede.canchas)) {
-      sede.canchas.forEach((cancha: any) => {
-        // Extraer deportes
-        if (cancha.parte && Array.isArray(cancha.parte)) {
-          cancha.parte.forEach((disciplinaRelation: any) => {
-            if (disciplinaRelation.disciplina?.nombre) {
-              deportesSet.add(disciplinaRelation.disciplina.nombre);
-            }
-          });
-        }
-
-        // Calcular precios
-        const precio = parseFloat(cancha.precio) || 0;
-        if (precio > 0) {
-          precioMin = Math.min(precioMin, precio);
-          precioMax = Math.max(precioMax, precio);
-        }
-
-        // Ratings de canchas
-        const ratingCancha = parseFloat(cancha.ratingPromedio) || 0;
-        totalRatingCanchas += ratingCancha;
-        totalResenasCanchas += cancha.totalResenas || 0;
-
-        // Recolectar fotos de canchas
-        if (cancha.fotos && Array.isArray(cancha.fotos)) {
-          fotosCancha.push(...cancha.fotos);
-        }
-      });
-    }
-
-    // Si no hay precios válidos, usar 0
-    if (precioMin === Infinity) precioMin = 0;
-
-    // Calcular rating promedio de canchas
-    const ratingCanchasPromedio = sede.canchas?.length > 0 
-      ? totalRatingCanchas / sede.canchas.length 
-      : 0;
-
-    return {
-      idSede: sede.idSede,
-      nombre: sede.nombre,
-      descripcion: sede.descripcion,
-      country: sede.country,
-      stateProvince: sede.stateProvince,
-      city: sede.city,
-      district: sede.district,
-      addressLine: sede.addressLine,
-      latitude: parseFloat(sede.latitude) || 0,
-      longitude: parseFloat(sede.longitude) || 0,
-      telefono: sede.telefono,
-      email: sede.email,
-      fotoPrincipal: fotosCancha[0] ? getImageUrl(fotosCancha[0].urlFoto) : undefined,
-      fotos: fotosCancha.map((foto: any) => ({
-        idFoto: foto.idFoto,
-        urlFoto: getImageUrl(foto.urlFoto),
-        tipo: 'cancha' as const,
-        orden: 0,
-      })),
-      estadisticas: {
-        totalCanchas: sede.canchas?.length || 0,
-        deportesDisponibles: Array.from(deportesSet),
-        precioDesde: precioMin,
-        precioHasta: precioMax,
-        ratingGeneral: parseFloat(sede.ratingPromedioSede) || 0,
-        ratingCanchas: ratingCanchasPromedio,
-        ratingFinal: parseFloat(sede.ratingFinal) || 0,
-        totalResenasSede: sede.totalResenasSede || 0,
-        totalResenasCanchas: totalResenasCanchas,
-      },
-      duenio: {
-        idUsuario: sede.idPersonaD,
-        nombre: '',
-        apellido: '',
-        correo: sede.email,
-        telefono: sede.telefono,
-      },
-      verificada: sede.estado === 'Activo',
-    };
-  }
 
   /**
-   * Obtener todas las sedes
-   * GET /api/sede - Devuelve un array de sedes
+   * Obtener todas las sedes para la página de inicio
+   * GET /api/sede/inicio - Devuelve un array de sedes con datos procesados
    */
   async findVenues(): Promise<SedeCard[]> {
     try {
-      const url = getApiUrl(`/sede`);
+      const url = getApiUrl(`/sede/inicio`);
       const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders(),
@@ -133,10 +41,23 @@ class VenueService {
         throw new Error(`Error al buscar sedes: ${response.statusText}`);
       }
 
-      const sedes: SedeApiResponse[] = await response.json();
+      const sedes = await response.json();
       
-      // Transformar las sedes de la API al formato SedeCard
-      return Array.isArray(sedes) ? sedes.map(sede => this.transformSedeApiToCard(sede)) : [];
+      if (!Array.isArray(sedes)) {
+        return [];
+      }
+
+      // Transformar solo lo necesario (URLs y conversión de tipos)
+      return sedes.map(sede => ({
+        ...sede,
+        latitude: typeof sede.latitude === 'string' ? parseFloat(sede.latitude) : sede.latitude,
+        longitude: typeof sede.longitude === 'string' ? parseFloat(sede.longitude) : sede.longitude,
+        fotoPrincipal: sede.fotoPrincipal ? getImageUrl(sede.fotoPrincipal) : undefined,
+        fotos: sede.fotos?.map((foto: any) => ({
+          ...foto,
+          urlFoto: getImageUrl(foto.urlFoto),
+        })) || [],
+      }));
       
     } catch (error) {
       console.error('Error en findVenues:', error);
