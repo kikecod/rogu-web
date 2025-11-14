@@ -13,6 +13,7 @@ import { fetchReservasByUserId, fetchCanchaImage } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { reviewService } from '@/reviews/services/reviewService';
 import { useAccessPass } from '../hooks/useAccessPass';
+import { ROUTES } from '@/config/routes';
 import type { ApiReservaUsuario } from '../types/booking.types';
 
 
@@ -341,7 +342,7 @@ const MyBookingsPage: React.FC = () => {
     });
 
     // Navegar al checkout CON el idReserva existente
-    navigate('/checkout', {
+    navigate(ROUTES.checkout, {
       state: {
         bookingDetails,
         idReserva: parseInt(booking.id),  // ← IMPORTANTE: pasar el ID existente
@@ -596,7 +597,7 @@ const MyBookingsPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar reservas</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Volver al inicio
@@ -755,7 +756,7 @@ const MyBookingsPage: React.FC = () => {
                 : 'Aún no tienes reservas. ¡Haz tu primera reserva ahora!'}
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.home)}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all"
             >
               Explorar canchas

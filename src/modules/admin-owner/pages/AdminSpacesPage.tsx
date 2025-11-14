@@ -8,20 +8,25 @@ import { useAuth } from '@/auth/hooks/useAuth';
 import AnalyticsDashboardPage from '../../analytics/pages/AnalyticsDashboardPage';
 import CanchaAnalyticsPage from '../../analytics/pages/CanchaAnalyticsPage';
 import ResenasPage from '../../analytics/pages/ResenasPage';
+import type { ApiSede } from '@/venues/types/venue.types';
+import { ROUTES } from '@/config/routes';
 
-interface Sede {
+// Sede compatible con VenueManagement
+interface Sede extends Partial<ApiSede> {
   idSede: number;
   nombre: string;
   descripcion: string;
-  direccion: string;
-  latitud: string;
-  longitud: string;
   telefono: string;
   email: string;
   politicas: string;
   estado: string;
   NIT: string;
   LicenciaFuncionamiento: string;
+  direccion?: string;
+  latitud?: string;
+  longitud?: string;
+  ciudad?: string;
+  canchas?: any[];
 }
 
 type ViewMode = 'sedes' | 'canchas' | 'analytics' | 'cancha-analytics' | 'resenas';
@@ -125,7 +130,7 @@ const AdminSpacesPage: React.FC = () => {
                     </>
                   )}
                   <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate(ROUTES.home)}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />

@@ -18,6 +18,8 @@ export default defineConfig({
       '@/reviews': '/src/modules/reviews',
       '@/assets': '/src/assets',
       '@/components': '/src/components',
+      '@/admin-panel': '/src/modules/admin-panel',
+      '@/config': '/src/config',
     }
   }
 })

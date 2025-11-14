@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail } from 'lucide-react';
-import type { SedeFormData } from '../types/venue.types';
+import type { SedeFormData, ApiSede } from '../types/venue.types';
 import { 
   getDepartments, 
   getCitiesByDepartment, 
@@ -8,32 +8,22 @@ import {
   getFullAddress
 } from '../lib/boliviaData';
 
-interface Sede {
+// Extender ApiSede para incluir campos opcionales que vienen del backend
+interface Sede extends Partial<ApiSede> {
   idSede: number;
   nombre: string;
   descripcion: string;
-  // Nuevos campos
-  country?: string;
-  countryCode?: string;
-  stateProvince?: string;
-  city?: string;
-  district?: string;
-  addressLine?: string;
-  postalCode?: string;
-  latitude?: number;
-  longitude?: number;
-  timezone?: string;
-  // Campos legacy para compatibilidad
-  direccion?: string;
-  latitud?: string;
-  longitud?: string;
-  // Otros campos
   telefono: string;
   email: string;
   politicas: string;
   estado: string;
   NIT: string;
   LicenciaFuncionamiento: string;
+  // Campos legacy para compatibilidad
+  direccion?: string;
+  latitud?: string;
+  longitud?: string;
+  ciudad?: string;
   canchas?: any[];
 }
 

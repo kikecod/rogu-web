@@ -19,7 +19,8 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
     <header className="bg-white shadow-md border-b-2 border-primary-500 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Logo - Más grande y con estilo */}
+
+          {/* LOGO */}
           <Link to="/" className="flex items-center min-w-0 group">
             <img 
               src={roguLogo} 
@@ -34,9 +35,10 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
             </div>
           </Link>
 
-          {/* Right side */}
+          {/* RIGHT SIDE */}
           <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
-            {/* Host your space link - Con más estilo */}
+
+            {/* HOST TU ESPACIO */}
             {!isDuenio() && (
               <Link
                 to="/host"
@@ -47,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
               </Link>
             )}
 
-            {/* Login button - Visible cuando NO está logueado */}
+            {/* LOGIN BUTTON */}
             {!isLoggedIn && (
               <button
                 onClick={onLoginClick}
@@ -58,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
               </button>
             )}
 
-            {/* User menu */}
+            {/* USER MENU */}
             <div className="relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -67,7 +69,15 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-600" />
                 {isLoggedIn && user ? (
                   user.avatar ? (
-                    <img src={user.avatar.startsWith('http') ? user.avatar : getImageUrl(user.avatar)} alt={user.correo} className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" />
+                    <img
+                      src={
+                        user.avatar.startsWith("http")
+                          ? user.avatar
+                          : getImageUrl(user.avatar)
+                      }
+                      alt={user.correo}
+                      className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                    />
                   ) : (
                     <div className="h-5 w-5 sm:h-6 sm:w-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
                       {user.correo.charAt(0).toUpperCase()}
@@ -78,23 +88,22 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                 )}
               </button>
 
-              {/* Dropdown menu */}
+              {/* DROPDOWN */}
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-white rounded-lg shadow-xl py-2 z-50 border border-neutral-200">
                   {isLoggedIn ? (
                     <>
-                      {/* Información del usuario */}
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {user?.correo}
                         </p>
-                        {user?.roles && user.roles.length > 0 && (
+                        {user?.roles?.length > 0 && (
                           <p className="text-xs text-blue-600 mt-1">
-                            Roles: {user.roles.join(', ')}
+                            Roles: {user.roles.join(", ")}
                           </p>
                         )}
                       </div>
-                      
+
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
@@ -102,6 +111,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                       >
                         Mi perfil
                       </Link>
+
                       <Link
                         to="/bookings"
                         className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
@@ -117,9 +127,9 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                       >
                         Mis canchas favoritas
                       </Link>
-                      
-                      {/* Solo mostrar para dueños y admins */}
-                      {user?.roles && (user.roles.includes('DUENIO') || user.roles.includes('ADMIN')) && (
+
+                      {/* OWNER + ADMIN */}
+                      {user?.roles?.some(r => r === "DUENIO" || r === "ADMIN") && (
                         <Link
                           to="/admin-spaces"
                           className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors font-medium"
@@ -128,9 +138,9 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                           Panel de Administración
                         </Link>
                       )}
-                      
-                      {/* Solo mostrar para admins */}
-                      {user?.roles && user.roles.includes('ADMIN') && (
+
+                      {/* ADMIN */}
+                      {user?.roles?.includes("ADMIN") && (
                         <Link
                           to="/test-roles"
                           className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 transition-colors"
@@ -139,8 +149,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                           Prueba de Roles (Admin)
                         </Link>
                       )}
-                      
-                      {/* Solo mostrar "Ofrece tu espacio" si NO es dueño */}
+
                       {!isDuenio() && (
                         <Link
                           to="/host"
@@ -150,7 +159,9 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                           Ofrece tu espacio
                         </Link>
                       )}
+
                       <hr className="my-1" />
+
                       <button
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
                         onClick={() => {
@@ -172,6 +183,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                       >
                         Registrarse
                       </button>
+
                       <button
                         onClick={() => {
                           setIsMenuOpen(false);
@@ -181,7 +193,9 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                       >
                         Iniciar sesión
                       </button>
+
                       <hr className="my-1" />
+
                       <Link
                         to="/host"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -195,6 +209,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
               )}
             </div>
           </div>
+
         </div>
       </div>
     </header>

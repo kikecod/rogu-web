@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Shield, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/hooks/useAuth';
+import { ROUTES } from '@/config/routes';
 
 const HostSpacePage: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -101,7 +102,7 @@ const HostSpacePage: React.FC = () => {
               Para ofrecer tu espacio deportivo, necesitas tener una cuenta en ROGU.
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.home)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir al inicio e iniciar sesión
@@ -257,7 +258,7 @@ const HostSpacePage: React.FC = () => {
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(ROUTES.home)}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancelar

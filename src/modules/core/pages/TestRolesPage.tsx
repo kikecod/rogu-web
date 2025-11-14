@@ -3,6 +3,7 @@ import ProtectedRoute from '@/core/routing/ProtectedRoute';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { ArrowLeft, Shield, Users, Settings, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/config/routes';
 
 const TestRolesPage: React.FC = () => {
   const { user, isDuenio, isAdmin, isCliente } = useAuth();
@@ -23,7 +24,7 @@ const TestRolesPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(ROUTES.home)}
               className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -117,7 +118,7 @@ const TestRolesPage: React.FC = () => {
                   <li>Administrar precios y horarios</li>
                 </ul>
                 <button
-                  onClick={() => navigate('/admin-spaces')}
+                  onClick={() => navigate(ROUTES.owner.adminSpaces)}
                   className="w-full mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Ir al Panel de Administración
@@ -130,7 +131,7 @@ const TestRolesPage: React.FC = () => {
                   <span className="text-red-800">❌ No tienes rol de DUEÑO</span>
                 </div>
                 <button
-                  onClick={() => navigate('/host')}
+                  onClick={() => navigate(ROUTES.owner.hostSpace)}
                   className="w-full mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Convertirme en Dueño

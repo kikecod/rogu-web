@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import MapView from '@/components/MapView';
 import { venueService } from '../services/venueService';
 import type { SedeDetalle, CanchaResumen, CalificacionSede } from '../types/venue-search.types';
+import { ROUTES } from '@/config/routes';
 
 const VenueDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ const VenueDetailPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
           <p className="text-gray-600 mb-6">{error || 'No se encontró la sede'}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Volver al inicio
@@ -94,7 +95,7 @@ const VenueDetailPage: React.FC = () => {
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />
