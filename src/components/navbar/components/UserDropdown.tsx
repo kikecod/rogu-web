@@ -1,10 +1,6 @@
-import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { 
-  commonNavigation, 
-  panelNavigation, 
-  filterNavigationByRole 
-} from '../config/navigation-items';
+import { useAuth } from '@/auth/hooks/useAuth';
+import { ClientNavItems, OwnerNavItems, AdminNavItems } from '@/core/navigation';
 
 interface UserDropdownProps {
   user: any;
@@ -13,23 +9,8 @@ interface UserDropdownProps {
 }
 
 const UserDropdown = ({ user, onLogout, onClose }: UserDropdownProps) => {
+  const { isAdmin, isDuenio } = useAuth();
   const userRoles = user?.roles || [];
-
-  // Filtrar navegación común
-  const commonItems = filterNavigationByRole(commonNavigation, userRoles, user);
-  
-  // Filtrar navegación de paneles
-  const panelItems = filterNavigationByRole(panelNavigation, userRoles, user);
-
-  const getStyleByRole = (roles: string[]) => {
-    if (roles.includes('ADMIN')) {
-      return 'text-purple-700 hover:bg-purple-50';
-    }
-    if (roles.includes('DUENIO')) {
-      return 'text-green-700 hover:bg-green-50';
-    }
-    return 'text-gray-700 hover:bg-gray-50';
-  };
 
   return (
     <>
@@ -45,42 +26,19 @@ const UserDropdown = ({ user, onLogout, onClose }: UserDropdownProps) => {
         )}
       </div>
 
-      {/* Navegación común */}
-      {commonItems.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.id}
-            to={item.route}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            onClick={onClose}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
+      {/* Navegación de ADMIN */}
+      {isAdmin() && (
+        <AdminNavItems onItemClick={onClose} />
+      )}
 
-      {/* Acceso rápido a paneles */}
-      {panelItems.length > 0 && (
-        <>
-          <div className="border-t border-gray-200 mt-1"></div>
-          {panelItems.map((item) => {
-            const Icon = item.icon;
-            const styleClass = getStyleByRole(item.roles || []);
-            return (
-              <Link
-                key={item.id}
-                to={item.route}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm ${styleClass} transition-colors font-medium`}
-                onClick={onClose}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </>
+      {/* Navegación de DUEÑO */}
+      {isDuenio() && !isAdmin() && (
+        <OwnerNavItems onItemClick={onClose} />
+      )}
+
+      {/* Navegación de CLIENTE (si no es Admin) */}
+      {!isAdmin() && (
+        <ClientNavItems onItemClick={onClose} isDuenio={isDuenio()} />
       )}
 
       {/* Separador y Logout */}

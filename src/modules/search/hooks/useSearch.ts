@@ -40,7 +40,7 @@ export const useSearchMain = (options: UseSearchMainOptions = {}) => {
     }));
 
     try {
-      const response: SearchResponse = await searchApiService.searchMain(params);
+      const response = await searchApiService.searchMain(params);
       
       setState(prev => ({
         ...prev,

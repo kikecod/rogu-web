@@ -16,6 +16,3 @@ export * from './components';
 
 // Exportar utilidades
 export * from './lib';
-
-// Exportar páginas
-export { default as SearchDemoPage } from './pages/SearchDemoPage';

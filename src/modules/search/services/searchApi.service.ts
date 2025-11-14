@@ -87,16 +87,37 @@ class SearchApiService {
   /**
    * 🔍 BÚSQUEDA PRINCIPAL
    * GET /api/search/main
-   * Nota: Este endpoint devuelve directamente un array de sedes, no la estructura ApiResponse
+   * Nota: Este endpoint devuelve directamente un array de sedes, lo convertimos a SearchResponse
    */
-  async searchMain(params: SearchMainParams): Promise<any[]> {
+  async searchMain(params: SearchMainParams): Promise<SearchResponse> {
     try {
       const queryString = buildQueryString(params);
       const url = `/search/main${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get(url);
-      // El endpoint devuelve directamente un array, no usa ApiResponse
-      return response.data;
+      // El endpoint devuelve directamente un array, lo convertimos a SearchResponse
+      const results = Array.isArray(response.data) ? response.data : [];
+      const page = params.page || 1;
+      const limit = params.limit || 10;
+      const totalPages = Math.ceil(results.length / limit);
+      
+      return {
+        results,
+        pagination: {
+          total: results.length,
+          page,
+          limit,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        },
+        filters: {
+          availableCities: [],
+          availableDistricts: [],
+          availableDisciplines: [],
+          priceRange: { min: 0, max: 0 }
+        }
+      };
     } catch (error) {
       console.error('Error en búsqueda principal:', error);
       throw error;
@@ -272,7 +293,7 @@ class SearchApiService {
         totalCiudades: Object.values(locations.cities).flat().length,
         disciplinasPopulares: response.filters.availableDisciplines
           .slice(0, 5)
-          .map(d => d.nombre)
+          .map((d: { nombre: string }) => d.nombre)
       };
     } catch (error) {
       console.error('Error obteniendo estadísticas:', error);

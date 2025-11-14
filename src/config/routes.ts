@@ -21,8 +21,7 @@ export const ROUTES = {
   howItWorks: '/how-it-works',
   faq: '/faq',
   terms: '/terms-and-conditions',
-  searchDemo: '/search-demo',
-  testRoles: '/test-roles',
+  // testRoles: '/test-roles', // Página de desarrollo - comentada
 
   // ==========================================
   // AUTENTICACIÓN

@@ -19,5 +19,4 @@ export { default as AvailabilityChecker } from './AvailabilityChecker';
 export { default as ErrorDisplay } from './ErrorDisplay';
 
 // Re-exportaciones para compatibilidad
-export type { SearchParams } from './SearchBar';
 export type { FilterState } from './Filters';

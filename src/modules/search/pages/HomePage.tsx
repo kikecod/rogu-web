@@ -127,18 +127,14 @@ const HomePage: React.FC = () => {
       }
 
       // Llamar al endpoint de búsqueda
-      const sedes = await searchApiService.searchMain(searchParams);
+      const response = await searchApiService.searchMain(searchParams);
       
-      console.log('Resultados de búsqueda:', sedes);
+      console.log('Resultados de búsqueda:', response);
       
-      // Si el array está vacío, no mostrar mensaje de error, solo mostrar el estado vacío
-      if (Array.isArray(sedes)) {
-        setFilteredVenues(sedes as any);
-        setAllVenues(sedes as any);
-      } else {
-        setFilteredVenues([]);
-        setAllVenues([]);
-      }
+      // Extraer los resultados de la respuesta
+      const sedes = response.results || [];
+      setFilteredVenues(sedes as any);
+      setAllVenues(sedes as any);
       
     } catch (err) {
       console.error('Error en búsqueda:', err);

@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onLogout }
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {user?.correo}
                         </p>
-                        {user?.roles?.length > 0 && (
+                        {user?.roles && user.roles.length > 0 && (
                           <p className="text-xs text-blue-600 mt-1">
                             Roles: {user.roles.join(", ")}
                           </p>

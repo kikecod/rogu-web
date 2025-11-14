@@ -1,21 +1,14 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
+import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
 import HomePage from '@/search/pages/HomePage';
 
-// Página que existía SOLO en Task3Bau
-import SearchDemoPage from '@/search/pages/SearchDemoPage';
-
-// Páginas que existían SOLO en dev
-import HostSpacePage from '@/admin/pages/HostSpacePage';
-import AdminSpacesPage from '@/admin/pages/AdminSpacesPage';
-
-// Duplicadas pero también existen en modules/admin-owner → renombramos para no romper
+// Páginas de dueños
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
 
-import TestRolesPage from '@/core/pages/TestRolesPage';
+// import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
 import ProfilePage from '@/user-profile/pages/ProfilePage';
 import { AuthProvider } from '@/auth/states/AuthProvider';
 import { useAuth, type User } from '@/auth/hooks/useAuth';
@@ -71,7 +64,7 @@ const AppContent = () => {
 
   return (
     <div className="App">
-      <Header
+      <Navbar
         onLoginClick={handleLoginClick}
         onSignupClick={handleSignupClick}
         onLogout={handleLogout}
@@ -87,9 +80,9 @@ const AppContent = () => {
 
       <Routes>
         <Route path={ROUTES.home} element={<HomePage />} />
-        <Route path={ROUTES.searchDemo} element={<SearchDemoPage />} />
 
-        <Route path={ROUTES.testRoles} element={<TestRolesPage />} />
+        {/* Página de desarrollo - comentada */}
+        {/* <Route path="/test-roles" element={<TestRolesPage />} /> */}
 
         {/* Páginas públicas */}
         <Route path={ROUTES.about} element={<AboutUsPage />} />
@@ -155,9 +148,9 @@ const AppContent = () => {
         <Route path={ROUTES.owner.hostSpace} element={<HostSpaceOwnerPage />} />
         <Route path={ROUTES.owner.adminSpaces} element={<AdminSpacesOwnerPage />} />
 
-        {/* Rutas Admin anteriores del branch dev */}
-        <Route path="/host" element={<HostSpacePage />} />
-        <Route path="/admin-spaces" element={<AdminSpacesPage />} />
+        {/* Rutas legacy - redirigen a las mismas páginas */}
+        <Route path="/host" element={<HostSpaceOwnerPage />} />
+        <Route path="/admin-spaces" element={<AdminSpacesOwnerPage />} />
       </Routes>
     </div>
   );
