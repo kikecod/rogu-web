@@ -5,7 +5,6 @@ import ProfileBaseLayout from './ProfileBaseLayout';
 import ProfileAccountSettings from './ProfileAccountSettings';
 import AvatarUploader from './AvatarUploader';
 import ProfilePersonalInfoForm from './ProfilePersonalInfoForm';
-import ProfilePreferencesForm from './ProfilePreferencesForm';
 import ProfileDangerZone from './ProfileDangerZone';
 import ProfileDuenioSection from './ProfileDuenioSection';
 import ProfileControladorSection from './ProfileControladorSection';
@@ -53,12 +52,6 @@ const ProfileGenericView: React.FC<ProfileVariantProps> = ({ data, onRefresh }) 
         cliente={data.cliente}
         duenio={data.duenio}
         controlador={data.controlador}
-        onUpdated={() => {
-          void onRefresh();
-        }}
-      />
-      <ProfilePreferencesForm
-        preferencias={data.preferencias}
         onUpdated={() => {
           void onRefresh();
         }}

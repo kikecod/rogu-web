@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
 import HomePage from '@/search/pages/HomePage';
@@ -7,6 +7,8 @@ import HomePage from '@/search/pages/HomePage';
 // Páginas de dueños
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
+import AnalyticsDashboardPage from './modules/analytics/pages/AnalyticsDashboardPage';
+import ResenasPage from './modules/analytics/pages/ResenasPage';
 
 // import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
 import ProfilePage from '@/user-profile/pages/ProfilePage';
@@ -34,6 +36,7 @@ const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -58,8 +61,16 @@ const AppContent = () => {
     setAuthMode(authMode === 'login' ? 'signup' : 'login');
   };
 
-  const handleLoginSuccess = (_userData: User) => {
+  const handleLoginSuccess = (userData: User) => {
     setIsAuthModalOpen(false);
+    
+    // Redirigir según el rol del usuario
+    if (userData.roles?.includes('ADMIN')) {
+      navigate(ROUTES.admin.dashboard);
+    } else if (userData.roles?.includes('DUENIO')) {
+      navigate(ROUTES.owner.dashboard);
+    }
+    // Los clientes permanecen en la página actual
   };
 
   return (
@@ -147,6 +158,8 @@ const AppContent = () => {
         {/* Rutas Dueños (owner) */}
         <Route path={ROUTES.owner.hostSpace} element={<HostSpaceOwnerPage />} />
         <Route path={ROUTES.owner.adminSpaces} element={<AdminSpacesOwnerPage />} />
+        <Route path={ROUTES.owner.dashboard} element={<AnalyticsDashboardPage />} />
+        <Route path={ROUTES.owner.resenas} element={<ResenasPage />} />
 
         {/* Rutas legacy - redirigen a las mismas páginas */}
         <Route path="/host" element={<HostSpaceOwnerPage />} />

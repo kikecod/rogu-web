@@ -90,8 +90,9 @@ export const ROUTES = {
   owner: {
     dashboard: '/owner/dashboard',
     spaces: '/owner/spaces',
-    hostSpace: '/host-space',
     adminSpaces: '/admin-spaces',
+    hostSpace: '/host-space',
+    resenas: '/owner/resenas',
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
     analytics: (idSede: number | string) => `/owner/spaces/${idSede}/analytics`,
     reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
