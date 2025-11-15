@@ -162,6 +162,7 @@ const HomePage: React.FC = () => {
       <div className="relative -mt-8 mb-6 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SportsSearchBar 
+            idPrefix="main-"
             onSearch={handleSportSearch}
             initialVenue={searchValues.venue}
             initialVenueId={searchValues.venueId}
@@ -181,6 +182,7 @@ const HomePage: React.FC = () => {
         <div className="bg-gradient-to-r from-primary-50 to-secondary-50 shadow-xl border-b-2 border-primary-500">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <SportsSearchBar 
+              idPrefix="sticky-"
               onSearch={handleSportSearch}
               initialVenue={searchValues.venue}
               initialVenueId={searchValues.venueId}

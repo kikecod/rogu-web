@@ -22,7 +22,7 @@ class ApiClient {
     // Interceptor para agregar token de autenticación
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,14 +36,14 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Redirigir al login si no está autorizado
-          localStorage.removeItem('authToken');
-          window.location.href = '/login';
+          // Error de autenticación - limpiar sesión completa
+          console.warn('❌ Token inválido o expirado - Sesión cerrada');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
         
         if (error.response?.status === 403) {
-          // No tiene permisos
-          console.error('Acceso denegado: No tienes permisos para esta acción');
+          console.error('❌ Acceso denegado: No tienes permisos para esta acción');
         }
         
         return Promise.reject(error);

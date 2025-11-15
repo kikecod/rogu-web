@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail } from 'lucide-react';
 import type { SedeFormData, ApiSede } from '../types/venue.types';
+import MapPicker from './MapPicker';
 import { 
   getDepartments, 
   getCitiesByDepartment, 
@@ -130,10 +131,30 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
       
       const method = editingSede ? 'PATCH' : 'POST';
       
+      // Sanitizar datos para asegurar que latitude/longitude sean números válidos o undefined
+      const sanitizedData = {
+        ...formData,
+        // Solo incluir latitude/longitude si tienen valores válidos
+        ...(formData.latitude !== null && !isNaN(Number(formData.latitude)) 
+          ? { latitude: Number(formData.latitude) } 
+          : {}),
+        ...(formData.longitude !== null && !isNaN(Number(formData.longitude)) 
+          ? { longitude: Number(formData.longitude) } 
+          : {}),
+      };
+      
+      // Verificar tipos antes de enviar
+      console.log('🔍 Validación de coordenadas:', {
+        latitudeOriginal: formData.latitude,
+        longitudeOriginal: formData.longitude,
+        latitudeSanitized: sanitizedData.latitude,
+        longitudeSanitized: sanitizedData.longitude,
+      });
+      
       // Preparar payload según la nueva estructura del backend
       const payload = editingSede 
-        ? formData 
-        : { ...formData, idPersonaD };
+        ? sanitizedData 
+        : { ...sanitizedData, idPersonaD };
 
       console.log('📤 Enviando payload a', url, ':', payload);
 
@@ -577,48 +598,19 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                   />
                 </div>
 
-                {/* Sección de Coordenadas */}
+                {/* Sección de Coordenadas con Mapa Interactivo */}
                 <div className="md:col-span-2">
-                  <h4 className="text-md font-semibold text-gray-800 mb-3 mt-4">
-                    📍 Coordenadas Geográficas
-                  </h4>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitud *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    name="latitude"
-                    value={formData.latitude || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev, 
-                      latitude: e.target.value ? parseFloat(e.target.value) : null
-                    }))}
-                    required
-                    placeholder="Ej: -16.5124789"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitud *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    name="longitude"
-                    value={formData.longitude || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev, 
-                      longitude: e.target.value ? parseFloat(e.target.value) : null
-                    }))}
-                    required
-                    placeholder="Ej: -68.0897456"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <MapPicker
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
+                    onLocationSelect={(lat, lng) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        latitude: lat,
+                        longitude: lng
+                      }));
+                    }}
+                    height="450px"
                   />
                 </div>
 

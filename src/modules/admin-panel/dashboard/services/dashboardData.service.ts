@@ -175,6 +175,18 @@ export const dashboardDataService = {
 
       return [
         {
+          id: 'sedes',
+          title: 'Gestión de Sedes',
+          description: 'Administrar sedes deportivas',
+          badge: {
+            text: 'activas',
+            value: sedesDisponibles,
+          },
+          route: ROUTES.admin.sedes,
+          icon: '🏟️',
+          iconColor: 'bg-green-100',
+        },
+        {
           id: 'canchas',
           title: 'Gestión de Canchas',
           description: 'Administrar canchas deportivas',
