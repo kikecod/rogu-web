@@ -17,7 +17,6 @@ export interface ApiSede {
   email: string;
   politicas: string;
   estado: string;
-  NIT: string;
   LicenciaFuncionamiento: string;
   // Campos opcionales para compatibilidad
   direccion?: string; // Deprecado - usar addressLine
@@ -44,7 +43,6 @@ export interface SedeFormData {
   email: string;
   politicas: string;
   estado: string;
-  NIT: string;
   LicenciaFuncionamiento: string;
 }
 

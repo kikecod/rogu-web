@@ -48,8 +48,8 @@ function LocationMarker({
 }
 
 const MapPicker: React.FC<MapPickerProps> = ({
-  initialLat = -17.783327, // La Paz, Bolivia por defecto
-  initialLng = -63.182129,
+  initialLat = -16.4897, // La Paz, Bolivia por defecto
+  initialLng = -68.1193,
   onLocationSelect,
   height = '400px',
   zoom = 13,

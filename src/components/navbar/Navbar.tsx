@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Globe } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Globe, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
+import { useMode } from '../../core/hooks/useMode';
 import { ROUTES } from '@/config/routes';
 import { AdminTabBar } from '@/core/navigation/AdminTabBar';
 import Logo from './Logo';
@@ -15,12 +16,24 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
-  const { isDuenio, user } = useAuth();
+  const { isDuenio, isAdmin, user } = useAuth();
+  const { mode, toggleMode } = useMode();
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Detectar si estamos en rutas admin
   const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Verificar si el usuario puede cambiar a modo dueño (solo DUENIO, no ADMIN)
+  const canSwitchToOwnerMode = isDuenio() && !isAdmin();
+
+  // Manejar cambio de modo
+  const handleModeToggle = () => {
+    toggleMode();
+    // Navegar a home para que HomeRouter decida qué mostrar
+    navigate(ROUTES.home);
+  };
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
@@ -31,8 +44,19 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
 
           {/* Right side */}
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-            {/* Host your space link */}
-            {!isDuenio() && (
+            {/* Botón de cambio de modo para DUENIO/ADMIN */}
+            {canSwitchToOwnerMode && (
+              <button
+                onClick={handleModeToggle}
+                className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 rounded-lg transition-all shadow-sm"
+              >
+                <RefreshCw className="h-4 w-4" />
+                {mode === 'duenio' ? 'Modo Cliente' : 'Modo Dueño'}
+              </button>
+            )}
+
+            {/* "Ofrece tu espacio" solo si NO es dueño/admin */}
+            {!canSwitchToOwnerMode && (
               <Link
                 to={ROUTES.owner.hostSpace}
                 className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600 transition-colors whitespace-nowrap"

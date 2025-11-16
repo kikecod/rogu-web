@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
-import HomePage from '@/search/pages/HomePage';
 
 // Páginas de dueños
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
+import OwnerModePage from './modules/admin-owner/pages/OwnerModePage';
 import AnalyticsDashboardPage from './modules/analytics/pages/AnalyticsDashboardPage';
 import ResenasPage from './modules/analytics/pages/ResenasPage';
 
@@ -14,6 +14,7 @@ import ResenasPage from './modules/analytics/pages/ResenasPage';
 import ProfilePage from '@/user-profile/pages/ProfilePage';
 import { AuthProvider } from '@/auth/states/AuthProvider';
 import { useAuth, type User } from '@/auth/hooks/useAuth';
+import { ModeProvider } from './core/context/ModeContext';
 import AboutUsPage from '@/core/pages/AboutUsPage';
 import HowItWorksPage from '@/core/pages/HowItWorksPage';
 import FAQPage from '@/core/pages/FAQPage';
@@ -31,8 +32,10 @@ import UsuariosListPage from '@/admin-panel/usuarios/pages/UsuariosListPage';
 import SedesListPage from '@/admin-panel/sedes/pages/SedesListPage';
 import SedeFormPage from '@/admin-panel/sedes/pages/SedeFormPage';
 import SedeDetallePage from '@/admin-panel/sedes/pages/SedeDetallePage';
+import { VerificacionesPage } from '@/admin-panel/verificaciones';
 import AdminLayout from '@/admin-panel/layout/AdminLayout';
 import { ROUTES } from '@/config/routes';
+import HomeRouter from './core/routing/HomeRouter';
 
 const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -92,7 +95,7 @@ const AppContent = () => {
       />
 
       <Routes>
-        <Route path={ROUTES.home} element={<HomePage />} />
+        <Route path={ROUTES.home} element={<HomeRouter />} />
 
         {/* Página de desarrollo - comentada */}
         {/* <Route path="/test-roles" element={<TestRolesPage />} /> */}
@@ -153,6 +156,17 @@ const AppContent = () => {
         />
 
         <Route
+          path={ROUTES.admin.verificaciones}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <VerificacionesPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path={ROUTES.admin.sedes}
           element={
             <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
@@ -200,11 +214,24 @@ const AppContent = () => {
         <Route 
           path={ROUTES.owner.hostSpace} 
           element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+            <ProtectedRoute requiredRoles={['ADMIN', 'CLIENTE']} redirectTo={ROUTES.home} showUnauthorized={true}>
               <HostSpaceOwnerPage />
             </ProtectedRoute>
           } 
         />
+        
+        {/* Modo Dueño ahora se maneja desde la ruta raíz "/" con HomeRouter */}
+        {/* La ruta /owner-mode se mantiene como alternativa directa */}
+        <Route 
+          path={ROUTES.owner.mode} 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <OwnerModePage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Rutas legacy de dueños - mantener para compatibilidad */}
         <Route 
           path={ROUTES.owner.adminSpaces} 
           element={
@@ -255,9 +282,11 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <ModeProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </ModeProvider>
     </AuthProvider>
   );
 }

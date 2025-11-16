@@ -1,9 +1,9 @@
 import { LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useMode } from '../../../core/hooks/useMode';
 import { 
   commonNavigation, 
   adminTabsNavigation,
-  ownerTabsNavigation,
   filterNavigationByRole 
 } from '../config/navigation-items';
 
@@ -15,14 +15,20 @@ interface UserDropdownProps {
 
 const UserDropdown = ({ user, onLogout, onClose }: UserDropdownProps) => {
   const userRoles = user?.roles || [];
+  const { mode } = useMode();
 
   // Filtrar navegación según roles del usuario
   const commonItems = filterNavigationByRole(commonNavigation, userRoles, user);
   const adminTabs = filterNavigationByRole(adminTabsNavigation, userRoles, user);
-  const ownerTabs = filterNavigationByRole(ownerTabsNavigation, userRoles, user);
+  // Ya no mostramos ownerTabs aquí, se maneja con el botón de cambio de modo
 
   const isAdmin = userRoles.includes('ADMIN');
   const isDuenio = userRoles.includes('DUENIO');
+  
+  // En modo dueño, solo mostrar "Mi perfil"
+  const filteredCommonItems = mode === 'duenio' && isDuenio && !isAdmin
+    ? commonItems.filter(item => item.id === 'profile')
+    : commonItems;
 
   return (
     <>
@@ -39,7 +45,7 @@ const UserDropdown = ({ user, onLogout, onClose }: UserDropdownProps) => {
       </div>
 
       {/* Navegación común (Perfil, Reservas, Favoritos) - Solo si NO es Admin */}
-      {commonItems.map((item) => {
+      {filteredCommonItems.map((item) => {
         const Icon = item.icon;
         return (
           <Link
@@ -70,32 +76,6 @@ const UserDropdown = ({ user, onLogout, onClose }: UserDropdownProps) => {
                 key={item.id}
                 to={item.route}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 transition-colors"
-                onClick={onClose}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </>
-      )}
-
-      {/* Pestañas de DUEÑO (solo si NO es Admin) */}
-      {isDuenio && !isAdmin && ownerTabs.length > 0 && (
-        <>
-          <div className="border-t border-gray-200 mt-1 pt-1"></div>
-          <div className="px-4 py-2 bg-green-50">
-            <p className="text-xs font-semibold text-green-900 uppercase tracking-wide">
-              Panel de Propietario
-            </p>
-          </div>
-          {ownerTabs.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.id}
-                to={item.route}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
                 onClick={onClose}
               >
                 <Icon className="h-4 w-4" />

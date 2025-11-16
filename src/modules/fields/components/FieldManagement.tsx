@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-react';
 import PhotoManagement from './PhotoManagement';
 import CalendarioReservasPage from '../../analytics/pages/CalendarioReservasPage';
+import FieldFormWizard from './FieldFormWizard';
 import { getApiUrl } from '@/core/config/api';
 
 interface Cancha {
@@ -19,20 +20,6 @@ interface Cancha {
   horaCierre: string;
   fotos?: any[];
   parte?: any[];
-}
-
-interface CanchaFormData {
-  nombre: string;
-  superficie: string;
-  cubierta: boolean;
-  aforoMax: number;
-  dimensiones: string;
-  reglasUso: string;
-  iluminacion: string;
-  estado: string;
-  precio: number;
-  horaApertura: string;
-  horaCierre: string;
 }
 
 interface Disciplina {
@@ -56,7 +43,6 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCancha, setEditingCancha] = useState<Cancha | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
   const [showDisciplinaModal, setShowDisciplinaModal] = useState(false);
   const [selectedDisciplinas, setSelectedDisciplinas] = useState<number[]>([]);
@@ -64,20 +50,6 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
   const [fotoCancha, setFotoCancha] = useState<Cancha | null>(null);
   const [showReservas, setShowReservas] = useState(false);
   const [reservaCancha, setReservaCancha] = useState<Cancha | null>(null);
-
-  const [formData, setFormData] = useState<CanchaFormData>({
-    nombre: '',
-    superficie: '',
-    cubierta: false,
-    aforoMax: 0,
-    dimensiones: '',
-    reglasUso: '',
-    iluminacion: '',
-    estado: 'Disponible',
-    precio: 0,
-    horaApertura: '06:00',
-    horaCierre: '23:00',
-  });
 
   // Cargar canchas de la sede
   const loadCanchas = async () => {
@@ -153,82 +125,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
     Promise.all([loadCanchas(), loadDisciplinas()]).finally(() => setLoading(false));
   }, [sede.idSede]);
 
-  const resetForm = () => {
-    setFormData({
-      nombre: '',
-      superficie: '',
-      cubierta: false,
-      aforoMax: 0,
-      dimensiones: '',
-      reglasUso: '',
-      iluminacion: '',
-      estado: 'Disponible',
-      precio: 0,
-      horaApertura: '06:00',
-      horaCierre: '23:00',
-    });
-    setEditingCancha(null);
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      // Validación local de horarios
-      if (formData.horaApertura >= formData.horaCierre) {
-        alert('⚠️ La hora de apertura debe ser menor que la hora de cierre');
-        setSubmitting(false);
-        return;
-      }
-
-      const url = editingCancha
-        ? `http://localhost:3000/api/cancha/${editingCancha.idCancha}`
-        : 'http://localhost:3000/api/cancha';
-
-      const method = editingCancha ? 'PATCH' : 'POST';
-
-      const payload = editingCancha ? formData : { ...formData, idSede: sede.idSede };
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        await loadCanchas();
-        resetForm();
-      } else {
-        const error = await response.json();
-        alert('Error: ' + (error.message || 'Error al guardar la cancha'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al guardar la cancha');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleEdit = (cancha: Cancha) => {
-    setFormData({
-      nombre: cancha.nombre,
-      superficie: cancha.superficie,
-      cubierta: cancha.cubierta,
-      aforoMax: cancha.aforoMax,
-      dimensiones: cancha.dimensiones,
-      reglasUso: cancha.reglasUso,
-      iluminacion: cancha.iluminacion,
-      estado: cancha.estado,
-      precio: cancha.precio,
-      horaApertura: cancha.horaApertura || '06:00',
-      horaCierre: cancha.horaCierre || '23:00',
-    });
     setEditingCancha(cancha);
     setShowForm(true);
   };
@@ -253,21 +150,6 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
       console.error('Error:', error);
       alert('Error al eliminar la cancha');
     }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]:
-        type === 'checkbox'
-          ? (e.target as HTMLInputElement).checked
-          : type === 'number'
-          ? Number(value)
-          : value,
-    }));
   };
 
   const openDisciplinaModal = (cancha: Cancha) => {
@@ -534,227 +416,35 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
         </div>
       )}
 
-      {/* Modal del formulario de cancha */}
+      {/* Wizard del formulario de cancha */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl border border-gray-200">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {editingCancha ? 'Editar cancha' : 'Nueva cancha'}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Completa la información para que los usuarios puedan reservarla.
-                </p>
-              </div>
-              <button
-                onClick={resetForm}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5 max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Nombre de la cancha *
-                  </label>
-                  <input
-                    type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Superficie *
-                  </label>
-                  <select
-                    name="superficie"
-                    value={formData.superficie}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="">Seleccionar superficie</option>
-                    <option value="Césped natural">Césped natural</option>
-                    <option value="Césped sintético">Césped sintético</option>
-                    <option value="Cemento">Cemento</option>
-                    <option value="Madera">Madera</option>
-                    <option value="Parquet">Parquet</option>
-                    <option value="Tierra batida">Tierra batida</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Dimensiones *
-                  </label>
-                  <input
-                    type="text"
-                    name="dimensiones"
-                    value={formData.dimensiones}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Ej: 40x20 metros"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Aforo máximo *
-                  </label>
-                  <input
-                    type="number"
-                    name="aforoMax"
-                    value={formData.aforoMax}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Iluminación *
-                  </label>
-                  <select
-                    name="iluminacion"
-                    value={formData.iluminacion}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="">Seleccionar iluminación</option>
-                    <option value="Natural">Natural</option>
-                    <option value="LED">LED</option>
-                    <option value="Halógena">Halógena</option>
-                    <option value="Fluorescente">Fluorescente</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Estado *
-                  </label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="Disponible">Disponible</option>
-                    <option value="No disponible">No disponible</option>
-                    <option value="Mantenimiento">En Mantenimiento</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Precio (Bs.) *
-                  </label>
-                  <input
-                    type="number"
-                    name="precio"
-                    value={formData.precio}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Hora de apertura *
-                  </label>
-                  <input
-                    type="time"
-                    name="horaApertura"
-                    value={formData.horaApertura}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                  <p className="mt-1 text-[0.7rem] text-gray-500">
-                    Hora desde la cual se puede reservar la cancha.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Hora de cierre *
-                  </label>
-                  <input
-                    type="time"
-                    name="horaCierre"
-                    value={formData.horaCierre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                  <p className="mt-1 text-[0.7rem] text-gray-500">
-                    Última hora disponible para finalizar reservas.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="cubierta"
-                    checked={formData.cubierta}
-                    onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label className="text-sm font-medium text-gray-700">
-                    La cancha está cubierta
-                  </label>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-700">
-                    Reglas de uso *
-                  </label>
-                  <textarea
-                    name="reglasUso"
-                    value={formData.reglasUso}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Reglas y restricciones para el uso de la cancha"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {submitting ? 'Guardando...' : editingCancha ? 'Actualizar' : 'Crear cancha'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <FieldFormWizard
+          initialData={editingCancha ? {
+            idCancha: editingCancha.idCancha,
+            nombre: editingCancha.nombre,
+            superficie: editingCancha.superficie,
+            cubierta: editingCancha.cubierta,
+            aforoMax: editingCancha.aforoMax,
+            dimensiones: editingCancha.dimensiones,
+            reglasUso: editingCancha.reglasUso,
+            iluminacion: editingCancha.iluminacion,
+            estado: editingCancha.estado,
+            precio: editingCancha.precio,
+            horaApertura: editingCancha.horaApertura,
+            horaCierre: editingCancha.horaCierre,
+          } : undefined}
+          isEditing={!!editingCancha}
+          idSede={sede.idSede}
+          onComplete={() => {
+            setShowForm(false);
+            setEditingCancha(null);
+            loadCanchas();
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingCancha(null);
+          }}
+        />
       )}
 
       {/* Modal de disciplinas */}
