@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Auth - ROGU</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #4b5563;
+            margin-top: 20px;
+        }
+        pre {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .status.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button.danger:hover {
+            background: #b91c1c;
+        }
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug de Autenticación - ROGU</h1>
+    
+    <div class="card">
+        <h2>Estado del LocalStorage</h2>
+        <div id="storageStatus"></div>
+        <div id="tokenInfo"></div>
+        <div id="userInfo"></div>
+        <button onclick="clearStorage()">🗑️ Limpiar Todo</button>
+        <button onclick="location.reload()">🔄 Recargar</button>
+    </div>
+
+    <div class="card">
+        <h2>Información del Token</h2>
+        <div id="tokenDecoded"></div>
+    </div>
+
+    <div class="card">
+        <h2>Test de API</h2>
+        <button onclick="testAPI()">🧪 Probar Endpoint /api/auth/me</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="card">
+        <h2>Acciones Rápidas</h2>
+        <button onclick="window.location.href='http://localhost:5173'">🏠 Ir al Home</button>
+        <button onclick="window.location.href='http://localhost:5173/admin/dashboard'">📊 Ir al Dashboard Admin</button>
+    </div>
+
+    <script>
+        // Función para decodificar JWT
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function checkStorage() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+
+            // Estado
+            const statusDiv = document.getElementById('storageStatus');
+            if (token && user) {
+                statusDiv.innerHTML = '<span class="status ok">✅ Sesión Activa</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="status error">❌ No hay sesión</span>';
+            }
+
+            // Token
+            const tokenDiv = document.getElementById('tokenInfo');
+            if (token) {
+                tokenDiv.innerHTML = `
+                    <h3>Token:</h3>
+                    <pre>${token.substring(0, 100)}...</pre>
+                    <p><strong>Longitud:</strong> ${token.length} caracteres</p>
+                `;
+            } else {
+                tokenDiv.innerHTML = '<p class="info">⚠️ No hay token guardado</p>';
+            }
+
+            // Usuario
+            const userDiv = document.getElementById('userInfo');
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    userDiv.innerHTML = `
+                        <h3>Usuario:</h3>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    `;
+                } catch (e) {
+                    userDiv.innerHTML = '<p class="info">⚠️ Error al parsear datos de usuario</p>';
+                }
+            } else {
+                userDiv.innerHTML = '<p class="info">⚠️ No hay datos de usuario</p>';
+            }
+
+            // Decodificar token
+            const decodedDiv = document.getElementById('tokenDecoded');
+            if (token) {
+                const decoded = parseJwt(token);
+                if (decoded) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const expired = decoded.exp && decoded.exp < now;
+                    
+                    decodedDiv.innerHTML = `
+                        <pre>${JSON.stringify(decoded, null, 2)}</pre>
+                        ${expired ? 
+                            '<p class="info" style="background: #fee2e2; border-color: #dc2626;">❌ <strong>Token expirado!</strong></p>' : 
+                            '<p class="info" style="background: #dcfce7; border-color: #16a34a;">✅ Token válido</p>'
+                        }
+                        ${decoded.exp ? `<p>Expira: ${new Date(decoded.exp * 1000).toLocaleString()}</p>` : ''}
+                    `;
+                } else {
+                    decodedDiv.innerHTML = '<p class="info">⚠️ No se pudo decodificar el token</p>';
+                }
+            } else {
+                decodedDiv.innerHTML = '<p class="info">No hay token para decodificar</p>';
+            }
+        }
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                resultDiv.innerHTML = '<p class="info" style="background: #fee2e2; border-color: #dc2626;">❌ No hay token para probar</p>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>⏳ Probando...</p>';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="info" style="background: #dcfce7; border-color: #16a34a;">✅ API funcionando correctamente</p>
+                        <h3>Respuesta:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="info" style="background: #fee2e2; border-color: #dc2626;">❌ Error ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="info" style="background: #fee2e2; border-color: #dc2626;">❌ Error de conexión</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        function clearStorage() {
+            if (confirm('¿Estás seguro de que quieres limpiar el localStorage?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Ejecutar al cargar
+        checkStorage();
+    </script>
+</body>
+</html>

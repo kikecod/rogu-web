@@ -18,16 +18,25 @@ import {
   Mail,
   CheckCircle,
   XCircle,
+  Loader2,
 } from 'lucide-react';
 import { useSedeDetalle } from '../hooks';
 import { sedesService } from '../services/sedes.service';
 import MapPicker from '../../../venues/components/MapPicker';
+import { ROUTES } from '@/config/routes';
+import { useCanchasDeSede } from '../canchas/hooks/useCanchasDeSede';
 
 const SedeDetallePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { sede, loading, error, recargar } = useSedeDetalle(Number(id));
   const [procesando, setProcesando] = useState(false);
+  const {
+    canchas: canchasSede,
+    loading: loadingCanchas,
+    error: errorCanchas,
+    total: totalCanchas,
+  } = useCanchasDeSede(sede?.idSede);
 
   const handleVerificar = async () => {
     if (!sede || !window.confirm('¿Estás seguro de que deseas verificar esta sede?')) return;
@@ -376,11 +385,41 @@ const SedeDetallePage = () => {
           )}
 
           {/* Canchas */}
-          {sede.canchas && sede.canchas.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Canchas ({sede.canchas.length})</h2>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold mb-4">
+                Canchas ({totalCanchas ?? sede?.canchas?.length ?? 0})
+              </h2>
+              <button
+                onClick={() => navigate(ROUTES.admin.sedesCanchas(sede.idSede))}
+                className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Gestionar canchas
+              </button>
+            </div>
+            {loadingCanchas ? (
+              <div className="flex min-h-[120px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-gray-200">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <p className="text-sm text-gray-500">Cargando canchas...</p>
+              </div>
+            ) : errorCanchas ? (
+              <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-center text-sm text-red-600">
+                <p>No se pudieron cargar las canchas.</p>
+                <p className="text-xs text-red-500">{errorCanchas}</p>
+              </div>
+            ) : canchasSede.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-gray-200 p-6 text-sm text-gray-500">
+                <p>No hay canchas registradas para esta sede.</p>
+                <button
+                  onClick={() => navigate(ROUTES.admin.sedesCanchasCrear(sede.idSede))}
+                  className="rounded-full border border-blue-500 px-4 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                >
+                  Crear cancha
+                </button>
+              </div>
+            ) : (
               <div className="space-y-3">
-                {sede.canchas.map((cancha: any) => (
+                {canchasSede.slice(0, 3).map((cancha) => (
                   <div
                     key={cancha.idCancha}
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -392,7 +431,7 @@ const SedeDetallePage = () => {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {cancha.activa ? (
+                      {cancha.activa ?? cancha.estado === 'Disponible' ? (
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                           Activa
                         </span>
@@ -405,8 +444,8 @@ const SedeDetallePage = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}

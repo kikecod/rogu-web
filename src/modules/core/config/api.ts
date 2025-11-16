@@ -23,14 +23,44 @@ export const getApiUrl = (endpoint: string): string => {
 // Helper para obtener URL de imagen (las imágenes están en el servidor, no en /api)
 export const getImageUrl = (path: string): string => {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+
+  // Si es URL absoluta, normalizar solo si apunta a este servidor
+  // y corregir /avatars -> /uploads/avatars cuando sea necesario.
+  if (path.startsWith('http')) {
+    try {
+      const url = new URL(path);
+      const server = new URL(API_CONFIG.serverURL);
+
+      // Solo normalizar si el host coincide con el backend
+      if (url.host === server.host) {
+        const originalPath = url.pathname;
+        const normalizedPath = originalPath.startsWith('/uploads/')
+          ? originalPath
+          : originalPath.startsWith('/avatars/')
+            ? `/uploads${originalPath}`
+            : originalPath;
+
+        return `${server.origin}${normalizedPath}${url.search || ''}${url.hash || ''}`;
+      }
+
+      // Para hosts externos (CDN, etc.) devolver la URL tal cual
+      return path;
+    } catch {
+      return path;
+    }
+  }
+
   // Normalización de rutas servidas por Nest estático:
   // El backend sirve el directorio 'uploads' en '/uploads',
-  // pero algunos endpoints devuelven paths como '/avatars/...'.
+  // pero algunos endpoints devuelven paths como '/avatars/...'
   // En ese caso, debemos anteponer '/uploads' para evitar 404.
   const base = API_CONFIG.serverURL.replace(/\/$/, '');
   const p = path.startsWith('/') ? path : `/${path}`;
-  const normalized = p.startsWith('/uploads/') ? p : p.startsWith('/avatars/') ? `/uploads${p}` : p;
+  const normalized = p.startsWith('/uploads/')
+    ? p
+    : p.startsWith('/avatars/')
+      ? `/uploads${p}`
+      : p;
   return `${base}${normalized}`;
 };
 
@@ -44,6 +74,6 @@ export const getAuthHeaders = (): HeadersInit => {
   const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };

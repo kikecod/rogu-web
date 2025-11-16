@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 import SportsSearchBar, { type SportSearchParams } from '../components/SearchBar';
 import SedeCard from '../../venues/components/SedeCard';
 import Filters from '../components/Filters';
@@ -14,6 +14,7 @@ import type { FilterState } from '../components/Filters';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [allVenues, setAllVenues] = useState<SedeCardType[]>([]);
   const [filteredVenues, setFilteredVenues] = useState<SedeCardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,6 +148,29 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 via-white to-secondary-50">
+      {/* Alerta de autenticación requerida */}
+      {location.state?.from && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="max-w-7xl mx-auto flex items-start">
+            <AlertCircle className="h-5 w-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-yellow-800">
+                <strong>Autenticación requerida:</strong> Necesitas iniciar sesión para acceder a <code className="bg-yellow-100 px-2 py-0.5 rounded">{location.state.from.pathname}</code>
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                Por favor, haz clic en "Iniciar sesión" en el menú superior.
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate(location.pathname, { replace: true })}
+              className="text-yellow-800 hover:text-yellow-900 ml-4"
+            >
+              <span className="text-xl">&times;</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section - Compacto con colores ROGU */}
       <div className="relative bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 overflow-hidden pt-20 pb-12">
         {/* Decorative Elements */}

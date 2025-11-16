@@ -1,4 +1,5 @@
 import { adminApiClient } from '../../lib/adminApiClient';
+import { apiClient } from '../../lib/apiClient';
 import type {
   Usuario,
   UsuarioDetalle,
@@ -9,6 +10,8 @@ import type {
   BanearUsuarioDto,
   EnviarEmailDto,
   NotaAdminDto,
+  CrearUsuarioDto,
+  ActualizarUsuarioDto,
 } from '../../types';
 
 // ==========================================
@@ -28,14 +31,33 @@ export const usuariosService = {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const query = queryParams.toString();
-    return adminApiClient.get<ListaUsuariosResponse>(`/usuarios${query ? `?${query}` : ''}`);
+    const response = await apiClient.get<ListaUsuariosResponse>(`/admin/usuarios${query ? `?${query}` : ''}`);
+    return response.data;
   },
 
   /**
    * Obtiene detalle completo de un usuario
    */
   getById: async (id: number): Promise<UsuarioDetalle> => {
-    return adminApiClient.get<UsuarioDetalle>(`/usuarios/${id}`);
+    const response = await apiClient.get<UsuarioDetalle>(`/admin/usuarios/${id}`);
+    console.log('📡 RESPUESTA API getById:', response.data);
+    return response.data;
+  },
+
+  /**
+   * Crea un usuario con sus datos de persona y roles
+   */
+  crear: async (data: CrearUsuarioDto): Promise<UsuarioDetalle> => {
+    const response = await apiClient.post<UsuarioDetalle>('/admin/usuarios', data);
+    return response.data;
+  },
+
+  /**
+   * Actualiza datos de usuario/persona y roles
+   */
+  actualizar: async (id: number, data: ActualizarUsuarioDto): Promise<UsuarioDetalle> => {
+    const response = await apiClient.put<UsuarioDetalle>(`/admin/usuarios/${id}`, data);
+    return response.data;
   },
 
   /**
@@ -63,14 +85,52 @@ export const usuariosService = {
    * Reactiva un usuario suspendido o baneado
    */
   reactivar: async (id: number, motivo: string): Promise<{ mensaje: string }> => {
-    return adminApiClient.put(`/usuarios/${id}/reactivar`, { motivo });
+    const response = await apiClient.put(`/admin/usuarios/${id}/reactivar`, { motivo });
+    return response.data;
   },
 
   /**
    * Elimina un usuario (soft delete)
    */
   eliminar: async (id: number, motivo: string): Promise<{ mensaje: string }> => {
-    return adminApiClient.delete(`/usuarios/${id}`, { data: { motivo, confirmacion: true } });
+    const response = await apiClient.delete(`/admin/usuarios/${id}`, { data: { motivo, confirmacion: true } });
+    return response.data;
+  },
+
+  /**
+   * Sube o actualiza el avatar de un usuario
+   */
+  uploadAvatar: async (id: number, file: File): Promise<{ mensaje: string; avatar: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<{ mensaje: string; avatar: string }>(
+      `/admin/usuarios/${id}/avatar`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Elimina el avatar de un usuario
+   */
+  deleteAvatar: async (id: number): Promise<{ mensaje: string }> => {
+    const response = await apiClient.delete<{ mensaje: string }>(`/admin/usuarios/${id}/avatar`);
+    return response.data;
+  },
+
+  /**
+   * Cambia la contraseña de un usuario desde el panel admin
+   */
+  cambiarContrasenaAdmin: async (id: number, nuevaContrasena: string): Promise<{ mensaje: string }> => {
+    const response = await apiClient.put<{ mensaje: string }>(`/admin/usuarios/${id}/contrasena`, {
+      nuevaContrasena,
+    });
+    return response.data;
   },
 
   /**

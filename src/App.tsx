@@ -28,9 +28,14 @@ import ProtectedRoute from '@/core/routing/ProtectedRoute';
 
 import NewDashboardPage from '@/admin-panel/dashboard/pages/NewDashboardPage';
 import UsuariosListPage from '@/admin-panel/usuarios/pages/UsuariosListPage';
+import UsuarioDetallePage from '@/admin-panel/usuarios/pages/UsuarioDetallePage';
+import UsuarioFormPage from '@/admin-panel/usuarios/pages/UsuarioFormPage';
 import SedesListPage from '@/admin-panel/sedes/pages/SedesListPage';
 import SedeFormPage from '@/admin-panel/sedes/pages/SedeFormPage';
 import SedeDetallePage from '@/admin-panel/sedes/pages/SedeDetallePage';
+import SedeCanchasPage from '@/admin-panel/sedes/canchas/pages/SedeCanchasPage';
+import SedeCanchaDetailPage from '@/admin-panel/sedes/canchas/pages/SedeCanchaDetailPage';
+import SedeCanchaFormPage from '@/admin-panel/sedes/canchas/pages/SedeCanchaFormPage';
 import AdminLayout from '@/admin-panel/layout/AdminLayout';
 import { ROUTES } from '@/config/routes';
 
@@ -133,7 +138,7 @@ const AppContent = () => {
         <Route
           path={ROUTES.admin.dashboard}
           element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo="/" showUnauthorized={true}>
               <AdminLayout>
                 <NewDashboardPage />
               </AdminLayout>
@@ -147,6 +152,36 @@ const AppContent = () => {
             <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
               <AdminLayout>
                 <UsuariosListPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuariosNuevo}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuarioDetallePattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioDetallePage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuarioEditarPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioFormPage />
               </AdminLayout>
             </ProtectedRoute>
           }
@@ -191,6 +226,50 @@ const AppContent = () => {
             <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
               <AdminLayout>
                 <SedeFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedesCanchasPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchasPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedesCanchasCrearPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedeCanchaDetallePattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaDetailPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedeCanchaEditarPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaFormPage />
               </AdminLayout>
             </ProtectedRoute>
           }

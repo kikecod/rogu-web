@@ -25,11 +25,7 @@ const ProfileClienteControladorView: React.FC<ProfileVariantProps> = ({ data, on
     data.persona?.urlFoto ??
     null;
 
-  const avatarUrl = avatarCandidate
-    ? avatarCandidate.startsWith('http')
-      ? avatarCandidate
-      : getImageUrl(avatarCandidate)
-    : null;
+  const avatarUrl = avatarCandidate ? getImageUrl(avatarCandidate) : null;
 
   const fallbackInitial =
     data.persona?.nombres?.charAt(0)?.toUpperCase() ??
