@@ -112,9 +112,10 @@ export const ROUTES = {
   // DUEÑO - Gestión de Espacios
   // ==========================================
   owner: {
+    mode: '/owner-mode', // Nueva ruta principal para Modo Dueño
     dashboard: '/owner/dashboard',
     spaces: '/owner/spaces',
-    adminSpaces: '/admin-spaces',
+    adminSpaces: '/admin-spaces', // Deprecado - usar mode
     hostSpace: '/host-space',
     resenas: '/owner/resenas',
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
