@@ -24,6 +24,8 @@ interface SportsSearchBarProps {
   initialEndTime?: string;
   initialDiscipline?: string;
   initialDisciplineId?: number;
+  // Prefijo para IDs únicos (evitar duplicados cuando hay múltiples instancias)
+  idPrefix?: string;
 }
 
 interface Discipline {
@@ -44,7 +46,8 @@ export default function SportsSearchBar({
   initialStartTime = '',
   initialEndTime = '',
   initialDiscipline = '',
-  initialDisciplineId
+  initialDisciplineId,
+  idPrefix = ''
 }: SportsSearchBarProps) {
   const [venue, setVenue] = useState(initialVenue);
   const [venueId, setVenueId] = useState<number | undefined>(initialVenueId);
@@ -163,13 +166,13 @@ export default function SportsSearchBar({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3">
           {/* Venue Input con Autocompletado */}
           <div className="relative lg:col-span-2" ref={venueRef}>
-            <label htmlFor="venue" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor={`${idPrefix}venue`} className="block text-xs font-medium text-gray-600 mb-1">
               Ubicación
             </label>
             <div className="relative">
               <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-500" />
               <input
-                id="venue"
+                id={`${idPrefix}venue`}
                 type="text"
                 placeholder="Buscar sede..."
                 value={venue}
@@ -212,13 +215,13 @@ export default function SportsSearchBar({
 
           {/* Date Input */}
           <div>
-            <label htmlFor="date" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor={`${idPrefix}date`} className="block text-xs font-medium text-gray-600 mb-1">
               Fecha
             </label>
             <div className="relative">
               <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-500" />
               <input
-                id="date"
+                id={`${idPrefix}date`}
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -229,13 +232,13 @@ export default function SportsSearchBar({
 
           {/* Start Time Input */}
           <div>
-            <label htmlFor="startTime" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor={`${idPrefix}startTime`} className="block text-xs font-medium text-gray-600 mb-1">
               Inicio
             </label>
             <div className="relative">
               <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-500" />
               <input
-                id="startTime"
+                id={`${idPrefix}startTime`}
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -246,13 +249,13 @@ export default function SportsSearchBar({
 
           {/* End Time Input */}
           <div>
-            <label htmlFor="endTime" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor={`${idPrefix}endTime`} className="block text-xs font-medium text-gray-600 mb-1">
               Fin
             </label>
             <div className="relative">
               <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-500" />
               <input
-                id="endTime"
+                id={`${idPrefix}endTime`}
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
@@ -263,13 +266,13 @@ export default function SportsSearchBar({
 
           {/* Discipline Input con Autocompletado */}
           <div className="relative" ref={disciplineRef}>
-            <label htmlFor="discipline" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor={`${idPrefix}discipline`} className="block text-xs font-medium text-gray-600 mb-1">
               Deporte
             </label>
             <div className="relative">
               <Dumbbell className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-500" />
               <input
-                id="discipline"
+                id={`${idPrefix}discipline`}
                 type="text"
                 placeholder="Buscar deporte..."
                 value={discipline}

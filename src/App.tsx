@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
 import HomePage from '@/search/pages/HomePage';
@@ -7,6 +7,8 @@ import HomePage from '@/search/pages/HomePage';
 // Páginas de dueños
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
+import AnalyticsDashboardPage from './modules/analytics/pages/AnalyticsDashboardPage';
+import ResenasPage from './modules/analytics/pages/ResenasPage';
 
 // import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
 import ProfilePage from '@/user-profile/pages/ProfilePage';
@@ -26,7 +28,14 @@ import ProtectedRoute from '@/core/routing/ProtectedRoute';
 
 import NewDashboardPage from '@/admin-panel/dashboard/pages/NewDashboardPage';
 import UsuariosListPage from '@/admin-panel/usuarios/pages/UsuariosListPage';
+import UsuarioDetallePage from '@/admin-panel/usuarios/pages/UsuarioDetallePage';
+import UsuarioFormPage from '@/admin-panel/usuarios/pages/UsuarioFormPage';
 import SedesListPage from '@/admin-panel/sedes/pages/SedesListPage';
+import SedeFormPage from '@/admin-panel/sedes/pages/SedeFormPage';
+import SedeDetallePage from '@/admin-panel/sedes/pages/SedeDetallePage';
+import SedeCanchasPage from '@/admin-panel/sedes/canchas/pages/SedeCanchasPage';
+import SedeCanchaDetailPage from '@/admin-panel/sedes/canchas/pages/SedeCanchaDetailPage';
+import SedeCanchaFormPage from '@/admin-panel/sedes/canchas/pages/SedeCanchaFormPage';
 import AdminLayout from '@/admin-panel/layout/AdminLayout';
 import { ROUTES } from '@/config/routes';
 
@@ -34,6 +43,7 @@ const AppContent = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -58,8 +68,16 @@ const AppContent = () => {
     setAuthMode(authMode === 'login' ? 'signup' : 'login');
   };
 
-  const handleLoginSuccess = (_userData: User) => {
+  const handleLoginSuccess = (userData: User) => {
     setIsAuthModalOpen(false);
+    
+    // Redirigir según el rol del usuario
+    if (userData.roles?.includes('ADMIN')) {
+      navigate(ROUTES.admin.dashboard);
+    }// } else if (userData.roles?.includes('DUENIO')) {
+    //   navigate(ROUTES.owner.dashboard);
+    // }
+    // Los clientes permanecen en la página actual
   };
 
   return (
@@ -116,41 +134,198 @@ const AppContent = () => {
           }
         />
 
-        {/* Panel de administración */}
+        {/* Panel de administración - PROTEGIDO SOLO ADMIN */}
         <Route
           path={ROUTES.admin.dashboard}
           element={
-            <AdminLayout>
-              <NewDashboardPage />
-            </AdminLayout>
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo="/" showUnauthorized={true}>
+              <AdminLayout>
+                <NewDashboardPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path={ROUTES.admin.usuarios}
           element={
-            <AdminLayout>
-              <UsuariosListPage />
-            </AdminLayout>
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuariosListPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuariosNuevo}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuarioDetallePattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioDetallePage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.admin.usuarioEditarPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <UsuarioFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path={ROUTES.admin.sedes}
           element={
-            <AdminLayout>
-              <SedesListPage />
-            </AdminLayout>
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedesListPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
-        {/* Rutas Dueños (owner) */}
-        <Route path={ROUTES.owner.hostSpace} element={<HostSpaceOwnerPage />} />
-        <Route path={ROUTES.owner.adminSpaces} element={<AdminSpacesOwnerPage />} />
+        <Route
+          path={ROUTES.admin.sedesNueva}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Rutas legacy - redirigen a las mismas páginas */}
-        <Route path="/host" element={<HostSpaceOwnerPage />} />
-        <Route path="/admin-spaces" element={<AdminSpacesOwnerPage />} />
+        <Route
+          path="/admin/sedes/:id"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeDetallePage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/sedes/:id/editar"
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedesCanchasPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchasPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedesCanchasCrearPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedeCanchaDetallePattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaDetailPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.admin.sedeCanchaEditarPattern}
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminLayout>
+                <SedeCanchaFormPage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rutas Dueños (owner) - PROTEGIDO ADMIN o DUENIO */}
+        <Route 
+          path={ROUTES.owner.hostSpace} 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <HostSpaceOwnerPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path={ROUTES.owner.adminSpaces} 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminSpacesOwnerPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path={ROUTES.owner.dashboard} 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AnalyticsDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path={ROUTES.owner.resenas} 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <ResenasPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rutas legacy - PROTEGIDAS ADMIN o DUENIO */}
+        <Route 
+          path="/host" 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <HostSpaceOwnerPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin-spaces" 
+          element={
+            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+              <AdminSpacesOwnerPage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </div>
   );

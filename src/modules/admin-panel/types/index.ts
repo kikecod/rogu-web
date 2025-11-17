@@ -122,12 +122,20 @@ export interface Usuario {
   estado: EstadoUsuario;
   creadoEn: Date;
   actualizadoEn: Date;
+  modificadoEn?: Date;
   ultimoAccesoEn?: Date;
   persona: Persona;
-  roles: UsuarioRol[];
+  roles: TipoRol[]; // Array de roles como strings
+  nombreCompleto?: string; // Agregado del backend
 }
 
 export interface UsuarioDetalle extends Usuario {
+  nombreCompleto?: string; // Nombre completo formateado
+  // Información asociada según roles
+  cliente?: any;
+  duenio?: any;
+  controlador?: any;
+  // Estadísticas agregadas
   estadisticas: {
     totalReservas: number;
     reservasCanceladas: number;
@@ -142,6 +150,7 @@ export interface UsuarioDetalle extends Usuario {
     nombre: string;
     totalCanchas: number;
   }>;
+  contrasenaTemporal?: string;
 }
 
 export interface ListaUsuariosParams {
@@ -157,6 +166,39 @@ export interface ListaUsuariosResponse {
   total: number;
   paginas: number;
 }
+
+export interface CrearUsuarioDto {
+  usuario: string;
+  correo: string;
+  estado: EstadoUsuario;
+  roles: TipoRol[];
+   contrasena?: string;
+  avatarPath?: string;
+  persona: {
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+    telefono?: string;
+    ci?: string;
+  };
+  cliente?: {
+    apodo?: string;
+    nivel?: number;
+    observaciones?: string;
+  };
+  duenio?: {
+    verificado?: boolean;
+    imagenCI?: string;
+    imagenFacial?: string;
+  };
+  controlador?: {
+    codigoEmpleado?: string;
+    turno?: string;
+    activo?: boolean;
+  };
+}
+
+export interface ActualizarUsuarioDto extends Partial<CrearUsuarioDto> {}
 
 // ==========================================
 // INTERFACES DE VERIFICACIONES

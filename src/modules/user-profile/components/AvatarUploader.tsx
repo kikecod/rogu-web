@@ -6,6 +6,7 @@ import { Camera, Loader2, ImageOff, Trash2, ZoomIn, CheckCircle2, XCircle } from
 import profileService from '../services/profileService';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { readFileAsDataUrl, getCroppedFile } from '../lib/imageTools';
+import { getImageUrl } from '@/core/config/api';
 
 type Feedback =
   | { type: 'success'; message: string }
@@ -37,12 +38,17 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, fallbackInit
     setCacheBuster(Date.now());
   }, [avatarUrl]);
 
-  const previewUrl = useMemo(() => {
+  const resolvedAvatarUrl = useMemo(() => {
     if (!avatarUrl) return null;
-    if (!cacheBuster) return avatarUrl;
-    const separator = avatarUrl.includes('?') ? '&' : '?';
-    return `${avatarUrl}${separator}v=${cacheBuster}`;
-  }, [avatarUrl, cacheBuster]);
+    return getImageUrl(avatarUrl);
+  }, [avatarUrl]);
+
+  const previewUrl = useMemo(() => {
+    if (!resolvedAvatarUrl) return null;
+    if (!cacheBuster) return resolvedAvatarUrl;
+    const separator = resolvedAvatarUrl.includes('?') ? '&' : '?';
+    return `${resolvedAvatarUrl}${separator}v=${cacheBuster}`;
+  }, [resolvedAvatarUrl, cacheBuster]);
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedArea(croppedAreaPixels);

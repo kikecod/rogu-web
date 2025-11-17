@@ -12,6 +12,8 @@
  * navigate(ROUTES.profile);
  */
 
+// src/config/routes.ts
+
 export const ROUTES = {
   // ==========================================
   // RUTAS PÚBLICAS
@@ -63,18 +65,35 @@ export const ROUTES = {
   profile: '/profile',
   favoritos: '/favoritos',
 
+  
   // ==========================================
   // ADMIN - Panel de Administración
   // ==========================================
   admin: {
     dashboard: '/admin/dashboard',
     usuarios: '/admin/usuarios',
+    usuariosNuevo: '/admin/usuarios/nuevo',
     usuarioDetalle: (id: number | string) => `/admin/usuarios/${id}`,
+    usuarioDetallePattern: '/admin/usuarios/:id',
+    usuarioEditar: (id: number | string) => `/admin/usuarios/${id}/editar`,
+    usuarioEditarPattern: '/admin/usuarios/:id/editar',
     verificaciones: '/admin/verificaciones',
     verificacionDuenio: (id: number | string) => `/admin/verificaciones/duenios/${id}`,
     verificacionSede: (id: number | string) => `/admin/verificaciones/sedes/${id}`,
     sedes: '/admin/sedes',
+    sedesNueva: '/admin/sedes/nueva',
     sedeDetalle: (id: number | string) => `/admin/sedes/${id}`,
+    sedeEditar: (id: number | string) => `/admin/sedes/${id}/editar`,
+    sedesCanchas: (id: number | string) => `/admin/sedes/${id}/canchas`,
+    sedesCanchasCrear: (id: number | string) => `/admin/sedes/${id}/canchas/nueva`,
+    sedeCanchaDetalle: (id: number | string, canchaId: number | string) =>
+      `/admin/sedes/${id}/canchas/${canchaId}`,
+    sedeCanchaEditar: (id: number | string, canchaId: number | string) =>
+      `/admin/sedes/${id}/canchas/${canchaId}/editar`,
+    sedesCanchasPattern: '/admin/sedes/:id/canchas',
+    sedesCanchasCrearPattern: '/admin/sedes/:id/canchas/nueva',
+    sedeCanchaDetallePattern: '/admin/sedes/:id/canchas/:idCancha',
+    sedeCanchaEditarPattern: '/admin/sedes/:id/canchas/:idCancha/editar',
     canchas: '/admin/canchas',
     reportes: '/admin/reportes',
     reporteDetalle: (id: number | string) => `/admin/reportes/${id}`,
@@ -82,6 +101,11 @@ export const ROUTES = {
     moderacion: '/admin/moderacion',
     configuracion: '/admin/configuracion',
     logs: '/admin/logs',
+    pagos: '/admin/pagos',
+    pagoDetalle: (id: number | string) => `/admin/pagos/${id}`,
+    reservas: '/admin/reservas',
+    reservaDetalle: (id: number | string) => `/admin/reservas/${id}`,
+    disciplinas: '/admin/disciplinas',
   },
 
   // ==========================================
@@ -90,8 +114,9 @@ export const ROUTES = {
   owner: {
     dashboard: '/owner/dashboard',
     spaces: '/owner/spaces',
-    hostSpace: '/host-space',
     adminSpaces: '/admin-spaces',
+    hostSpace: '/host-space',
+    resenas: '/owner/resenas',
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
     analytics: (idSede: number | string) => `/owner/spaces/${idSede}/analytics`,
     reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
@@ -105,6 +130,7 @@ export const ROUTES = {
     verify: (qrCode: string) => `/controller/verify/${qrCode}`,
   },
 } as const;
+
 
 /**
  * Rutas que requieren autenticación

@@ -23,20 +23,20 @@ CLIENTE
 └─ No tiene acceso al panel
 
 GERENTE_PENDIENTE (duenio)
-└─ Solicitó ser dueño, esperando verificación
+└─ Solicitó ser dueño, esperando verificación // Se resuelve con un atributo de verificado en el dueño
 └─ No puede crear sedes
 
-GERENTE_VERIFICADO (duenio)
+GERENTE_VERIFICADO (duenio) // Se resuelve con un atributo de verificado en el dueño
 └─ Dueño verificado
 └─ Puede crear/gestionar sedes y canchas
-└─ Acceso a analytics de sus sedes
+└─ Acceso a analytics de sus sedes 
 
-ADMIN
-└─ Acceso completo al panel de administración
+ADMIN // No lo veo Necesario Gerente???? nmms
+└─ Acceso completo al panel de administración 
 └─ Puede verificar, moderar, gestionar usuarios
 └─ No puede gestionar otros admins
 
-SUPER_ADMIN
+SUPER_ADMIN // Entendible
 └─ Todo lo de ADMIN +
 └─ Puede crear/eliminar otros admins
 └─ Acceso a configuración del sistema

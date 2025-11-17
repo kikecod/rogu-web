@@ -1,5 +1,17 @@
 import { ROUTES } from '@/config/routes';
-import { User, Calendar, Heart, Building2, Store } from 'lucide-react';
+import { 
+  User, 
+  Calendar, 
+  Heart, 
+  Building2, 
+  Store,
+  LayoutDashboard,
+  Users,
+  CheckCircle,
+  FileText,
+  BarChart3,
+  Settings
+} from 'lucide-react';
 
 export interface NavigationItem {
   id: string;
@@ -55,6 +67,88 @@ export const panelNavigation: NavigationItem[] = [
     route: ROUTES.owner.adminSpaces,
     icon: Building2,
     roles: ['DUENIO'], // Solo para DUEÑO
+  },
+];
+
+/**
+ * Pestañas/Tabs de navegación para ADMIN (submenu detallado)
+ */
+export const adminTabsNavigation: NavigationItem[] = [
+  {
+    id: 'admin-dashboard',
+    label: 'Dashboard',
+    route: ROUTES.admin.dashboard,
+    icon: LayoutDashboard,
+    roles: ['ADMIN'],
+  },
+  {
+    id: 'admin-usuarios',
+    label: 'Usuarios',
+    route: ROUTES.admin.usuarios,
+    icon: Users,
+    roles: ['ADMIN'],
+  },
+  {
+    id: 'admin-sedes',
+    label: 'Sedes',
+    route: ROUTES.admin.sedes,
+    icon: Building2,
+    roles: ['ADMIN'],
+  },
+  {
+    id: 'admin-verificaciones',
+    label: 'Verificaciones',
+    route: ROUTES.admin.verificaciones,
+    icon: CheckCircle,
+    roles: ['ADMIN'],
+  },
+  {
+    id: 'admin-reportes',
+    label: 'Reportes',
+    route: ROUTES.admin.reportes,
+    icon: FileText,
+    roles: ['ADMIN'],
+  },
+  {
+    id: 'admin-analytics',
+    label: 'Analytics',
+    route: ROUTES.admin.analytics,
+    icon: BarChart3,
+    roles: ['ADMIN'],
+  },
+];
+
+/**
+ * Pestañas/Tabs de navegación para DUEÑO (submenu detallado)
+ */
+export const ownerTabsNavigation: NavigationItem[] = [
+  {
+    id: 'owner-dashboard',
+    label: 'Dashboard',
+    route: ROUTES.owner.dashboard,
+    icon: LayoutDashboard,
+    roles: ['DUENIO'],
+  },
+  {
+    id: 'owner-spaces',
+    label: 'Mis Espacios',
+    route: ROUTES.owner.adminSpaces,
+    icon: Building2,
+    roles: ['DUENIO'],
+  },
+  {
+    id: 'owner-resenas',
+    label: 'Reseñas',
+    route: ROUTES.owner.resenas,
+    icon: Heart,
+    roles: ['DUENIO'],
+  },
+  {
+    id: 'owner-settings',
+    label: 'Configuración',
+    route: ROUTES.profile,
+    icon: Settings,
+    roles: ['DUENIO'],
   },
 ];
 

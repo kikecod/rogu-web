@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { getAuthToken } from '@/core/config/api';
 
 // ==========================================
 // CONFIGURACIÓN BASE API ADMIN
@@ -22,7 +23,7 @@ class AdminApiClient {
     // Interceptor para agregar token de autenticación
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
+        const token = getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -38,6 +39,8 @@ class AdminApiClient {
         if (error.response?.status === 401) {
           // Redirigir al login si no está autorizado
           localStorage.removeItem('authToken');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
         
