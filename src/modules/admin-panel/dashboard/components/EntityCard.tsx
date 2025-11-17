@@ -1,3 +1,5 @@
+// src/modules/admin-panel/dashboard/components/EntityCard.tsx
+
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { EntityCardData } from '../../types';

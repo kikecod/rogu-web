@@ -33,19 +33,31 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Si no está logueado, redirigir al login
+  // Si no está logueado, redirigir
   if (!isLoggedIn) {
+    console.log('🚫 Acceso denegado - No autenticado');
+    console.log('Ruta solicitada:', location.pathname);
+    console.log('Redirigiendo a:', redirectTo);
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   // Verificar roles requeridos
+  console.log('🔐 ProtectedRoute:', location.pathname);
   const hasRequiredRoles = requiredRoles.length === 0 || hasAnyRole(requiredRoles);
   const hasAllRequiredRoles = requireAllRoles.length === 0 || hasAllRoles(requireAllRoles);
 
   const isAuthorized = hasRequiredRoles && hasAllRequiredRoles;
 
+  console.log(`✅ Autorizado: ${isAuthorized}`);
+
   // Si no tiene los roles requeridos
   if (!isAuthorized) {
+    console.error('❌ ACCESO DENEGADO:', {
+      usuario: user?.correo,
+      rolesUsuario: user?.roles,
+      rolesRequeridos: requiredRoles,
+      todosRequeridos: requireAllRoles
+    });
     if (showUnauthorized) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">

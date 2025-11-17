@@ -1,3 +1,5 @@
+// src/modules/admin-panel/sedes/pages/SedesListPage.tsx
+
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, AlertCircle } from 'lucide-react';
 import { useSedes } from '../hooks';

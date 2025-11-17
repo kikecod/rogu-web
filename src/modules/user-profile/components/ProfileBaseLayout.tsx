@@ -70,9 +70,7 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
     persona?.urlFoto ??
     null;
 
-  const avatarUrl = avatarCandidate
-    ? (avatarCandidate.startsWith('http') ? avatarCandidate : getImageUrl(avatarCandidate))
-    : null;
+  const avatarUrl = avatarCandidate ? getImageUrl(avatarCandidate) : null;
 
   const fullName = getFullName(persona, usuario.usuario || usuario.correo || 'Usuario sin nombre');
   const initials = getInitials(persona, usuario);

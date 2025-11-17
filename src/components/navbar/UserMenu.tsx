@@ -25,7 +25,7 @@ const UserMenu = ({ onLoginClick, onSignupClick, onLogout }: UserMenuProps) => {
         {isLoggedIn && user ? (
           user.avatar ? (
             <img 
-              src={user.avatar.startsWith('http') ? user.avatar : getImageUrl(user.avatar)} 
+              src={getImageUrl(user.avatar)} 
               alt={user.correo} 
               className="h-5 w-5 sm:h-6 sm:w-6 rounded-full" 
             />

@@ -42,16 +42,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
         
+        console.log('🔐 Inicializando Auth...');
+        console.log('Token existe:', !!token);
+        console.log('User data existe:', !!userData);
+        
         if (token && userData) {
+          // Validar expiración del token
+          try {
+            const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+            const now = Math.floor(Date.now() / 1000);
+            
+            if (tokenPayload.exp && tokenPayload.exp < now) {
+              console.warn('⚠️ Token expirado, limpiando sesión...');
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              setUser(null);
+              setIsLoggedIn(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Error al validar token:', e);
+          }
+          
           const parsedUser = JSON.parse(userData);
+          console.log('✅ Usuario autenticado:', parsedUser.correo);
+          console.log('Roles:', parsedUser.roles);
           setUser(parsedUser);
           setIsLoggedIn(true);
         } else {
+          console.log('❌ No hay sesión guardada');
           setUser(null);
           setIsLoggedIn(false);
         }
       } catch (error) {
-        console.error('Error al inicializar autenticación:', error);
+        console.error('❌ Error al inicializar autenticación:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
         setIsLoggedIn(false);
       } finally {
@@ -63,6 +89,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (userData: User, token: string) => {
+    console.log('🔐 Login ejecutado');
+    console.log('Usuario:', userData.correo);
+    console.log('Roles:', userData.roles);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -88,12 +117,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Verificar si el usuario tiene alguno de los roles especificados
   const hasAnyRole = (roles: string[]): boolean => {
-    return roles.some(role => hasRole(role));
+    const result = roles.some(role => hasRole(role));
+    console.log(`🔑 hasAnyRole([${roles.join(', ')}]):`, result, '| User roles:', user?.roles);
+    return result;
   };
 
   // Verificar si el usuario tiene todos los roles especificados
   const hasAllRoles = (roles: string[]): boolean => {
-    return roles.every(role => hasRole(role));
+    const result = roles.every(role => hasRole(role));
+    console.log(`🔑 hasAllRoles([${roles.join(', ')}]):`, result, '| User roles:', user?.roles);
+    return result;
   };
 
   // Verificar si es administrador
