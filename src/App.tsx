@@ -209,7 +209,7 @@ const AppContent = () => {
 
         <Route
           path={ROUTES.admin.sedes}
-        _ element={
+          element={
             <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
               <AdminLayout>
                 <SedesListPage />
@@ -352,7 +352,7 @@ const AppContent = () => {
           } 
         />
         <Route 
-  nbsp;       path="/admin-spaces" 
+         path="/admin-spaces" 
           element={
             <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
               <AdminSpacesOwnerPage />
