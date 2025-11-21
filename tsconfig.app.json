@@ -34,10 +34,13 @@
       "@/venues/*": ["src/modules/venues/*"],
       "@/user-profile/*": ["src/modules/user-profile/*"],
       "@/search/*": ["src/modules/search/*"],
-      "@/admin/*": ["src/modules/admin/*"],
+      "@/admin/*": ["src/modules/admin-owner/*"],
       "@/reviews/*": ["src/modules/reviews/*"],
       "@/assets/*": ["src/assets/*"],
-      "@/components/*": ["src/components/*"]
+      "@/components/*": ["src/components/*"],
+      "@/admin-panel/*": ["src/modules/admin-panel/*"],
+      "@/favorites/*": ["src/modules/favorites/*"],
+      "@/config/*": ["src/config/*"]
     }
   },
   "include": ["src"]

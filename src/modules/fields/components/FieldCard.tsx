@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, MapPin, Clock } from 'lucide-react';
 import type { SportField } from '../types/field.types';
+import FavoriteButton from '../../favorites/components/FavoriteButton';
 
 interface SportFieldCardProps {
   field: SportField;
@@ -8,29 +9,10 @@ interface SportFieldCardProps {
 }
 
 const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
-  const getSportIcon = (sport: string) => {
-    const icons: { [key: string]: string } = {
-      football: '⚽',
-      basketball: '🏀',
-      tennis: '🎾',
-      volleyball: '🏐',
-      paddle: '🏓',
-      hockey: '🏒',
-    };
-    return icons[sport] || '⚽';
-  };
-
-  const getSportLabel = (sport: string) => {
-    const labels: { [key: string]: string } = {
-      football: 'Fútbol',
-      basketball: 'Básquetbol',
-      tennis: 'Tenis',
-      volleyball: 'Voleibol',
-      paddle: 'Paddle',
-      hockey: 'Hockey',
-    };
-    return labels[sport] || sport.charAt(0).toUpperCase() + sport.slice(1);
-  };
+  // Espera que el parent ya haya inyectado field.disciplinas como array de nombres (normalizado)
+  const disciplinaNombres: string[] = Array.isArray((field as any).disciplinas)
+    ? ((field as any).disciplinas as string[])
+    : [];
 
   return (
     <div
@@ -49,9 +31,30 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
             e.currentTarget.src = 'https://placehold.co/400x300/22c55e/ffffff?text=Cancha';
           }}
         />
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm">
-          <span className="mr-1">{getSportIcon(field.sport)}</span>
-          <span className="hidden xs:inline">{getSportLabel(field.sport)}</span>
+        {/* Botón favorito */}
+        <div className="absolute top-2 right-2">
+          <FavoriteButton idCancha={Number(field.id)} size="sm" />
+        </div>
+        {/* Disciplinas dinámicas */}
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1 flex-wrap max-w-[80%]">
+          {disciplinaNombres.slice(0, 2).map((name, idx) => (
+            <span
+              key={name + idx}
+              className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm border border-neutral-200"
+            >
+              {name}
+            </span>
+          ))}
+          {disciplinaNombres.length > 2 && (
+            <span className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm border border-neutral-200">
+              +{disciplinaNombres.length - 2}
+            </span>
+          )}
+          {disciplinaNombres.length === 0 && (
+            <span className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs sm:text-sm font-medium shadow-sm border border-neutral-200">
+              Sin disciplina
+            </span>
+          )}
         </div>
         {field.images.length > 1 && (
           <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 bg-neutral-900/70 text-white text-xs px-2 py-1 rounded-full">

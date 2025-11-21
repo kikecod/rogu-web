@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, CreditCard, QrCode, Star, MapPin, 
@@ -8,6 +8,8 @@ import Footer from '@/components/Footer';
 import { createReserva } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
 import type { CreateReservaRequest } from '../types/booking.types';
+import { ROUTES } from '@/config/routes';
+import { usePagoLibelula } from '../hooks/usePagoLibelula';
 
 interface BookingDetails {
   fieldName: string;
@@ -35,12 +37,141 @@ const CheckoutPage: React.FC = () => {
   const totalPrice = location.state?.totalPrice;
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'qr' | null>(null);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [showErrors, setShowErrors] = useState(false);
+  const [showErrors] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [idReserva, setIdReserva] = useState<number | null>(location.state?.idReserva || null);
+  const [isCreatingReserva, setIsCreatingReserva] = useState(false);
+  
+  // Hook de pago con Libélula
+  const { iniciarPago } = usePagoLibelula({
+    onError: (error) => {
+      alert(error.message);
+      setIsProcessing(false);
+    }
+  });
+  
+  // Ref para prevenir doble creación de reserva
+  const reservaCreatedRef = useRef(false);
+
+  // Crear reserva PENDIENTE al montar el componente
+  useEffect(() => {
+    const createPendingReserva = async () => {
+      // Prevenir doble ejecución en React StrictMode
+      if (reservaCreatedRef.current) {
+        console.log('⚠️ [Checkout] Reserva ya fue creada, saltando...');
+        return;
+      }
+
+      // Si ya existe idReserva (viene desde MyBookings), no crear otra
+      if (idReserva) {
+        console.log('💡 [Checkout] Ya existe idReserva, no se crea nueva reserva:', idReserva);
+        reservaCreatedRef.current = true;
+        return;
+      }
+
+      // Validar que tengamos todos los datos necesarios
+      if (!user || !fieldId || !selectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
+        console.error('❌ [Checkout] Faltan datos para crear reserva');
+        console.log('🆕 [Checkout] Creando reserva PENDIENTE para campo:', fieldId, user, selectedTimeSlots);
+        return;
+      }
+
+      
+
+      // Validar que el usuario tenga el rol de CLIENTE
+      if (!user.roles?.includes('CLIENTE')) {
+        console.error('❌ [Checkout] Usuario no tiene rol de CLIENTE');
+        return;
+      }
+
+      const idCliente = user.idPersona;
+      if (!idCliente) {
+        console.error('❌ [Checkout] No se encontró idPersona del usuario');
+        return;
+      }
+
+      // Marcar como en proceso ANTES de hacer la petición
+      reservaCreatedRef.current = true;
+      setIsCreatingReserva(true);
+
+      try {
+        // Validar y procesar horarios consecutivos
+        const validateAndMergeTimeSlots = (slots: string[]): { startTime: string; endTime: string } | null => {
+          if (slots.length === 0) return null;
+          
+          const parsedSlots = slots.map(slot => {
+            const [start, end] = slot.split(' - ');
+            return { start, end };
+          });
+          
+          parsedSlots.sort((a, b) => a.start.localeCompare(b.start));
+          
+          for (let i = 0; i < parsedSlots.length - 1; i++) {
+            const currentEnd = parsedSlots[i].end;
+            const nextStart = parsedSlots[i + 1].start;
+            
+            if (currentEnd !== nextStart) {
+              return null;
+            }
+          }
+          
+          return {
+            startTime: parsedSlots[0].start,
+            endTime: parsedSlots[parsedSlots.length - 1].end
+          };
+        };
+
+        const timeRange = validateAndMergeTimeSlots(selectedTimeSlots);
+        
+        if (!timeRange) {
+          alert('Los horarios seleccionados deben ser consecutivos.');
+          navigate(-1);
+          return;
+        }
+
+        // Crear timestamps ISO
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        
+        const iniciaEn = `${year}-${month}-${day}T${timeRange.startTime}:00`;
+        const terminaEn = `${year}-${month}-${day}T${timeRange.endTime}:00`;
+
+        const reservaData: CreateReservaRequest = {
+          idCliente: idCliente,
+          idCancha: parseInt(fieldId),
+          iniciaEn: iniciaEn,
+          terminaEn: terminaEn,
+          cantidadPersonas: participants || 1,
+          requiereAprobacion: false,
+          montoBase: totalPrice || 0,
+          montoExtra: 0,
+          montoTotal: totalPrice || 0
+        };
+
+        console.log('🆕 [Checkout] Creando reserva PENDIENTE:', reservaData);
+
+        // Crear la reserva PENDIENTE en el backend
+        const response = await createReserva(reservaData);
+        
+        console.log('✅ [Checkout] Reserva PENDIENTE creada:', response);
+        console.log('🎫 [Checkout] idReserva:', response.reserva.idReserva);
+        console.log('📊 [Checkout] Estado:', response.reserva.estado);
+
+        setIdReserva(response.reserva.idReserva);
+      } catch (error) {
+        console.error('❌ [Checkout] Error al crear reserva PENDIENTE:', error);
+        // Resetear el ref si hay error para permitir reintentar
+        reservaCreatedRef.current = false;
+        alert(error instanceof Error ? error.message : 'Error al crear la reserva. Por favor intenta de nuevo.');
+        navigate(-1);
+      } finally {
+        setIsCreatingReserva(false);
+      }
+    };
+
+    createPendingReserva();
+  }, []); // ← Dependencias vacías, solo se ejecuta una vez
 
   // Scroll hacia arriba al montar el componente
   useEffect(() => {
@@ -54,7 +185,7 @@ const CheckoutPage: React.FC = () => {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">No hay información de reserva</h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Volver al inicio
@@ -64,151 +195,62 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const validateCardForm = () => {
-    if (paymentMethod !== 'card') return true;
-    return cardNumber.length === 16 && 
-           expiryDate.length === 5 && 
-           cvv.length === 3 && 
-           cardName.trim().length > 0;
-  };
-
   const handlePayment = async () => {
-    if (paymentMethod === 'card' && !validateCardForm()) {
-      setShowErrors(true);
-      return;
-    }
-
+    // Validar que haya un método de pago seleccionado
     if (!paymentMethod) {
-      setShowErrors(true);
+      alert('Por favor selecciona un método de pago');
       return;
     }
 
-    // Validar que tengamos todos los datos necesarios
-    if (!user || !fieldId || !selectedDate || !selectedTimeSlots || selectedTimeSlots.length === 0) {
-      alert('Faltan datos para completar la reserva');
-      return;
-    }
-
-    // Validar que el usuario tenga el rol de CLIENTE
-    if (!user.roles?.includes('CLIENTE')) {
-      alert('Debes tener el rol de cliente para hacer reservas');
-      return;
-    }
-
-    // Usar idPersona como idCliente (el backend lo asocia así)
-    const idCliente = user.idPersona;
-
-    if (!idCliente) {
-      alert('No se encontró la información de persona del usuario');
-      return;
-    }
-
-    // Validar y procesar horarios consecutivos
-    const validateAndMergeTimeSlots = (slots: string[]): { startTime: string; endTime: string } | null => {
-      if (slots.length === 0) return null;
-      
-      // Parsear todos los slots
-      const parsedSlots = slots.map(slot => {
-        const [start, end] = slot.split(' - ');
-        return { start, end };
-      });
-      
-      // Ordenar por hora de inicio
-      parsedSlots.sort((a, b) => a.start.localeCompare(b.start));
-      
-      // Verificar que sean consecutivos
-      for (let i = 0; i < parsedSlots.length - 1; i++) {
-        const currentEnd = parsedSlots[i].end;
-        const nextStart = parsedSlots[i + 1].start;
-        
-        if (currentEnd !== nextStart) {
-          // No son consecutivos
-          return null;
-        }
-      }
-      
-      // Si son consecutivos, retornar el rango completo
-      return {
-        startTime: parsedSlots[0].start,
-        endTime: parsedSlots[parsedSlots.length - 1].end
-      };
-    };
-
-    const timeRange = validateAndMergeTimeSlots(selectedTimeSlots);
-    
-    if (!timeRange) {
-      alert('Los horarios seleccionados deben ser consecutivos. Por favor, selecciona horarios continuos o haz reservas separadas.');
+    // Validar que tengamos idReserva
+    if (!idReserva || !totalPrice) {
+      alert('No se ha creado la reserva. Por favor recarga la página e intenta de nuevo.');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Crear timestamps ISO
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const descripcion = `Reserva de ${bookingDetails.fieldName} - ${bookingDetails.date} ${bookingDetails.timeSlot}`;
       
-      const iniciaEn = `${year}-${month}-${day}T${timeRange.startTime}:00`;
-      const terminaEn = `${year}-${month}-${day}T${timeRange.endTime}:00`;
-
-      const reservaData: CreateReservaRequest = {
-        idCliente: idCliente,
-        idCancha: parseInt(fieldId),
-        iniciaEn: iniciaEn,
-        terminaEn: terminaEn,
-        cantidadPersonas: participants || 1,
-        requiereAprobacion: false,
-        montoBase: totalPrice || 0,
-        montoExtra: 0,
-        montoTotal: totalPrice || 0
-      };
-
-      console.log('📝 Enviando reserva:', reservaData);
-      console.log(`⏰ Horario: ${timeRange.startTime} - ${timeRange.endTime}`);
-
-      // Crear la reserva en el backend
-      const response = await createReserva(reservaData);
-      
-      console.log('✅ Reserva creada exitosamente:', response);
-
-      // Navegar a la página de confirmación con QR
-      navigate('/booking-confirmation', {
-        state: {
-          bookingDetails,
-          paymentMethod,
-          reservaId: response.reserva.idReserva,
-          reserva: response.reserva
-        }
+      console.log('💳 [Checkout] Iniciando pago con Libélula:', {
+        idReserva,
+        monto: totalPrice,
+        metodo: paymentMethod
       });
+
+      // Iniciar el pago con Libélula
+      const metodoPago = paymentMethod === 'card' ? 'tarjeta' : 'qr';
+      await iniciarPago(
+        idReserva, 
+        totalPrice, 
+        descripcion, 
+        metodoPago,
+        bookingDetails
+      );
+
+      // El hook maneja la navegación automáticamente
     } catch (error) {
-      console.error('❌ Error al crear reserva:', error);
-      alert(error instanceof Error ? error.message : 'Error al crear la reserva. Por favor intenta de nuevo.');
+      console.error('❌ [Checkout] Error al procesar pago:', error);
       setIsProcessing(false);
     }
   };
 
-  const formatCardNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCardNumber(numbers.slice(0, 16));
-  };
 
-  const formatExpiryDate = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length >= 2) {
-      setExpiryDate(`${numbers.slice(0, 2)}/${numbers.slice(2, 4)}`);
-    } else {
-      setExpiryDate(numbers);
-    }
-  };
-
-  const formatCVV = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCvv(numbers.slice(0, 3));
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Loader mientras se crea la reserva */}
+      {isCreatingReserva && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Creando tu reserva...</h3>
+            <p className="text-gray-600">Por favor espera un momento</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -256,81 +298,21 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 {paymentMethod === 'card' && (
-                  <div className="mt-4 space-y-4 animate-fadeIn">
-                    {/* Card Number */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número de tarjeta *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => formatCardNumber(e.target.value)}
-                        placeholder="1234 5678 9012 3456"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && cardNumber.length !== 16 ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && cardNumber.length !== 16 && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa un número de tarjeta válido (16 dígitos)</p>
-                      )}
-                    </div>
-
-                    {/* Expiry and CVV */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Fecha de vencimiento *
-                        </label>
-                        <input
-                          type="text"
-                          value={expiryDate}
-                          onChange={(e) => formatExpiryDate(e.target.value)}
-                          placeholder="MM/AA"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && expiryDate.length !== 5 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && expiryDate.length !== 5 && (
-                          <p className="text-xs text-red-500 mt-1">Formato: MM/AA</p>
-                        )}
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV *
-                        </label>
-                        <input
-                          type="text"
-                          value={cvv}
-                          onChange={(e) => formatCVV(e.target.value)}
-                          placeholder="123"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && cvv.length !== 3 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && cvv.length !== 3 && (
-                          <p className="text-xs text-red-500 mt-1">3 dígitos</p>
-                        )}
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-2">Pago con tarjeta</h4>
+                        <p className="text-sm text-gray-700 mb-3">
+                          Serás redirigido a la pasarela segura de <strong>Libélula</strong> para completar tu pago con tarjeta de crédito o débito.
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Shield className="w-4 h-4 text-green-600" />
+                          <span>Pago 100% seguro y encriptado</span>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Cardholder Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del titular *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Como aparece en la tarjeta"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && !cardName.trim() ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && !cardName.trim() && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa el nombre del titular</p>
-                      )}
                     </div>
                   </div>
                 )}
@@ -363,16 +345,20 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 {paymentMethod === 'qr' && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 animate-fadeIn">
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <QrCode className="h-48 w-48 text-gray-700 mx-auto mb-3" />
-                        <p className="text-sm text-gray-600">
-                          Escanea este código QR con tu app de banco
+                  <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-fadeIn">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                        <QrCode className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-2">Pago con código QR</h4>
+                        <p className="text-sm text-gray-700 mb-3">
+                          Se generará un código QR que podrás escanear con tu aplicación de banca móvil o billetera digital para completar el pago de forma rápida y segura.
                         </p>
-                        <p className="text-lg font-bold text-blue-600 mt-2">
-                          Bs {bookingDetails.price.toFixed(2)}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Shield className="w-4 h-4 text-green-600" />
+                          <span>Procesado por Libélula</span>
+                        </div>
                       </div>
                     </div>
                   </div>

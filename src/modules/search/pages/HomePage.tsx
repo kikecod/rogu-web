@@ -1,147 +1,228 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Calendar, Clock } from 'lucide-react';
-import FieldCard from '@/fields/components/FieldCard';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowRight, AlertCircle } from 'lucide-react';
+import SportsSearchBar, { type SportSearchParams } from '../components/SearchBar';
+import SedeCard from '../../venues/components/SedeCard';
 import Filters from '../components/Filters';
 import Footer from '@/components/Footer';
-import { fetchCanchas } from '@/core/lib/helpers';
-import type { SportField } from '@/fields/types/field.types';
+import { venueService } from '../../venues/services/venueService';
+import { searchApiService } from '../services/searchApi.service';
+import type { SedeCard as SedeCardType } from '../../venues/types/venue-search.types';
 import type { FilterState } from '../components/Filters';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [allFields, setAllFields] = useState<SportField[]>([]);
-  const [filteredFields, setFilteredFields] = useState<SportField[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const [allVenues, setAllVenues] = useState<SedeCardType[]>([]);
+  const [filteredVenues, setFilteredVenues] = useState<SedeCardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSearchBarSticky, setIsSearchBarSticky] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  // Estado compartido del SearchBar
+  const [searchValues, setSearchValues] = useState<SportSearchParams>({
+    venue: '',
+    venueId: undefined,
+    date: '',
+    startTime: '',
+    endTime: '',
+    discipline: '',
+    disciplineId: undefined,
+  });
 
-  // Scroll to top al montar el componente
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Cargar canchas al montar el componente
   useEffect(() => {
-    const loadCanchas = async () => {
+    const handleScroll = () => {
+      // El SearchBar se vuelve sticky cuando se scrollea más allá del hero (más compacto ahora)
+      setIsSearchBarSticky(window.scrollY > 80);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadSedes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const canchas = await fetchCanchas();
-        setAllFields(canchas);
-        setFilteredFields(canchas);
+        const sedes = await venueService.findVenues();
+        console.log('Sedes cargadas:', sedes);
+        setAllVenues(sedes);
+        setFilteredVenues(sedes);
       } catch (err) {
-        console.error('Error al cargar canchas:', err);
-        setError('No se pudieron cargar las canchas. Por favor, intenta de nuevo.');
+        console.error('Error al cargar sedes:', err);
+        setError('No se pudieron cargar las sedes. Por favor, intenta de nuevo.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCanchas();
+    loadSedes();
   }, []);
 
   const handleFiltersChange = (filters: FilterState) => {
-    let filtered = [...allFields];
+    let filtered = [...allVenues];
 
-    // Filter by sport
     if (filters.sport.length > 0) {
-      filtered = filtered.filter(field => filters.sport.includes(field.sport));
-    }
-
-    // Filter by price range
-    filtered = filtered.filter(field => 
-      field.price >= filters.priceRange[0] && field.price <= filters.priceRange[1]
-    );
-
-    // Filter by rating
-    if (filters.rating > 0) {
-      filtered = filtered.filter(field => field.rating >= filters.rating);
-    }
-
-    // Filter by amenities
-    if (filters.amenities.length > 0) {
-      filtered = filtered.filter(field =>
-        filters.amenities.every(amenity => field.amenities.includes(amenity))
+      filtered = filtered.filter(venue => 
+        filters.sport.some(sport => venue.estadisticas.deportesDisponibles.includes(sport))
       );
     }
 
-    setFilteredFields(filtered);
+    filtered = filtered.filter(venue => 
+      venue.estadisticas.precioDesde >= filters.priceRange[0] && 
+      venue.estadisticas.precioDesde <= filters.priceRange[1]
+    );
+
+    if (filters.rating > 0) {
+      filtered = filtered.filter(venue => venue.estadisticas.ratingFinal >= filters.rating);
+    }
+
+    setFilteredVenues(filtered);
   };
 
-  const handleFieldClick = (field: SportField) => {
-    navigate(`/field/${field.id}`);
-  };
+  const handleSportSearch = async (params: SportSearchParams) => {
+    console.log('Searching with sports params:', params);
+    
+    // Actualizar el estado compartido para mantener sincronizados ambos SearchBars
+    setSearchValues(params);
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      setHasSearched(true);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Searching for:', searchQuery);
+      // Construir parámetros para la API
+      const searchParams: any = {
+        page: 1,
+        limit: 50,
+      };
+
+      // Agregar parámetros opcionales solo si tienen valor
+      // Solo agregar IDs si fueron seleccionados del dropdown (tienen ID válido)
+      if (params.venueId && params.venueId > 0) {
+        searchParams.idSede = params.venueId;
+      }
+      
+      if (params.date) {
+        searchParams.fecha = params.date;
+      }
+      
+      if (params.startTime) {
+        searchParams.horaInicio = params.startTime;
+      }
+      
+      if (params.endTime) {
+        searchParams.horaFin = params.endTime;
+      }
+      
+      if (params.disciplineId && params.disciplineId > 0) {
+        searchParams.idDisciplina = params.disciplineId;
+      }
+
+      // Llamar al endpoint de búsqueda
+      const response = await searchApiService.searchMain(searchParams);
+      
+      console.log('Resultados de búsqueda:', response);
+      
+      // Extraer los resultados de la respuesta
+      const sedes = response.results || [];
+      setFilteredVenues(sedes as any);
+      setAllVenues(sedes as any);
+      
+    } catch (err) {
+      console.error('Error en búsqueda:', err);
+      setError('No se pudieron cargar los resultados. Por favor, intenta de nuevo.');
+      setFilteredVenues([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Search Section - Simplified like Airbnb */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-neutral-900 mb-3 sm:mb-4">
-              Encuentra espacios deportivos increíbles
-            </h1>
-            <p className="text-base sm:text-lg text-neutral-600 px-4 mb-4">
-              Reserva la cancha perfecta para tu próximo partido
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 via-white to-secondary-50">
+      {/* Alerta de autenticación requerida */}
+      {location.state?.from && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="max-w-7xl mx-auto flex items-start">
+            <AlertCircle className="h-5 w-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-yellow-800">
+                <strong>Autenticación requerida:</strong> Necesitas iniciar sesión para acceder a <code className="bg-yellow-100 px-2 py-0.5 rounded">{location.state.from.pathname}</code>
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                Por favor, haz clic en "Iniciar sesión" en el menú superior.
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate(location.pathname, { replace: true })}
+              className="text-yellow-800 hover:text-yellow-900 ml-4"
+            >
+              <span className="text-xl">&times;</span>
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Responsive Search Bar */}
-          <div className="max-w-4xl mx-auto">
-            <form onSubmit={handleSearch} className="bg-white border border-neutral-300 rounded-2xl sm:rounded-full shadow-lg p-3 sm:p-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-2 items-center">
-                <div className="relative">
-                  <MapPin className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <input
-                    type="text"
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent placeholder-neutral-500 focus:outline-none text-neutral-900 text-sm sm:text-base"
-                    placeholder="¿Dónde?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="relative">
-                  <Calendar className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <input
-                    type="date"
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent text-neutral-900 focus:outline-none text-sm sm:text-base"
-                  />
-                </div>
-                <div className="relative">
-                  <Clock className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <select className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-3 border-0 rounded-xl sm:rounded-full bg-transparent text-neutral-900 focus:outline-none appearance-none text-sm sm:text-base">
-                    <option>Hora</option>
-                    <option>08:00</option>
-                    <option>10:00</option>
-                    <option>12:00</option>
-                    <option>14:00</option>
-                    <option>16:00</option>
-                    <option>18:00</option>
-                    <option>20:00</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl sm:rounded-full transition-colors flex items-center justify-center min-h-[48px] font-medium"
-                >
-                  <Search className="h-4 w-4 sm:mr-0 mr-2" />
-                  <span className="sm:hidden">Buscar</span>
-                </button>
-              </div>
-            </form>
+      {/* Hero Section - Compacto con colores ROGU */}
+      <div className="relative bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 overflow-hidden pt-20 pb-12">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-secondary-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-300 opacity-20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          {/* Pattern overlay */}
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+        </div>
+      </div>
+
+      {/* Search Bar - Normal position (below hero) */}
+      <div className="relative -mt-8 mb-6 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SportsSearchBar 
+            idPrefix="main-"
+            onSearch={handleSportSearch}
+            initialVenue={searchValues.venue}
+            initialVenueId={searchValues.venueId}
+            initialDate={searchValues.date}
+            initialStartTime={searchValues.startTime}
+            initialEndTime={searchValues.endTime}
+            initialDiscipline={searchValues.discipline}
+            initialDisciplineId={searchValues.disciplineId}
+          />
+        </div>
+      </div>
+
+      {/* Search Bar - Sticky version (appears on scroll) */}
+      <div className={`fixed top-16 sm:top-20 left-0 right-0 z-40 transition-all duration-300 ${
+        isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+      }`}>
+        <div className="bg-gradient-to-r from-primary-50 to-secondary-50 shadow-xl border-b-2 border-primary-500">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <SportsSearchBar 
+              idPrefix="sticky-"
+              onSearch={handleSportSearch}
+              initialVenue={searchValues.venue}
+              initialVenueId={searchValues.venueId}
+              initialDate={searchValues.date}
+              initialStartTime={searchValues.startTime}
+              initialEndTime={searchValues.endTime}
+              initialDiscipline={searchValues.discipline}
+              initialDisciplineId={searchValues.disciplineId}
+            />
           </div>
         </div>
       </div>
 
-      {/* Listings Section - Like Airbnb main content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+      
+      {/* Listings Section */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
@@ -153,86 +234,58 @@ const HomePage: React.FC = () => {
         {/* Loading State */}
         {isLoading ? (
           <div className="text-center py-16">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-neutral-600">Cargando canchas...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
+            <p className="text-gray-600">Cargando espacios deportivos...</p>
           </div>
         ) : (
           <>
-            {/* Filters and Results Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-              <div className="mb-4 sm:mb-0">
-                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-1">
-                  Espacios deportivos
+            {/* Results Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600 mb-2">
+                  Espacios Deportivos
                 </h2>
-                <p className="text-neutral-600 text-sm sm:text-base">
-                  {filteredFields.length > 0 ? `${filteredFields.length} canchas disponibles` : 'No hay canchas disponibles'}
+                <p className="text-gray-600 text-base">
+                  {filteredVenues.length > 0 ? `${filteredVenues.length} sedes disponibles` : 'No hay sedes disponibles'}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                <div className="flex-1 sm:flex-none">
-                  <Filters onFiltersChange={handleFiltersChange} />
-                </div>
-                <button className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors text-sm sm:text-base min-w-[80px]">
-                  <span>Mapa</span>
+              <div className="flex flex-wrap gap-3 mt-4 sm:mt-0">
+                <Filters onFiltersChange={handleFiltersChange} />
+                <button className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-all font-semibold text-sm">
+                  <span>Ver Mapa</span>
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            {/* Carrusel horizontal - Airbnb style */}
-            {filteredFields.length > 0 && (
-              <div className="relative group">
-                <div 
-                  className="overflow-x-auto scrollbar-hide scroll-smooth"
-                  style={{ scrollBehavior: 'smooth' }}
-                >
-                  <div className="flex gap-4 sm:gap-6 pb-4 px-1" style={{ width: 'max-content' }}>
-                    {filteredFields.map((field) => (
-                      <div key={field.id} className="flex-none w-72 sm:w-80 lg:w-72">
-                        <FieldCard
-                          field={field}
-                          onClick={handleFieldClick}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Indicador de scroll para móvil */}
-                <div className="flex justify-center mt-2 sm:hidden">
-                  <div className="flex space-x-1">
-                    {[...Array(Math.ceil(filteredFields.length / 1))].map((_, i) => (
-                      <div key={i} className="w-1.5 h-1.5 bg-neutral-300 rounded-full"></div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Indicador de scroll para desktop */}
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-neutral-400 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
-                  Desliza horizontalmente para ver más →
-                </div>
+            {/* Venues Grid */}
+            {filteredVenues.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredVenues.map((sede) => (
+                  <SedeCard 
+                    key={sede.idSede} 
+                    sede={sede} 
+                    onClick={() => navigate(`/venues/${sede.idSede}`)} 
+                  />
+                ))}
               </div>
-            )}
-
-            {filteredFields.length === 0 && !error && (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🏟️</div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                  No se encontraron canchas
+            ) : hasSearched ? (
+              <div className="text-center py-16 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border-2 border-primary-200">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600 mb-3">
+                  No se encontraron resultados
                 </h3>
-                <p className="text-neutral-600">
-                  {allFields.length === 0 
-                    ? 'No hay canchas disponibles en este momento'
-                    : 'Prueba ajustando tus filtros o busca en otra ubicación'
-                  }
+                <p className="text-gray-600 max-w-md mx-auto">
+                  No hay espacios disponibles con los criterios de búsqueda seleccionados. Intenta con otros parámetros.
                 </p>
               </div>
-            )}
+            ) : null}
 
-            {/* Load more button - Solo mostrar si hay canchas */}
-            {filteredFields.length > 0 && (
+            {/* Load More Button */}
+            {filteredVenues.length > 0 && filteredVenues.length >= 12 && (
               <div className="text-center mt-12">
-                <button className="bg-neutral-900 text-white px-8 py-3 rounded-lg hover:bg-neutral-800 transition-colors">
-                  Mostrar más canchas
+                <button className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-10 py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all font-semibold shadow-lg hover:shadow-xl">
+                  Mostrar más espacios
                 </button>
               </div>
             )}

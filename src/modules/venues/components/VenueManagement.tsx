@@ -1,34 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail, AlertCircle } from 'lucide-react';
+import type { ApiSede } from '../types/venue.types';
+import SedeFormWizard from './SedeFormWizard';
 
-interface Sede {
+interface Sede extends Partial<ApiSede> {
   idSede: number;
   nombre: string;
   descripcion: string;
-  direccion: string;
-  latitud: string;
-  longitud: string;
   telefono: string;
   email: string;
   politicas: string;
   estado: string;
   NIT: string;
   LicenciaFuncionamiento: string;
+  verificada?: boolean;
+  direccion?: string;
+  latitud?: string;
+  longitud?: string;
+  ciudad?: string;
   canchas?: any[];
-}
-
-interface SedeFormData {
-  nombre: string;
-  descripcion: string;
-  direccion: string;
-  latitud: string;
-  longitud: string;
-  telefono: string;
-  email: string;
-  politicas: string;
-  estado: string;
-  NIT: string;
-  LicenciaFuncionamiento: string;
 }
 
 interface SedeManagementProps {
@@ -41,26 +31,10 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingSede, setEditingSede] = useState<Sede | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState<SedeFormData>({
-    nombre: '',
-    descripcion: '',
-    direccion: '',
-    latitud: '',
-    longitud: '',
-    telefono: '',
-    email: '',
-    politicas: '',
-    estado: 'Activo',
-    NIT: '',
-    LicenciaFuncionamiento: ''
-  });
-
-  // Cargar sedes del dueño
   const loadSedes = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sede`, {
+      const response = await fetch(`http://localhost:3000/api/sede/duenio/${idPersonaD}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -68,7 +42,6 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
 
       if (response.ok) {
         const allSedes = await response.json();
-        // Filtrar solo las sedes del dueño actual
         const mySedes = allSedes.filter((sede: any) => sede.idPersonaD === idPersonaD);
         setSedes(mySedes);
       }
@@ -82,81 +55,6 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   useEffect(() => {
     loadSedes();
   }, [idPersonaD]);
-
-  const resetForm = () => {
-    setFormData({
-      nombre: '',
-      descripcion: '',
-      direccion: '',
-      latitud: '',
-      longitud: '',
-      telefono: '',
-      email: '',
-      politicas: '',
-      estado: 'Activo',
-      NIT: '',
-      LicenciaFuncionamiento: ''
-    });
-    setEditingSede(null);
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      const url = editingSede 
-        ? `http://localhost:3000/api/sede/${editingSede.idSede}`
-        : 'http://localhost:3000/api/sede';
-      
-      const method = editingSede ? 'PATCH' : 'POST';
-      
-      const payload = editingSede 
-        ? formData 
-        : { ...formData, idPersonaD };
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        await loadSedes();
-        resetForm();
-      } else {
-        const error = await response.json();
-        alert('Error: ' + (error.message || 'Error al guardar la sede'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al guardar la sede');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEdit = (sede: Sede) => {
-    setFormData({
-      nombre: sede.nombre,
-      descripcion: sede.descripcion,
-      direccion: sede.direccion,
-      latitud: sede.latitud,
-      longitud: sede.longitud,
-      telefono: sede.telefono,
-      email: sede.email,
-      politicas: sede.politicas,
-      estado: sede.estado,
-      NIT: sede.NIT,
-      LicenciaFuncionamiento: sede.LicenciaFuncionamiento
-    });
-    setEditingSede(sede);
-    setShowForm(true);
-  };
 
   const handleDelete = async (idSede: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta sede?')) return;
@@ -180,12 +78,15 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleEdit = (sede: Sede) => {
+    setEditingSede(sede);
+    setShowForm(true);
+  };
+
+  const handleFormComplete = () => {
+    setShowForm(false);
+    setEditingSede(null);
+    loadSedes();
   };
 
   if (loading) {
@@ -196,9 +97,42 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
     );
   }
 
+  if (showForm) {
+    return (
+      <SedeFormWizard
+        idPersonaD={idPersonaD}
+        initialData={editingSede ? {
+          idSede: editingSede.idSede,
+          nombre: editingSede.nombre,
+          descripcion: editingSede.descripcion,
+          country: editingSede.country || 'Bolivia',
+          countryCode: editingSede.countryCode || 'BO',
+          stateProvince: editingSede.stateProvince || '',
+          city: editingSede.city || '',
+          district: editingSede.district || '',
+          addressLine: editingSede.addressLine || editingSede.direccion || '',
+          postalCode: editingSede.postalCode || '00000',
+          latitude: editingSede.latitude || (editingSede.latitud ? parseFloat(editingSede.latitud) : null),
+          longitude: editingSede.longitude || (editingSede.longitud ? parseFloat(editingSede.longitud) : null),
+          timezone: editingSede.timezone || 'America/La_Paz',
+          telefono: editingSede.telefono,
+          email: editingSede.email,
+          politicas: editingSede.politicas,
+          estado: editingSede.estado,
+          LicenciaFuncionamiento: editingSede.LicenciaFuncionamiento
+        } : undefined}
+        isEditing={!!editingSede}
+        onComplete={handleFormComplete}
+        onCancel={() => {
+          setShowForm(false);
+          setEditingSede(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Mis Sedes</h2>
@@ -213,7 +147,6 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
         </button>
       </div>
 
-      {/* Lista de sedes */}
       {sedes.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
           <Building className="mx-auto h-12 w-12 text-gray-400" />
@@ -234,7 +167,15 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
           {sedes.map((sede) => (
             <div key={sede.idSede} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{sede.nombre}</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{sede.nombre}</h3>
+                  {sede.verificada === false && (
+                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Pendiente Verificación
+                    </span>
+                  )}
+                </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleEdit(sede)}
@@ -256,7 +197,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
               <div className="space-y-2 text-sm">
                 <div className="flex items-center text-gray-600">
                   <MapPin className="h-4 w-4 mr-2" />
-                  {sede.direccion}
+                  {sede.addressLine || sede.direccion || 'Sin dirección'}
                 </div>
                 <div className="flex items-center text-gray-600">
                   <Phone className="h-4 w-4 mr-2" />
@@ -290,205 +231,6 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Modal del formulario */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                {editingSede ? 'Editar Sede' : 'Nueva Sede'}
-              </h3>
-              <button
-                onClick={resetForm}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de la Sede *
-                  </label>
-                  <input
-                    type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado *
-                  </label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
-                    <option value="Mantenimiento">En Mantenimiento</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción *
-                  </label>
-                  <textarea
-                    name="descripcion"
-                    value={formData.descripcion}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dirección *
-                  </label>
-                  <input
-                    type="text"
-                    name="direccion"
-                    value={formData.direccion}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitud *
-                  </label>
-                  <input
-                    type="text"
-                    name="latitud"
-                    value={formData.latitud}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Ej: -16.5000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitud *
-                  </label>
-                  <input
-                    type="text"
-                    name="longitud"
-                    value={formData.longitud}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Ej: -68.1500"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono *
-                  </label>
-                  <input
-                    type="tel"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    NIT *
-                  </label>
-                  <input
-                    type="text"
-                    name="NIT"
-                    value={formData.NIT}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Licencia de Funcionamiento *
-                  </label>
-                  <input
-                    type="text"
-                    name="LicenciaFuncionamiento"
-                    value={formData.LicenciaFuncionamiento}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Políticas *
-                  </label>
-                  <textarea
-                    name="politicas"
-                    value={formData.politicas}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Políticas de uso, cancelación, etc."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {submitting ? 'Guardando...' : editingSede ? 'Actualizar' : 'Crear Sede'}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ArrowLeft, Camera, Tag, Calendar } from 'lucide-react';
 import PhotoManagement from './PhotoManagement';
 import CalendarioReservasPage from '../../analytics/pages/CalendarioReservasPage';
+import FieldFormWizard from './FieldFormWizard';
 import { getApiUrl } from '@/core/config/api';
 
 interface Cancha {
@@ -21,20 +22,6 @@ interface Cancha {
   parte?: any[];
 }
 
-interface CanchaFormData {
-  nombre: string;
-  superficie: string;
-  cubierta: boolean;
-  aforoMax: number;
-  dimensiones: string;
-  reglasUso: string;
-  iluminacion: string;
-  estado: string;
-  precio: number;
-  horaApertura: string;
-  horaCierre: string;
-}
-
 interface Disciplina {
   idDisciplina: number;
   nombre: string;
@@ -50,13 +37,12 @@ interface CanchaManagementProps {
   onBack: () => void;
 }
 
-const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
+const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
   const [canchas, setCanchas] = useState<Cancha[]>([]);
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCancha, setEditingCancha] = useState<Cancha | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
   const [showDisciplinaModal, setShowDisciplinaModal] = useState(false);
   const [selectedDisciplinas, setSelectedDisciplinas] = useState<number[]>([]);
@@ -65,27 +51,13 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   const [showReservas, setShowReservas] = useState(false);
   const [reservaCancha, setReservaCancha] = useState<Cancha | null>(null);
 
-  const [formData, setFormData] = useState<CanchaFormData>({
-    nombre: '',
-    superficie: '',
-    cubierta: false,
-    aforoMax: 0,
-    dimensiones: '',
-    reglasUso: '',
-    iluminacion: '',
-    estado: 'Disponible',
-    precio: 0,
-    horaApertura: '06:00',
-    horaCierre: '23:00'
-  });
-
   // Cargar canchas de la sede
   const loadCanchas = async () => {
     try {
       const response = await fetch(`http://localhost:3000/api/cancha`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       });
 
       if (response.ok) {
@@ -93,16 +65,16 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
         const sedeCanchas = allCanchas.filter((cancha: any) => {
           return cancha.id_Sede === sede.idSede;
         });
-        
+
         // Para cada cancha, cargar sus partes (disciplinas)
         for (const cancha of sedeCanchas) {
           try {
             const parteResponse = await fetch(`http://localhost:3000/api/parte`, {
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
             });
-            
+
             if (parteResponse.ok) {
               const allPartes = await parteResponse.json();
               cancha.parte = allPartes.filter((parte: any) => parte.idCancha === cancha.idCancha);
@@ -113,7 +85,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
             cancha.parte = [];
           }
         }
-        
+
         setCanchas(sedeCanchas);
       }
     } catch (error) {
@@ -125,7 +97,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   const loadDisciplinas = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         console.error('No hay token de autenticación');
         return;
@@ -133,9 +105,9 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
 
       const response = await fetch(getApiUrl('/disciplina'), {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
@@ -153,84 +125,7 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     Promise.all([loadCanchas(), loadDisciplinas()]).finally(() => setLoading(false));
   }, [sede.idSede]);
 
-  const resetForm = () => {
-    setFormData({
-      nombre: '',
-      superficie: '',
-      cubierta: false,
-      aforoMax: 0,
-      dimensiones: '',
-      reglasUso: '',
-      iluminacion: '',
-      estado: 'Disponible',
-      precio: 0,
-      horaApertura: '06:00',
-      horaCierre: '23:00'
-    });
-    setEditingCancha(null);
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      // Validación local de horarios
-      if (formData.horaApertura >= formData.horaCierre) {
-        alert('⚠️ La hora de apertura debe ser menor que la hora de cierre');
-        setSubmitting(false);
-        return;
-      }
-
-      const url = editingCancha 
-        ? `http://localhost:3000/api/cancha/${editingCancha.idCancha}`
-        : 'http://localhost:3000/api/cancha';
-      
-      const method = editingCancha ? 'PATCH' : 'POST';
-      
-      const payload = editingCancha 
-        ? formData 
-        : { ...formData, idSede: sede.idSede };
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        await loadCanchas();
-        resetForm();
-      } else {
-        const error = await response.json();
-        alert('Error: ' + (error.message || 'Error al guardar la cancha'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al guardar la cancha');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleEdit = (cancha: Cancha) => {
-    setFormData({
-      nombre: cancha.nombre,
-      superficie: cancha.superficie,
-      cubierta: cancha.cubierta,
-      aforoMax: cancha.aforoMax,
-      dimensiones: cancha.dimensiones,
-      reglasUso: cancha.reglasUso,
-      iluminacion: cancha.iluminacion,
-      estado: cancha.estado,
-      precio: cancha.precio,
-      horaApertura: cancha.horaApertura || '06:00',
-      horaCierre: cancha.horaCierre || '23:00'
-    });
     setEditingCancha(cancha);
     setShowForm(true);
   };
@@ -242,8 +137,8 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       const response = await fetch(`http://localhost:3000/api/cancha/${idCancha}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       });
 
       if (response.ok) {
@@ -257,18 +152,10 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-               type === 'number' ? Number(value) : value
-    }));
-  };
-
   const openDisciplinaModal = (cancha: Cancha) => {
     setSelectedCancha(cancha);
-    const canchaParteDisciplinas = cancha.parte?.map(p => p.idDisciplina).filter(id => id) || [];
+    const canchaParteDisciplinas =
+      cancha.parte?.map(p => p.idDisciplina).filter(id => id) || [];
     setSelectedDisciplinas(canchaParteDisciplinas);
     setShowDisciplinaModal(true);
   };
@@ -291,12 +178,15 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
       if (selectedCancha.parte && selectedCancha.parte.length > 0) {
         for (const parte of selectedCancha.parte) {
           try {
-            await fetch(`http://localhost:3000/api/parte/${selectedCancha.idCancha}/${parte.idDisciplina}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            await fetch(
+              `http://localhost:3000/api/parte/${selectedCancha.idCancha}/${parte.idDisciplina}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
               }
-            });
+            );
           } catch (deleteError) {
             // Continuar si hay error eliminando
           }
@@ -310,12 +200,12 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
             body: JSON.stringify({
               idCancha: selectedCancha.idCancha,
-              idDisciplina: idDisciplina
-            })
+              idDisciplina: idDisciplina,
+            }),
           });
         } catch (error) {
           // Continuar si hay error creando
@@ -333,8 +223,8 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center py-10">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
       </div>
     );
   }
@@ -355,113 +245,140 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="text-gray-600 hover:text-gray-800"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition"
           >
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Canchas de {sede.nombre}</h2>
-            <p className="text-gray-600">Gestiona las canchas de esta sede</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+              Gestión de canchas
+            </p>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Canchas de <span className="text-blue-600">{sede.nombre}</span>
+            </h2>
+            <p className="text-sm text-gray-500">
+              Administra tus canchas, disciplinas, fotos y reservas desde este panel.
+            </p>
           </div>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 mr-3"
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Nueva Cancha
         </button>
-        
       </div>
 
       {/* Lista de canchas */}
       {canchas.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-          <Camera className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay canchas</h3>
-          <p className="mt-1 text-sm text-gray-500">Comienza agregando tu primera cancha a esta sede.</p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Cancha
-            </button>
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white px-6 py-12 text-center shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+            <Camera className="h-8 w-8 text-gray-400" />
           </div>
+          <h3 className="mt-4 text-base font-semibold text-gray-900">Aún no tienes canchas</h3>
+          <p className="mt-1 text-sm text-gray-500 max-w-md">
+            Agrega tu primera cancha a esta sede para empezar a gestionar reservas, disciplinas y
+            fotos.
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva Cancha
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {canchas.map((cancha) => (
-            <div key={cancha.idCancha} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{cancha.nombre}</h3>
-                <div className="flex space-x-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {canchas.map(cancha => (
+            <div
+              key={cancha.idCancha}
+              className="group relative flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{cancha.nombre}</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {cancha.horaApertura} - {cancha.horaCierre}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEdit(cancha)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(cancha.idCancha)}
-                    className="text-red-600 hover:text-red-800"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 text-xs text-gray-600">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Superficie:</span>
-                  <span>{cancha.superficie}</span>
+                  <span className="text-gray-500">Superficie</span>
+                  <span className="font-medium text-gray-800">{cancha.superficie}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Dimensiones:</span>
-                  <span>{cancha.dimensiones}</span>
+                  <span className="text-gray-500">Dimensiones</span>
+                  <span className="font-medium text-gray-800">{cancha.dimensiones}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Aforo máx:</span>
-                  <span>{cancha.aforoMax} personas</span>
+                  <span className="text-gray-500">Aforo máx.</span>
+                  <span className="font-medium text-gray-800">{cancha.aforoMax} personas</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Cubierta:</span>
-                  <span>{cancha.cubierta ? 'Sí' : 'No'}</span>
+                  <span className="text-gray-500">Cubierta</span>
+                  <span className="font-medium text-gray-800">
+                    {cancha.cubierta ? 'Sí' : 'No'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Precio:</span>
+                  <span className="text-gray-500">Iluminación</span>
+                  <span className="font-medium text-gray-800">{cancha.iluminacion}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Precio</span>
                   <span className="font-semibold text-green-600">Bs. {cancha.precio}</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between items-center mb-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    cancha.estado === 'Disponible' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+              <div className="mt-4 border-t border-gray-200 pt-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      cancha.estado === 'Disponible'
+                        ? 'bg-green-50 text-green-700 ring-1 ring-green-100'
+                        : cancha.estado === 'Mantenimiento' || cancha.estado === 'En Mantenimiento'
+                        ? 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-100'
+                        : 'bg-red-50 text-red-700 ring-1 ring-red-100'
+                    }`}
+                  >
                     {cancha.estado}
                   </span>
-                  <span className="text-sm text-gray-500">
-                    {cancha.parte?.length || 0} disciplinas
+                  <span className="text-xs text-gray-500">
+                    {(cancha.parte && cancha.parte.length) || 0} disciplinas
                   </span>
                 </div>
 
                 {/* Mostrar nombres de disciplinas */}
                 {cancha.parte && cancha.parte.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-xs text-gray-500 mb-1">Disciplinas:</p>
-                    <div className="flex flex-wrap gap-1">
+                    <p className="mb-1 text-xs font-medium text-gray-500">Disciplinas:</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {cancha.parte.map((parte: any, index: number) => (
                         <span
                           key={index}
-                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+                          className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[0.7rem] font-medium text-blue-700"
                         >
                           {parte.disciplina?.nombre || `Disciplina ${parte.idDisciplina}`}
                         </span>
@@ -470,27 +387,27 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="mt-auto space-y-2">
                   <button
                     onClick={() => openDisciplinaModal(cancha)}
-                    className="w-full bg-purple-50 text-purple-600 hover:bg-purple-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
                   >
-                    <Tag className="mr-2 h-4 w-4" />
-                    Gestionar Disciplinas
+                    <Tag className="h-4 w-4" />
+                    Gestionar disciplinas
                   </button>
                   <button
                     onClick={() => openFotoModal(cancha)}
-                    className="w-full bg-green-50 text-green-600 hover:bg-green-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100"
                   >
-                    <Camera className="mr-2 h-4 w-4" />
-                    Gestionar Fotos
+                    <Camera className="h-4 w-4" />
+                    Gestionar fotos
                   </button>
                   <button
                     onClick={() => openReservationManagement(cancha)}
-                    className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Calendario de Reservas
+                    <Calendar className="h-4 w-4" />
+                    Calendario de reservas
                   </button>
                 </div>
               </div>
@@ -499,272 +416,103 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
         </div>
       )}
 
-      {/* Modal del formulario de cancha */}
+      {/* Wizard del formulario de cancha */}
       {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                {editingCancha ? 'Editar Cancha' : 'Nueva Cancha'}
-              </h3>
-              <button
-                onClick={resetForm}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de la Cancha *
-                  </label>
-                  <input
-                    type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Superficie *
-                  </label>
-                  <select
-                    name="superficie"
-                    value={formData.superficie}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar superficie</option>
-                    <option value="Césped natural">Césped natural</option>
-                    <option value="Césped sintético">Césped sintético</option>
-                    <option value="Cemento">Cemento</option>
-                    <option value="Madera">Madera</option>
-                    <option value="Parquet">Parquet</option>
-                    <option value="Tierra batida">Tierra batida</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dimensiones *
-                  </label>
-                  <input
-                    type="text"
-                    name="dimensiones"
-                    value={formData.dimensiones}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Ej: 40x20 metros"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Aforo Máximo *
-                  </label>
-                  <input
-                    type="number"
-                    name="aforoMax"
-                    value={formData.aforoMax}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Iluminación *
-                  </label>
-                  <select
-                    name="iluminacion"
-                    value={formData.iluminacion}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar iluminación</option>
-                    <option value="Natural">Natural</option>
-                    <option value="LED">LED</option>
-                    <option value="Halógena">Halógena</option>
-                    <option value="Fluorescente">Fluorescente</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado *
-                  </label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Disponible">Disponible</option>
-                    <option value="No disponible">No disponible</option>
-                    <option value="Mantenimiento">En Mantenimiento</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio (Bs.) *
-                  </label>
-                  <input
-                    type="number"
-                    name="precio"
-                    value={formData.precio}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hora de Apertura *
-                  </label>
-                  <input
-                    type="time"
-                    name="horaApertura"
-                    value={formData.horaApertura}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Hora de apertura de la cancha</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hora de Cierre *
-                  </label>
-                  <input
-                    type="time"
-                    name="horaCierre"
-                    value={formData.horaCierre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Hora de cierre de la cancha</p>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="cubierta"
-                    checked={formData.cubierta}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  <label className="text-sm font-medium text-gray-700">
-                    Cancha cubierta
-                  </label>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reglas de Uso *
-                  </label>
-                  <textarea
-                    name="reglasUso"
-                    value={formData.reglasUso}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Reglas y restricciones para el uso de la cancha"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {submitting ? 'Guardando...' : editingCancha ? 'Actualizar' : 'Crear Cancha'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <FieldFormWizard
+          initialData={editingCancha ? {
+            idCancha: editingCancha.idCancha,
+            nombre: editingCancha.nombre,
+            superficie: editingCancha.superficie,
+            cubierta: editingCancha.cubierta,
+            aforoMax: editingCancha.aforoMax,
+            dimensiones: editingCancha.dimensiones,
+            reglasUso: editingCancha.reglasUso,
+            iluminacion: editingCancha.iluminacion,
+            estado: editingCancha.estado,
+            precio: editingCancha.precio,
+            horaApertura: editingCancha.horaApertura,
+            horaCierre: editingCancha.horaCierre,
+          } : undefined}
+          isEditing={!!editingCancha}
+          idSede={sede.idSede}
+          onComplete={() => {
+            setShowForm(false);
+            setEditingCancha(null);
+            loadCanchas();
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingCancha(null);
+          }}
+        />
       )}
 
       {/* Modal de disciplinas */}
       {showDisciplinaModal && selectedCancha && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Disciplinas para {selectedCancha.nombre}
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Disciplinas para {selectedCancha.nombre}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Marca las disciplinas que se pueden practicar en esta cancha.
+                </p>
+              </div>
               <button
                 onClick={() => setShowDisciplinaModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {disciplinas.map((disciplina) => (
-                <div key={disciplina.idDisciplina} className="flex items-center space-x-3 p-3 border rounded-md">
+            <div className="max-h-96 overflow-y-auto px-6 py-4 space-y-3">
+              {disciplinas.map(disciplina => (
+                <div
+                  key={disciplina.idDisciplina}
+                  className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-3"
+                >
                   <input
                     type="checkbox"
                     checked={selectedDisciplinas.includes(disciplina.idDisciplina)}
-                    onChange={(e) => {
+                    onChange={e => {
                       if (e.target.checked) {
                         setSelectedDisciplinas([...selectedDisciplinas, disciplina.idDisciplina]);
                       } else {
-                        setSelectedDisciplinas(selectedDisciplinas.filter(id => id !== disciplina.idDisciplina));
+                        setSelectedDisciplinas(
+                          selectedDisciplinas.filter(id => id !== disciplina.idDisciplina)
+                        );
                       }
                     }}
-                    className="mr-2"
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{disciplina.nombre}</h4>
-                    <p className="text-sm text-gray-500">{disciplina.categoria}</p>
-                    <p className="text-xs text-gray-400">{disciplina.descripcion}</p>
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      {disciplina.nombre}
+                    </h4>
+                    <p className="text-xs text-gray-500">{disciplina.categoria}</p>
+                    <p className="mt-1 text-[0.7rem] text-gray-400">
+                      {disciplina.descripcion}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
               <button
                 onClick={() => setShowDisciplinaModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={saveDisciplinas}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700"
               >
-                Guardar Disciplinas
+                Guardar disciplinas
               </button>
             </div>
           </div>
@@ -786,4 +534,4 @@ const CanchaManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => 
   );
 };
 
-export default CanchaManagement;
+export default FieldManagement;

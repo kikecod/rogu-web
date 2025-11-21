@@ -16,8 +16,11 @@ export default defineConfig({
       '@/admin': '/src/modules/admin',
       '@/analytics': '/src/modules/analytics',
       '@/reviews': '/src/modules/reviews',
+      '@/favorites': '/src/modules/favorites',
       '@/assets': '/src/assets',
       '@/components': '/src/components',
+      '@/admin-panel': '/src/modules/admin-panel',
+      '@/config': '/src/config',
     }
   }
 })

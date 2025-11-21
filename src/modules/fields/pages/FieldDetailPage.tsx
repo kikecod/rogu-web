@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  Star, MapPin, Share2, Heart, ChevronLeft, ChevronRight,
+  Star, MapPin, Share2, ChevronLeft, ChevronRight,
   Clock, Calendar, Shield, Sparkles, Check, X,
   MessageCircle, Phone, Users, Plus, Minus
 } from 'lucide-react';
 import Footer from '@/components/Footer';
-import MapView from '@/components/MapView';
 import CustomCalendar from '@/bookings/components/CustomCalendar';
 import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
 import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots, formatDateLocal } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
+import FavoriteButton from '../../favorites/components/FavoriteButton';
+import { ROUTES } from '@/config/routes';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id, idCancha } = useParams<{ id?: string; idCancha?: string; idSede?: string }>();
   const { user, isLoggedIn } = useAuth();
+  
+  // Usar idCancha si está disponible, sino usar id (para rutas legacy)
+  const canchaId = idCancha || id;
   
   // Estados
   const [field, setField] = useState<SportField | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -40,7 +43,7 @@ const SportFieldDetailPage: React.FC = () => {
   // Cargar datos de la cancha
   useEffect(() => {
     const loadField = async () => {
-      if (!id) {
+      if (!canchaId) {
         setError('ID de cancha no válido');
         setLoading(false);
         return;
@@ -49,9 +52,9 @@ const SportFieldDetailPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Cargando cancha con ID:', id);
+        console.log('🔍 Cargando cancha con ID:', canchaId);
         
-        const fieldData = await fetchCanchaById(id);
+        const fieldData = await fetchCanchaById(canchaId);
         setField(fieldData);
         console.log('✅ Cancha cargada:', fieldData);
       } catch (err) {
@@ -63,7 +66,7 @@ const SportFieldDetailPage: React.FC = () => {
     };
 
     loadField();
-  }, [id]);
+  }, [canchaId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,14 +79,14 @@ const SportFieldDetailPage: React.FC = () => {
   // Actualizar horarios disponibles cuando cambie la fecha seleccionada
   useEffect(() => {
     const updateAvailability = async () => {
-      if (!field || !id) return;
+      if (!field || !canchaId) return;
 
       try {
         setLoadingSlots(true);
         console.log('🔄 Actualizando horarios para fecha:', formatDateLocal(selectedDate), '(hora local Bolivia)');
         
         // Obtener reservas para la fecha seleccionada
-        const reservasPorFecha = await fetchReservasByFecha(id, selectedDate);
+        const reservasPorFecha = await fetchReservasByFecha(canchaId, selectedDate);
         
         // Generar nuevos slots de disponibilidad
         const newAvailability = generateAvailabilitySlots(
@@ -109,7 +112,7 @@ const SportFieldDetailPage: React.FC = () => {
     };
 
     updateAvailability();
-  }, [selectedDate, field?.id, id]); // Se ejecuta cuando cambia la fecha o el ID de la cancha
+  }, [selectedDate, field?.id, canchaId]); // Se ejecuta cuando cambia la fecha o el ID de la cancha
 
   // Handlers
   const nextImage = () => {
@@ -150,9 +153,9 @@ const SportFieldDetailPage: React.FC = () => {
     }, 0);
     
     // Navegar al checkout con los detalles de la reserva
-    navigate('/checkout', {
+    navigate(ROUTES.checkout, {
       state: {
-        fieldId: id,
+        fieldId: canchaId,
         fieldData: field,
         selectedDate: selectedDate,
         selectedTimeSlots: selectedTimeSlots,
@@ -179,17 +182,7 @@ const SportFieldDetailPage: React.FC = () => {
     });
   };
 
-  const getSportIcon = (sport: string) => {
-    const icons: { [key: string]: string } = {
-      football: '⚽',
-      basketball: '🏀',
-      tennis: '🎾',
-      volleyball: '🏐',
-      paddle: '🏓',
-      hockey: '🏒',
-    };
-    return icons[sport] || '⚽';
-  };
+  // Sport icon ya no se usa en el badge; mantenido si se requiere en otro lugar
 
   // Calcular precio total de todos los horarios seleccionados
   const totalPrice = field ? selectedTimeSlots.reduce((sum, timeSlot) => {
@@ -217,7 +210,7 @@ const SportFieldDetailPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Cancha no encontrada</h2>
           <p className="text-gray-600 mb-6">{error || 'No se pudo cargar la información de esta cancha'}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.home)}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Volver al inicio
@@ -235,7 +228,7 @@ const SportFieldDetailPage: React.FC = () => {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/venues/${field.id}`)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -243,16 +236,8 @@ const SportFieldDetailPage: React.FC = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className={`p-2 rounded-full transition-all ${
-                isFavorite 
-                  ? 'bg-red-50 text-red-500' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
-            </button>
+            {/* Botón de favoritos funcional */}
+            {id && <FavoriteButton idCancha={Number(id)} size="sm" />}
             <button className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
               <Share2 className="h-5 w-5" />
             </button>
@@ -291,10 +276,24 @@ const SportFieldDetailPage: React.FC = () => {
                 {currentImageIndex + 1} / {field.images.length}
               </div>
 
-              {/* Sport Badge */}
-              <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10">
-                {getSportIcon(field.sport)} {field.sport.charAt(0).toUpperCase() + field.sport.slice(1)}
-              </div>
+              {/* Disciplinas Badge (dinámicas) */}
+              {Array.isArray(field.disciplinas) && field.disciplinas.length > 0 && (
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[70%] z-10">
+                  {field.disciplinas.slice(0, 3).map((disc, idx) => (
+                    <span
+                      key={disc + idx}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow"
+                    >
+                      {disc}
+                    </span>
+                  ))}
+                  {field.disciplinas.length > 3 && (
+                    <span className="bg-white/80 backdrop-blur-sm text-gray-700 px-3 py-1 rounded-full text-xs font-medium shadow border border-gray-200">
+                      +{field.disciplinas.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Grid */}
@@ -326,9 +325,12 @@ const SportFieldDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-5">
             {/* Title and Rating */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">
-                {field.name}
-              </h1>
+              <div className="flex items-start justify-between mb-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                  {field.name}
+                </h1>
+                <FavoriteButton idCancha={Number(field.id)} size="md" />
+              </div>
               
               <div className="flex flex-wrap items-center gap-3 text-gray-600 mb-5">
                 <div className="flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full">
@@ -431,7 +433,7 @@ const SportFieldDetailPage: React.FC = () => {
                 Reseñas y Calificaciones
               </h2>
               
-              {id && <ReviewList idCancha={parseInt(id)} />}
+              {canchaId && <ReviewList idCancha={parseInt(canchaId)} />}
             </div>
           </div>
 
@@ -612,53 +614,6 @@ const SportFieldDetailPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Location Map */}
-        <div className="mt-10 bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-blue-600" />
-            Ubicación
-          </h2>
-          
-          {/* Si tiene coordenadas, mostrar el mapa */}
-          {field.location?.coordinates?.lat && field.location?.coordinates?.lng ? (
-            <div className="mb-4">
-              <MapView
-                lat={field.location.coordinates.lat}
-                lng={field.location.coordinates.lng}
-                title={field.name}
-                height="400px"
-                zoom={15}
-              />
-            </div>
-          ) : (
-            /* Placeholder si no hay coordenadas */
-            <div className="bg-gradient-to-br from-blue-100 to-indigo-100 h-64 rounded-lg flex items-center justify-center mb-4">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-3" />
-                <p className="text-gray-700 font-medium text-base">Ubicación no disponible</p>
-                <p className="text-gray-600 text-sm">Coordenadas no configuradas</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Información de dirección */}
-          {(field.location?.address || field.location?.city) && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  {field.location.address && (
-                    <p className="text-gray-900 font-medium">{field.location.address}</p>
-                  )}
-                  {field.location.city && (
-                    <p className="text-gray-600 text-sm mt-1">{field.location.city}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
