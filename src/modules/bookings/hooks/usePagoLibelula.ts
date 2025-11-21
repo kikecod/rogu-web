@@ -5,6 +5,19 @@ import { crearDeudaLibelula, generarIdentificadorDeuda } from '../services/libel
 import type { MetodoPago, CrearDeudaRequest } from '../types/libelula.types';
 import { ROUTES } from '@/config/routes';
 
+interface BookingDetails {
+  fieldName: string;
+  fieldImage: string;
+  sedeName: string;
+  address: string;
+  date: string;
+  participants: number;
+  timeSlot: string;
+  price: number;
+  rating: number;
+  reviews: number;
+}
+
 interface UsePagoLibelulaOptions {
   onError?: (error: Error) => void;
 }
@@ -25,7 +38,8 @@ export const usePagoLibelula = (options?: UsePagoLibelulaOptions) => {
     idReserva: number,
     monto: number,
     descripcion: string,
-    metodoPago: MetodoPago
+    metodoPago: MetodoPago,
+    bookingDetails: BookingDetails
   ): Promise<void> => {
     if (!user?.correo) {
       const error = new Error('No se encontró el email del usuario');
@@ -74,15 +88,29 @@ export const usePagoLibelula = (options?: UsePagoLibelulaOptions) => {
 
       // Procesar según el método de pago seleccionado
       if (metodoPago === 'qr') {
-        // Para QR, simplemente guardamos la URL y la mostramos en el modal
-        // El componente que usa este hook mostrará el modal con el QR
-        console.log('📱 [PagoLibelula] Método QR seleccionado');
+        // Para QR, navegamos a la página de espera que mostrará el QR
+        console.log('📱 [PagoLibelula] Método QR seleccionado, navegando a página de espera');
+        navigate(`${ROUTES.esperandoPago}?transaccionId=${response.transaccionId}&metodo=qr&qrUrl=${encodeURIComponent(response.qrSimpleUrl)}`, {
+          state: {
+            bookingDetails,
+            paymentMethod: 'qr',
+            reservaId: idReserva,
+            qrUrl: response.qrSimpleUrl,
+            transaccionId: response.transaccionId
+          }
+        });
       } else if (metodoPago === 'tarjeta') {
         // Para tarjeta, redirigimos a la página de espera y luego abrimos la pasarela
         console.log('💳 [PagoLibelula] Método tarjeta seleccionado, redirigiendo...');
         
         // Navegar a la página de espera
-        navigate(`${ROUTES.esperandoPago}?transaccionId=${response.transaccionId}`);
+        navigate(`${ROUTES.esperandoPago}?transaccionId=${response.transaccionId}&metodo=tarjeta`, {
+          state: {
+            bookingDetails,
+            paymentMethod: 'card',
+            reservaId: idReserva
+          }
+        });
         
         // Abrir la pasarela en una nueva pestaña
         setTimeout(() => {
