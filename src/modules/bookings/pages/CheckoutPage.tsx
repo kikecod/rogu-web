@@ -7,9 +7,9 @@ import {
 import Footer from '@/components/Footer';
 import { createReserva } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
-import { getAuthToken } from '@/core/config/api';
 import type { CreateReservaRequest } from '../types/booking.types';
 import { ROUTES } from '@/config/routes';
+import { usePagoLibelula } from '../hooks/usePagoLibelula';
 
 interface BookingDetails {
   fieldName: string;
@@ -37,14 +37,18 @@ const CheckoutPage: React.FC = () => {
   const totalPrice = location.state?.totalPrice;
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'qr' | null>(null);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [showErrors, setShowErrors] = useState(false);
+  const [showErrors] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [idReserva, setIdReserva] = useState<number | null>(location.state?.idReserva || null);
   const [isCreatingReserva, setIsCreatingReserva] = useState(false);
+  
+  // Hook de pago con Libélula
+  const { iniciarPago } = usePagoLibelula({
+    onError: (error) => {
+      alert(error.message);
+      setIsProcessing(false);
+    }
+  });
   
   // Ref para prevenir doble creación de reserva
   const reservaCreatedRef = useRef(false);
@@ -191,27 +195,15 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const validateCardForm = () => {
-    if (paymentMethod !== 'card') return true;
-    return cardNumber.length === 16 && 
-           expiryDate.length === 5 && 
-           cvv.length === 3 && 
-           cardName.trim().length > 0;
-  };
-
   const handlePayment = async () => {
-    if (paymentMethod === 'card' && !validateCardForm()) {
-      setShowErrors(true);
-      return;
-    }
-
+    // Validar que haya un método de pago seleccionado
     if (!paymentMethod) {
-      setShowErrors(true);
+      alert('Por favor selecciona un método de pago');
       return;
     }
 
     // Validar que tengamos idReserva
-    if (!idReserva) {
+    if (!idReserva || !totalPrice) {
       alert('No se ha creado la reserva. Por favor recarga la página e intenta de nuevo.');
       return;
     }
@@ -219,85 +211,32 @@ const CheckoutPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      console.log('💳 [Checkout] Procesando pago para reserva:', idReserva);
+      const descripcion = `Reserva de ${bookingDetails.fieldName} - ${bookingDetails.date} ${bookingDetails.timeSlot}`;
       
-      // Crear la transacción para confirmar el pago
-      const transaccionData = {
-        idReserva: idReserva,
-        pasarela: paymentMethod === 'card' ? 'Stripe' : 'MercadoPago',
-        metodo: paymentMethod === 'card' ? 'tarjeta' : 'qr',
-        monto: totalPrice || 0,
-        estado: 'completada',
-        idExterno: `EXT-${Date.now()}`,
-        comisionPasarela: (totalPrice || 0) * 0.05,
-        comisionPlataforma: (totalPrice || 0) * 0.03,
-        monedaLiquidada: 'USD',
-        codigoAutorizacion: `AUTH-${Date.now()}`
-      };
-
-      console.log('💰 [Checkout] Datos de transacción:', transaccionData);
-
-      // Obtener token de autenticación
-      const token = getAuthToken();
-      console.log('🔑 [Checkout] Token present:', !!token);
-
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const transaccionResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transacciones`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(transaccionData),
+      console.log('💳 [Checkout] Iniciando pago con Libélula:', {
+        idReserva,
+        monto: totalPrice,
+        metodo: paymentMethod
       });
 
-      if (!transaccionResponse.ok) {
-        const errorData = await transaccionResponse.text();
-        console.error('❌ [Checkout] Error en transacción:', errorData);
-        throw new Error(`Error al procesar el pago: ${errorData}`);
-      }
+      // Iniciar el pago con Libélula
+      const metodoPago = paymentMethod === 'card' ? 'tarjeta' : 'qr';
+      await iniciarPago(
+        idReserva, 
+        totalPrice, 
+        descripcion, 
+        metodoPago,
+        bookingDetails
+      );
 
-      const transaccion = await transaccionResponse.json();
-      console.log('✅ [Checkout] Transacción completada:', transaccion);
-      console.log('🎉 [Checkout] Reserva ahora está CONFIRMADA con QR generado');
-
-      // Navegar a la página de confirmación con QR
-      navigate(`/booking-confirmation/${idReserva}`, {
-        state: {
-          bookingDetails,
-          paymentMethod,
-          reservaId: idReserva
-        }
-      });
+      // El hook maneja la navegación automáticamente
     } catch (error) {
       console.error('❌ [Checkout] Error al procesar pago:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el pago. Por favor intenta de nuevo.');
       setIsProcessing(false);
     }
   };
 
-  const formatCardNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCardNumber(numbers.slice(0, 16));
-  };
 
-  const formatExpiryDate = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length >= 2) {
-      setExpiryDate(`${numbers.slice(0, 2)}/${numbers.slice(2, 4)}`);
-    } else {
-      setExpiryDate(numbers);
-    }
-  };
-
-  const formatCVV = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    setCvv(numbers.slice(0, 3));
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -359,81 +298,21 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 {paymentMethod === 'card' && (
-                  <div className="mt-4 space-y-4 animate-fadeIn">
-                    {/* Card Number */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número de tarjeta *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => formatCardNumber(e.target.value)}
-                        placeholder="1234 5678 9012 3456"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && cardNumber.length !== 16 ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && cardNumber.length !== 16 && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa un número de tarjeta válido (16 dígitos)</p>
-                      )}
-                    </div>
-
-                    {/* Expiry and CVV */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Fecha de vencimiento *
-                        </label>
-                        <input
-                          type="text"
-                          value={expiryDate}
-                          onChange={(e) => formatExpiryDate(e.target.value)}
-                          placeholder="MM/AA"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && expiryDate.length !== 5 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && expiryDate.length !== 5 && (
-                          <p className="text-xs text-red-500 mt-1">Formato: MM/AA</p>
-                        )}
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV *
-                        </label>
-                        <input
-                          type="text"
-                          value={cvv}
-                          onChange={(e) => formatCVV(e.target.value)}
-                          placeholder="123"
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            showErrors && cvv.length !== 3 ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {showErrors && cvv.length !== 3 && (
-                          <p className="text-xs text-red-500 mt-1">3 dígitos</p>
-                        )}
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-2">Pago con tarjeta</h4>
+                        <p className="text-sm text-gray-700 mb-3">
+                          Serás redirigido a la pasarela segura de <strong>Libélula</strong> para completar tu pago con tarjeta de crédito o débito.
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Shield className="w-4 h-4 text-green-600" />
+                          <span>Pago 100% seguro y encriptado</span>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Cardholder Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del titular *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Como aparece en la tarjeta"
-                        className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          showErrors && !cardName.trim() ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {showErrors && !cardName.trim() && (
-                        <p className="text-xs text-red-500 mt-1">Ingresa el nombre del titular</p>
-                      )}
                     </div>
                   </div>
                 )}
@@ -466,16 +345,20 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 {paymentMethod === 'qr' && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 animate-fadeIn">
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <QrCode className="h-48 w-48 text-gray-700 mx-auto mb-3" />
-                        <p className="text-sm text-gray-600">
-                          Escanea este código QR con tu app de banco
+                  <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-fadeIn">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                        <QrCode className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-2">Pago con código QR</h4>
+                        <p className="text-sm text-gray-700 mb-3">
+                          Se generará un código QR que podrás escanear con tu aplicación de banca móvil o billetera digital para completar el pago de forma rápida y segura.
                         </p>
-                        <p className="text-lg font-bold text-blue-600 mt-2">
-                          Bs {bookingDetails.price.toFixed(2)}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Shield className="w-4 h-4 text-green-600" />
+                          <span>Procesado por Libélula</span>
+                        </div>
                       </div>
                     </div>
                   </div>
