@@ -23,6 +23,7 @@ import FieldDetailPage from '@/fields/pages/FieldDetailPage';
 import VenueDetailPage from '@/venues/pages/VenueDetailPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
+import EsperandoPagoPage from '@/bookings/pages/EsperandoPagoPage';
 import MyBookingsPage from '@/bookings/pages/MyBookingsPage';
 import FavoritesPage from './modules/favorites/pages/FavoritesPage';
 import ProtectedRoute from '@/core/routing/ProtectedRoute';
@@ -125,15 +126,14 @@ const AppContent = () => {
         <Route path={ROUTES.fieldPattern} element={<FieldDetailPage />} />
         <Route path={ROUTES.sedePattern} element={<VenueDetailPage />} />
 
-        {/* Booking */}
-        <Route path={ROUTES.checkout} element={<CheckoutPage />} />
-        <Route path={ROUTES.bookingConfirmationPattern} element={<BookingConfirmationPage />} />
-        <Route path={ROUTES.bookingConfirmationBase} element={<BookingConfirmationPage />} />
+        {/* Booking */}
+        <Route path={ROUTES.checkout} element={<CheckoutPage />} />
+        <Route path={ROUTES.bookingConfirmationPattern} element={<BookingConfirmationPage />} />
+        <Route path={ROUTES.bookingConfirmationBase} element={<BookingConfirmationPage />} />
+        <Route path={ROUTES.esperandoPago} element={<EsperandoPagoPage />} />
 
-        <Route path={ROUTES.bookings} element={<MyBookingsPage />} />
-        <Route path={ROUTES.profile} element={<ProfilePage />} />
-
-        {/* Favoritos PROTEGIDO */}
+        <Route path={ROUTES.bookings} element={<MyBookingsPage />} />
+        <Route path={ROUTES.profile} element={<ProfilePage />} />        {/* Favoritos PROTEGIDO */}
         <Route
           path={ROUTES.favoritos}
           element={

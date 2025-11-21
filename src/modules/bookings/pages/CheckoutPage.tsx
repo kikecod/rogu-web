@@ -7,9 +7,12 @@ import {
 import Footer from '@/components/Footer';
 import { createReserva } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
-import { getAuthToken } from '@/core/config/api';
 import type { CreateReservaRequest } from '../types/booking.types';
 import { ROUTES } from '@/config/routes';
+import ModalSeleccionPago from '../components/ModalSeleccionPago';
+import ModalQRPago from '../components/ModalQRPago';
+import { usePagoLibelula } from '../hooks/usePagoLibelula';
+import type { MetodoPago } from '../types/libelula.types';
 
 interface BookingDetails {
   fieldName: string;
@@ -41,10 +44,22 @@ const CheckoutPage: React.FC = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardName, setCardName] = useState('');
-  const [showErrors, setShowErrors] = useState(false);
+  const [showErrors] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [idReserva, setIdReserva] = useState<number | null>(location.state?.idReserva || null);
   const [isCreatingReserva, setIsCreatingReserva] = useState(false);
+  
+  // Estados para modales de Libélula
+  const [mostrarModalSeleccion, setMostrarModalSeleccion] = useState(false);
+  const [mostrarModalQR, setMostrarModalQR] = useState(false);
+  
+  // Hook de pago con Libélula
+  const { loading: loadingPago, transaccionId, qrUrl, iniciarPago, navegarAEsperaPago } = usePagoLibelula({
+    onError: (error) => {
+      alert(error.message);
+      setIsProcessing(false);
+    }
+  });
   
   // Ref para prevenir doble creación de reserva
   const reservaCreatedRef = useRef(false);
@@ -191,93 +206,55 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const validateCardForm = () => {
-    if (paymentMethod !== 'card') return true;
-    return cardNumber.length === 16 && 
-           expiryDate.length === 5 && 
-           cvv.length === 3 && 
-           cardName.trim().length > 0;
-  };
-
   const handlePayment = async () => {
-    if (paymentMethod === 'card' && !validateCardForm()) {
-      setShowErrors(true);
-      return;
-    }
-
-    if (!paymentMethod) {
-      setShowErrors(true);
-      return;
-    }
-
     // Validar que tengamos idReserva
     if (!idReserva) {
       alert('No se ha creado la reserva. Por favor recarga la página e intenta de nuevo.');
       return;
     }
 
+    // Mostrar modal de selección de método de pago
+    setMostrarModalSeleccion(true);
+  };
+
+  const handleSeleccionMetodoPago = async (metodo: MetodoPago) => {
+    if (!idReserva || !totalPrice) {
+      alert('Error: No se encontró la información de la reserva');
+      return;
+    }
+
+    setMostrarModalSeleccion(false);
     setIsProcessing(true);
 
     try {
-      console.log('💳 [Checkout] Procesando pago para reserva:', idReserva);
+      const descripcion = `Reserva de ${bookingDetails.fieldName} - ${bookingDetails.date} ${bookingDetails.timeSlot}`;
       
-      // Crear la transacción para confirmar el pago
-      const transaccionData = {
-        idReserva: idReserva,
-        pasarela: paymentMethod === 'card' ? 'Stripe' : 'MercadoPago',
-        metodo: paymentMethod === 'card' ? 'tarjeta' : 'qr',
-        monto: totalPrice || 0,
-        estado: 'completada',
-        idExterno: `EXT-${Date.now()}`,
-        comisionPasarela: (totalPrice || 0) * 0.05,
-        comisionPlataforma: (totalPrice || 0) * 0.03,
-        monedaLiquidada: 'USD',
-        codigoAutorizacion: `AUTH-${Date.now()}`
-      };
-
-      console.log('💰 [Checkout] Datos de transacción:', transaccionData);
-
-      // Obtener token de autenticación
-      const token = getAuthToken();
-      console.log('🔑 [Checkout] Token present:', !!token);
-
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const transaccionResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transacciones`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(transaccionData),
+      console.log('💳 [Checkout] Iniciando pago con Libélula:', {
+        idReserva,
+        monto: totalPrice,
+        metodo
       });
 
-      if (!transaccionResponse.ok) {
-        const errorData = await transaccionResponse.text();
-        console.error('❌ [Checkout] Error en transacción:', errorData);
-        throw new Error(`Error al procesar el pago: ${errorData}`);
+      // Iniciar el pago con Libélula
+      await iniciarPago(idReserva, totalPrice, descripcion, metodo);
+
+      // Si es QR, mostrar el modal con el QR
+      if (metodo === 'qr') {
+        setMostrarModalQR(true);
+        setIsProcessing(false);
       }
-
-      const transaccion = await transaccionResponse.json();
-      console.log('✅ [Checkout] Transacción completada:', transaccion);
-      console.log('🎉 [Checkout] Reserva ahora está CONFIRMADA con QR generado');
-
-      // Navegar a la página de confirmación con QR
-      navigate(`/booking-confirmation/${idReserva}`, {
-        state: {
-          bookingDetails,
-          paymentMethod,
-          reservaId: idReserva
-        }
-      });
+      // Si es tarjeta, el hook ya redirigió a la página de espera y abrió la pasarela
     } catch (error) {
       console.error('❌ [Checkout] Error al procesar pago:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el pago. Por favor intenta de nuevo.');
+      // El error ya se maneja en el hook
       setIsProcessing(false);
     }
+  };
+
+  const handleCerrarModalQR = () => {
+    setMostrarModalQR(false);
+    // Navegar a la página de espera
+    navegarAEsperaPago();
   };
 
   const formatCardNumber = (value: string) => {
@@ -639,6 +616,21 @@ const CheckoutPage: React.FC = () => {
       </div>
 
       <Footer />
+
+      {/* Modales de Libélula */}
+      <ModalSeleccionPago
+        isOpen={mostrarModalSeleccion}
+        onClose={() => setMostrarModalSeleccion(false)}
+        onSelectMetodo={handleSeleccionMetodoPago}
+        loading={loadingPago}
+      />
+
+      <ModalQRPago
+        isOpen={mostrarModalQR}
+        onClose={handleCerrarModalQR}
+        qrUrl={qrUrl || ''}
+        transaccionId={transaccionId || ''}
+      />
     </div>
   );
 };

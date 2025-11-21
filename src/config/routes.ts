@@ -58,6 +58,7 @@ export const ROUTES = {
     id ? `/booking-confirmation/${id}` : '/booking-confirmation',
   bookingConfirmationPattern: '/booking-confirmation/:id',
   bookingConfirmationBase: '/booking-confirmation',
+  esperandoPago: '/esperando-pago',
 
   // ==========================================
   // USUARIO
