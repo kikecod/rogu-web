@@ -50,330 +50,328 @@ import { ROUTES } from '@/config/routes';
 import HomeRouter from './core/routing/HomeRouter';
 
 const AppContent = () => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const { logout } = useAuth();
-  const navigate = useNavigate();
+        const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+        const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+        const { logout } = useAuth();
+        const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    window.location.reload();
-  };
+        const handleLogout = () => {
+                logout();
+                window.location.reload();
+        };
 
-  const handleLoginClick = () => {
-    setAuthMode('login');
-    setIsAuthModalOpen(true);
-  };
+        const handleLoginClick = () => {
+                setAuthMode('login');
+                setIsAuthModalOpen(true);
+        };
 
-  const handleSignupClick = () => {
-    setAuthMode('signup');
-    setIsAuthModalOpen(true);
-  };
+        const handleSignupClick = () => {
+                setAuthMode('signup');
+                setIsAuthModalOpen(true);
+        };
 
-  const handleAuthModalClose = () => {
-    setIsAuthModalOpen(false);
-  };
+        const handleAuthModalClose = () => {
+                setIsAuthModalOpen(false);
+        };
 
-  const handleSwitchAuthMode = () => {
-    setAuthMode(authMode === 'login' ? 'signup' : 'login');
-  };
+        const handleSwitchAuthMode = () => {
+                setAuthMode(authMode === 'login' ? 'signup' : 'login');
+        };
 
-  const handleLoginSuccess = (userData: User) => {
-    setIsAuthModalOpen(false);
-    
-    // Redirigir según el rol del usuario
-    if (userData.roles?.includes('ADMIN')) {
-      navigate(ROUTES.admin.dashboard);
-    }// } else if (userData.roles?.includes('DUENIO')) {
-    //   navigate(ROUTES.owner.dashboard);
-    // }
-    // Los clientes permanecen en la página actual
-  };
+        const handleLoginSuccess = (userData: User) => {
+                setIsAuthModalOpen(false);
 
-  return (
-    <div className="App">
-      <Navbar
-        onLoginClick={handleLoginClick}
-        onSignupClick={handleSignupClick}
-        onLogout={handleLogout}
-      />
+                // Redirigir según el rol del usuario
+                if (userData.roles?.includes('ADMIN')) {
+                        navigate(ROUTES.admin.dashboard);
+                        // Los clientes permanecen en la página actual
+                };
+        };
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={handleAuthModalClose}
-        mode={authMode}
-        onSwitchMode={handleSwitchAuthMode}
-        onLoginSuccess={handleLoginSuccess}
-      />
+        return (
+                <div className="App flex flex-col min-h-screen">
+                        <Navbar
+                                onLoginClick={handleLoginClick}
+                                onSignupClick={handleSignupClick}
+                                onLogout={handleLogout}
+                        />
 
-      <Routes>
-        <Route path={ROUTES.home} element={<HomeRouter />} />
+                        <AuthModal
+                                isOpen={isAuthModalOpen}
+                                onClose={handleAuthModalClose}
+                                mode={authMode}
+                                onSwitchMode={handleSwitchAuthMode}
+                                onLoginSuccess={handleLoginSuccess}
+                        />
 
-        {/* Página de desarrollo - comentada */}
-        {/* <Route path="/test-roles" element={<TestRolesPage />} /> */}
+                        <Routes>
+                                <Route path={ROUTES.home} element={<HomeRouter />} />
 
-        {/* Páginas públicas */}
-        <Route path={ROUTES.about} element={<AboutUsPage />} />
-        <Route path={ROUTES.howItWorks} element={<HowItWorksPage />} />
-        <Route path={ROUTES.faq} element={<FAQPage />} />
-        <Route path={ROUTES.terms} element={<TermsPage />} />
+                                {/* Página de desarrollo - comentada */}
+                                {/* <Route path="/test-roles" element={<TestRolesPage />} /> */}
 
-        {/* Venue y fields */}
-        <Route path={ROUTES.venuePattern} element={<VenueDetailPage />} />
-        <Route path={ROUTES.venueFieldPattern} element={<FieldDetailPage />} />
+                                {/* Páginas públicas */}
+                                <Route path={ROUTES.about} element={<AboutUsPage />} />
+                                <Route path={ROUTES.howItWorks} element={<HowItWorksPage />} />
+                                <Route path={ROUTES.faq} element={<FAQPage />} />
+                                <Route path={ROUTES.terms} element={<TermsPage />} />
 
-        {/* Legacy */}
-        <Route path={ROUTES.fieldPattern} element={<FieldDetailPage />} />
-        <Route path={ROUTES.sedePattern} element={<VenueDetailPage />} />
+                                {/* Venue y fields */}
+                                <Route path={ROUTES.venuePattern} element={<VenueDetailPage />} />
+                                <Route path={ROUTES.venueFieldPattern} element={<FieldDetailPage />} />
 
-        {/* Booking */}
-        <Route path={ROUTES.checkout} element={<CheckoutPage />} />
-        <Route path={ROUTES.bookingConfirmationPattern} element={<BookingConfirmationPage />} />
-        <Route path={ROUTES.bookingConfirmationBase} element={<BookingConfirmationPage />} />
-        <Route path={ROUTES.esperandoPago} element={<EsperandoPagoPage />} />
+                                {/* Legacy */}
+                                <Route path={ROUTES.fieldPattern} element={<FieldDetailPage />} />
+                                <Route path={ROUTES.sedePattern} element={<VenueDetailPage />} />
 
-        <Route path={ROUTES.bookings} element={<MyBookingsPage />} />
-        <Route path={ROUTES.profile} element={<ProfilePage />} />        {/* Favoritos PROTEGIDO */}
-        <Route
-          path={ROUTES.favoritos}
-          element={
-            <ProtectedRoute redirectTo={ROUTES.home} showUnauthorized={false}>
-              <FavoritesPage />
-            </ProtectedRoute>
-          }
-        />
+                                {/* Booking */}
+                                <Route path={ROUTES.checkout} element={<CheckoutPage />} />
+                                <Route path={ROUTES.bookingConfirmationPattern} element={<BookingConfirmationPage />} />
+                                <Route path={ROUTES.bookingConfirmationBase} element={<BookingConfirmationPage />} />
+                                <Route path={ROUTES.esperandoPago} element={<EsperandoPagoPage />} />
 
-        {/* Panel de administración - PROTEGIDO SOLO ADMIN */}
-        <Route
-          path={ROUTES.admin.dashboard}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo="/" showUnauthorized={true}>
-              <AdminLayout>
-                <NewDashboardPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route path={ROUTES.bookings} element={<MyBookingsPage />} />
+                                <Route path={ROUTES.profile} element={<ProfilePage />} />        {/* Favoritos PROTEGIDO */}
+                                <Route
+                                        path={ROUTES.favoritos}
+                                        element={
+                                                <ProtectedRoute redirectTo={ROUTES.home} showUnauthorized={false}>
+                                                        <FavoritesPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.usuarios}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <UsuariosListPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.admin.usuariosNuevo}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <UsuarioFormPage />
-  _           </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.admin.usuarioDetallePattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <UsuarioDetallePage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.admin.usuarioEditarPattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <UsuarioFormPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                {/* Panel de administración - PROTEGIDO SOLO ADMIN */}
+                                <Route
+                                        path={ROUTES.admin.dashboard}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo="/" showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <NewDashboardPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.verificaciones}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <VerificacionesPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.usuarios}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <UsuariosListPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.admin.usuariosNuevo}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <UsuarioFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.admin.usuarioDetallePattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <UsuarioDetallePage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.admin.usuarioEditarPattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <UsuarioFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedes}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedesListPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.verificaciones}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <VerificacionesPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedesNueva}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeFormPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.sedes}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedesListPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path="/admin/sedes/:id"
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeDetallePage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.sedesNueva}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path="/admin/sedes/:id/editar"
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeFormPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path="/admin/sedes/:id"
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeDetallePage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedesCanchasPattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeCanchasPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path="/admin/sedes/:id/editar"
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedesCanchasCrearPattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeCanchaFormPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.sedesCanchasPattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeCanchasPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedeCanchaDetallePattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeCanchaDetailPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.sedesCanchasCrearPattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeCanchaFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        <Route
-          path={ROUTES.admin.sedeCanchaEditarPattern}
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminLayout>
-                <SedeCanchaFormPage />
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
+                                <Route
+                                        path={ROUTES.admin.sedeCanchaDetallePattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeCanchaDetailPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        {/* Rutas Dueños (owner) - PROTEGIDO ADMIN o DUENIO */}
-        <Route 
-          path={ROUTES.owner.hostSpace} 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'CLIENTE']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <HostSpaceOwnerPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Modo Dueño ahora se maneja desde la ruta raíz "/" con HomeRouter */}
-        {/* La ruta /owner-mode se mantiene como alternativa directa */}
-        <Route 
-          path={ROUTES.owner.mode} 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <OwnerModePage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Rutas legacy de dueños - mantener para compatibilidad */}
-        <Route 
-          path={ROUTES.owner.adminSpaces} 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminSpacesOwnerPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path={ROUTES.owner.dashboard} 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AnalyticsDashboardPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path={ROUTES.owner.resenas} 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <ResenasPage />
-            </ProtectedRoute>
-          } 
-        />
+                                <Route
+                                        path={ROUTES.admin.sedeCanchaEditarPattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminLayout>
+                                                                <SedeCanchaFormPage />
+                                                        </AdminLayout>
+                                                </ProtectedRoute>
+                                        }
+                                />
 
-        {/* Rutas legacy - PROTEGIDAS ADMIN o DUENIO */}
-        <Route 
-          path="/host" 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <HostSpaceOwnerPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-         path="/admin-spaces" 
-          element={
-            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-              <AdminSpacesOwnerPage />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-    </div>
-  );
+                                {/* Rutas Dueños (owner) - PROTEGIDO ADMIN o DUENIO */}
+                                <Route
+                                        path={ROUTES.owner.hostSpace}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'CLIENTE']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <HostSpaceOwnerPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+
+                                {/* Modo Dueño ahora se maneja desde la ruta raíz "/" con HomeRouter */}
+                                {/* La ruta /owner-mode se mantiene como alternativa directa */}
+                                <Route
+                                        path={ROUTES.owner.mode}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <OwnerModePage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+
+                                {/* Rutas legacy de dueños - mantener para compatibilidad */}
+                                <Route
+                                        path={ROUTES.owner.adminSpaces}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminSpacesOwnerPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.owner.dashboard}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AnalyticsDashboardPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.owner.resenas}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <ResenasPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+
+                                {/* Rutas legacy - PROTEGIDAS ADMIN o DUENIO */}
+                                <Route
+                                        path="/host"
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <HostSpaceOwnerPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path="/admin-spaces"
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <AdminSpacesOwnerPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+                        </Routes>
+                </div>
+        );
 };
 
 function App() {
-  return (
-    <AuthProvider>
-      <ModeProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </ModeProvider>
-    </AuthProvider>
-  );
+        return (
+                <AuthProvider>
+                        <ModeProvider>
+                                <Router>
+                                        <AppContent />
+                                </Router>
+                        </ModeProvider>
+                </AuthProvider>
+        );
 }
 
 export default App;

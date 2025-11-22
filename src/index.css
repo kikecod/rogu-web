@@ -2,12 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset global margins and padding to eliminate spacing issues */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 /* Animación fade in */
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -20,12 +30,15 @@
 
 /* Ocultar scrollbar pero mantener funcionalidad */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;             /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 /* Custom scrollbar bonito */
@@ -64,7 +77,7 @@
   text-transform: capitalize;
 }
 
-.rbc-header + .rbc-header {
+.rbc-header+.rbc-header {
   border-left: 1px solid #e5e7eb;
 }
 
@@ -153,21 +166,17 @@
 }
 
 .rbc-time-content::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(59, 130, 246, 0.4) 0%,
-    rgba(99, 102, 241, 0.4) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(59, 130, 246, 0.4) 0%,
+      rgba(99, 102, 241, 0.4) 100%);
   border-radius: 100px;
   transition: all 0.3s ease;
 }
 
 .rbc-time-content::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(37, 99, 235, 0.7) 0%,
-    rgba(79, 70, 229, 0.7) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(37, 99, 235, 0.7) 0%,
+      rgba(79, 70, 229, 0.7) 100%);
   width: 8px;
 }
 
@@ -252,7 +261,7 @@
 }
 
 /* Ajustes para mejor legibilidad de horarios */
-.rbc-time-content > * + * > * {
+.rbc-time-content>*+*>* {
   border-left: 1px solid #e5e7eb;
 }
 
@@ -261,7 +270,7 @@
   min-width: 0;
 }
 
-.rbc-day-bg + .rbc-day-bg {
+.rbc-day-bg+.rbc-day-bg {
   border-left: 1px solid #e5e7eb;
 }
 
@@ -295,12 +304,12 @@
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .rbc-toolbar-label {
     text-align: center;
     width: 100%;
   }
-  
+
   .rbc-event {
     font-size: 10px;
   }
@@ -312,6 +321,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
