@@ -19,18 +19,21 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Image,
 } from 'lucide-react';
 import { useSedeDetalle } from '../hooks';
 import { sedesService } from '../services/sedes.service';
 import MapPicker from '../../../venues/components/MapPicker';
 import { ROUTES } from '@/config/routes';
 import { useCanchasDeSede } from '../canchas/hooks/useCanchasDeSede';
+import { SedePhotoManagement } from '../components';
 
 const SedeDetallePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { sede, loading, error, recargar } = useSedeDetalle(Number(id));
   const [procesando, setProcesando] = useState(false);
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const {
     canchas: canchasSede,
     loading: loadingCanchas,
@@ -235,6 +238,15 @@ const SedeDetallePage = () => {
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <h3 className="font-semibold text-gray-900 mb-3">Acciones Administrativas</h3>
         <div className="flex flex-wrap gap-2">
+          {/* Botón de Gestionar Fotos */}
+          <button
+            onClick={() => setPhotoManagementOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Image size={18} />
+            Gestionar Fotos
+          </button>
+
           {/* Botón de Verificación/Desverificación */}
           {sede.verificada ? (
             <button
@@ -319,14 +331,14 @@ const SedeDetallePage = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* Mapa de Ubicación */}
               {sede.latitud && sede.longitud && (
                 <div className="md:col-span-2">
                   <MapPicker
                     latitude={Number(sede.latitud)}
                     longitude={Number(sede.longitud)}
-                    onLocationSelect={() => {}} 
+                    onLocationSelect={() => { }}
                     height="350px"
                     readOnly={true}
                   />
@@ -524,6 +536,15 @@ const SedeDetallePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de gestión de fotos */}
+      {sede && (
+        <SedePhotoManagement
+          sede={{ idSede: sede.idSede, nombre: sede.nombre }}
+          isOpen={photoManagementOpen}
+          onClose={() => setPhotoManagementOpen(false)}
+        />
+      )}
     </div>
   );
 };
