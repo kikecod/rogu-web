@@ -1,4 +1,4 @@
-import { getApiUrl, getAuthToken, getImageUrl } from '@/core/config/api';
+import { getApiUrl, getAuthToken } from '@/core/config/api';
 
 export interface PhotoItem {
   idFoto: number;
@@ -15,11 +15,12 @@ const authHeaders = (contentType: string | null = 'application/json') => {
   };
 };
 
+// S3 URLs are already complete public URLs, no need for getImageUrl normalization
 const sanitize = (foto: any): PhotoItem => ({
   idFoto: foto.idFoto || foto.id || 0,
   esPrincipal: foto.esPrincipal ?? foto.principal ?? false,
   orden: typeof foto.orden === 'number' ? foto.orden : undefined,
-  urlFoto: getImageUrl(foto.urlFoto || foto.url || foto.imageUrl || ''),
+  urlFoto: foto.urlFoto || foto.url || foto.imageUrl || '',
 });
 
 export const photoService = {
@@ -33,10 +34,36 @@ export const photoService = {
     return data.map(sanitize);
   },
 
-  async upload(idCancha: number, file: File) {
+  async listBySede(idSede: number): Promise<PhotoItem[]> {
+    const response = await fetch(getApiUrl(`/fotos/sede/${idSede}`), {
+      headers: authHeaders(),
+    });
+    if (!response.ok) throw new Error('No se pudieron cargar las fotos');
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+    return data.map(sanitize);
+  },
+
+  async uploadCanchaPhoto(idCancha: number, file: File) {
     const formData = new FormData();
     formData.append('image', file);
-    const response = await fetch(getApiUrl(`/fotos/upload/${idCancha}`), {
+    const response = await fetch(getApiUrl(`/fotos/upload/cancha/${idCancha}`), {
+      method: 'POST',
+      headers: {
+        ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo subir la foto');
+    }
+  },
+
+  async uploadSedePhoto(idSede: number, file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch(getApiUrl(`/fotos/upload/sede/${idSede}`), {
       method: 'POST',
       headers: {
         ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),

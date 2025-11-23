@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle } from 'lucide-react';
+import { getApiUrl } from '@/core/config/api';
 
 interface Foto {
   idFoto: number;
@@ -20,16 +21,16 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; fotoId: number | null }>({ 
-    show: false, 
-    fotoId: null 
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; fotoId: number | null }>({
+    show: false,
+    fotoId: null
   });
 
   // Cargar fotos de la cancha
   const loadFotos = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/fotos/cancha/${cancha.idCancha}`, {
+      const response = await fetch(getApiUrl(`/fotos/cancha/${cancha.idCancha}`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -37,14 +38,8 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
 
       if (response.ok) {
         const canchaFotos = await response.json();
-        // Convertir URLs relativas a URLs completas
-        const fotosWithFullUrls = canchaFotos.map((foto: any) => ({
-          ...foto,
-          urlFoto: foto.urlFoto.startsWith('http') 
-            ? foto.urlFoto 
-            : `http://localhost:3000${foto.urlFoto}`
-        }));
-        setFotos(fotosWithFullUrls);
+        // S3 URLs are already complete public URLs, no normalization needed
+        setFotos(canchaFotos);
       }
     } catch (error) {
       console.error('Error loading fotos:', error);
@@ -88,7 +83,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        
+
         // Validar la imagen
         if (!validateImage(file)) {
           continue;
@@ -99,8 +94,8 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
           const formData = new FormData();
           formData.append('image', file);
 
-          // Subir la imagen al endpoint correcto
-          const response = await fetch(`http://localhost:3000/api/fotos/upload/${cancha.idCancha}`, {
+          // Subir la imagen al endpoint correcto (S3)
+          const response = await fetch(getApiUrl(`/fotos/upload/cancha/${cancha.idCancha}`), {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -121,7 +116,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
       // Recargar fotos
       await loadFotos();
       setSelectedFiles(null);
-      
+
       // Limpiar el input
       const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
@@ -149,7 +144,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
     if (!deleteConfirm.fotoId) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/fotos/${deleteConfirm.fotoId}`, {
+      const response = await fetch(getApiUrl(`/fotos/${deleteConfirm.fotoId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -193,7 +188,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
         {/* Sección de subida */}
         <div className="mb-8 p-6 bg-gray-50 rounded-lg">
           <h4 className="text-md font-medium text-gray-900 mb-4">Subir nuevas fotos</h4>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -321,7 +316,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
                   </h3>
                 </div>
               </div>
-              
+
               <div className="mb-6">
                 <p className="text-sm text-gray-500">
                   ¿Estás seguro de que quieres eliminar esta foto? Esta acción no se puede deshacer.
