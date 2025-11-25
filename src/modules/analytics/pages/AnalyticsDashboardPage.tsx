@@ -6,9 +6,9 @@ import KPICard from '../components/KPICard';
 import SimpleBarChart from '../components/SimpleBarChart';
 import SimpleLineChart from '../components/SimpleLineChart';
 import DonutChart from '../components/DonutChart';
-import { 
-  getDashboard, 
-  descargarReporteDashboard 
+import {
+  getDashboard,
+  descargarReporteDashboard
 } from '../services/analyticsService';
 import type { DashboardData } from '../types/analytics.types';
 
@@ -18,8 +18,8 @@ interface AnalyticsDashboardPageProps {
   onViewCanchaAnalytics?: (idCancha: number) => void;
 }
 
-const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
-  idPersonaD, 
+const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({
+  idPersonaD,
   idSede,
   onViewCanchaAnalytics
 }) => {
@@ -52,31 +52,31 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({
   const loadCanchas = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Si hay sede seleccionada, cargar solo canchas de esa sede
       if (idSede) {
-        const response = await fetch(`http://localhost:3000/api/sede/${idSede}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/${idSede}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (response.ok) {
           const sedeData = await response.json();
           setCanchas(sedeData.canchas || []);
         }
       } else if (idPersonaD) {
         // Si no hay sede pero hay dueño, cargar todas las sedes del dueño y sus canchas
-        const sedesResponse = await fetch('http://localhost:3000/api/sede', {
+        const sedesResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (sedesResponse.ok) {
           const allSedes = await sedesResponse.json();
           const mySedes = allSedes.filter((s: any) => s.idPersonaD === idPersonaD);
-          
+
           // Obtener todas las canchas de mis sedes
           const todasLasCanchas: any[] = [];
           for (const sede of mySedes) {
@@ -315,7 +315,7 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({
               const disciplinas = cancha.parte
                 ?.map((p: any) => p.disciplina?.nombre)
                 .filter(Boolean) || [];
-              
+
               return (
                 <button
                   key={cancha.idCancha}
@@ -326,12 +326,12 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({
                     <h4 className="font-semibold text-gray-900 line-clamp-1">
                       {cancha.nombre}
                     </h4>
-                    
+
                     {/* Mostrar disciplinas */}
                     {disciplinas.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5 mt-1">
                         {disciplinas.map((disc: string, idx: number) => (
-                          <span 
+                          <span
                             key={idx}
                             className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
                           >
@@ -342,7 +342,7 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({
                     ) : (
                       <p className="text-sm text-gray-500 mt-1">Sin disciplinas</p>
                     )}
-                    
+
                     <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
                       <p>
                         {cancha.estado === 'Disponible' ? '✅ Disponible' : '🔴 No disponible'}

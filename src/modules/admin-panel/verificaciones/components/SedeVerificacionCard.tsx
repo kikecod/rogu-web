@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  Building2, 
-  MapPin, 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  FileText, 
+import {
+  Building2,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  FileText,
   CheckCircle
 } from 'lucide-react';
 import type { SedeVerificacion } from '../services/verificaciones.service';
@@ -35,7 +35,7 @@ const SedeVerificacionCard: React.FC<SedeVerificacionCardProps> = ({
 
   // Descargar licencia directamente
   const descargarLicencia = () => {
-    const url = `http://localhost:3000/api/sede/${sede.idSede}/licencia`;
+    const url = `${import.meta.env.VITE_API_BASE_URL}/sede/${sede.idSede}/licencia`;
     const link = document.createElement('a');
     link.href = url;
     link.download = `licencia-sede-${sede.idSede}.pdf`;

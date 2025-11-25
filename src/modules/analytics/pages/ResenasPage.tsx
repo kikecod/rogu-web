@@ -11,10 +11,10 @@ interface ResenasPageProps {
   idCancha?: number;
 }
 
-const ResenasPage: React.FC<ResenasPageProps> = ({ 
-  idPersonaD, 
-  idSede, 
-  idCancha 
+const ResenasPage: React.FC<ResenasPageProps> = ({
+  idPersonaD,
+  idSede,
+  idCancha
 }) => {
   const [resenasData, setResenasData] = useState<ResumenResenasData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,31 +33,31 @@ const ResenasPage: React.FC<ResenasPageProps> = ({
   const loadCanchas = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Si hay sede seleccionada, cargar solo canchas de esa sede
       if (idSede) {
-        const response = await fetch(`http://localhost:3000/api/sede/${idSede}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/${idSede}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (response.ok) {
           const sedeData = await response.json();
           setCanchas(sedeData.canchas || []);
         }
       } else if (idPersonaD) {
         // Si no hay sede pero hay dueño, cargar todas las sedes del dueño y sus canchas
-        const sedesResponse = await fetch('http://localhost:3000/api/sede', {
+        const sedesResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (sedesResponse.ok) {
           const allSedes = await sedesResponse.json();
           const mySedes = allSedes.filter((s: any) => s.idPersonaD === idPersonaD);
-          
+
           // Obtener todas las canchas de mis sedes
           const todasLasCanchas: any[] = [];
           for (const sede of mySedes) {
@@ -77,10 +77,10 @@ const ResenasPage: React.FC<ResenasPageProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const data = await getResumenResenas({ 
-        idPersonaD, 
-        idSede, 
-        idCancha: selectedCanchaId 
+      const data = await getResumenResenas({
+        idPersonaD,
+        idSede,
+        idCancha: selectedCanchaId
       });
       setResenasData(data);
     } catch (err) {
@@ -97,11 +97,10 @@ const ResenasPage: React.FC<ResenasPageProps> = ({
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`h-4 w-4 sm:h-5 sm:w-5 ${
-              star <= rating
+            className={`h-4 w-4 sm:h-5 sm:w-5 ${star <= rating
                 ? 'text-yellow-400 fill-yellow-400'
                 : 'text-gray-300'
-            }`}
+              }`}
           />
         ))}
       </div>

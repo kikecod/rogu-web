@@ -54,7 +54,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
   // Cargar canchas de la sede
   const loadCanchas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/cancha`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cancha`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -69,7 +69,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
         // Para cada cancha, cargar sus partes (disciplinas)
         for (const cancha of sedeCanchas) {
           try {
-            const parteResponse = await fetch(`http://localhost:3000/api/parte`, {
+            const parteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/parte`, {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`,
               },
@@ -134,7 +134,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta cancha?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/cancha/${idCancha}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cancha/${idCancha}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -179,7 +179,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
         for (const parte of selectedCancha.parte) {
           try {
             await fetch(
-              `http://localhost:3000/api/parte/${selectedCancha.idCancha}/${parte.idDisciplina}`,
+              `${import.meta.env.VITE_API_BASE_URL}/parte/${selectedCancha.idCancha}/${parte.idDisciplina}`,
               {
                 method: 'DELETE',
                 headers: {
@@ -196,7 +196,7 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
       // Agregar las nuevas disciplinas seleccionadas
       for (const idDisciplina of selectedDisciplinas) {
         try {
-          await fetch('http://localhost:3000/api/parte', {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/parte`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -355,13 +355,12 @@ const FieldManagement: React.FC<CanchaManagementProps> = ({ sede, onBack }) => {
               <div className="mt-4 border-t border-gray-200 pt-3">
                 <div className="mb-3 flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      cancha.estado === 'Disponible'
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cancha.estado === 'Disponible'
                         ? 'bg-green-50 text-green-700 ring-1 ring-green-100'
                         : cancha.estado === 'Mantenimiento' || cancha.estado === 'En Mantenimiento'
-                        ? 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-100'
-                        : 'bg-red-50 text-red-700 ring-1 ring-red-100'
-                    }`}
+                          ? 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-100'
+                          : 'bg-red-50 text-red-700 ring-1 ring-red-100'
+                      }`}
                   >
                     {cancha.estado}
                   </span>
