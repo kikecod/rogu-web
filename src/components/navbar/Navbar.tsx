@@ -1,4 +1,4 @@
-import { useState } from 'react';
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Globe, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
@@ -6,7 +6,6 @@ import { useMode } from '../../core/hooks/useMode';
 import { ROUTES } from '@/config/routes';
 import { AdminTabBar } from '@/core/navigation/AdminTabBar';
 import Logo from './Logo';
-import SearchBar from './SearchBar';
 import UserMenu from './UserMenu';
 
 interface NavbarProps {
@@ -18,13 +17,12 @@ interface NavbarProps {
 const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
   const { isDuenio, isAdmin, user } = useAuth();
   const { mode, toggleMode } = useMode();
-  const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
   // Detectar si estamos en rutas admin
   const isAdminRoute = location.pathname.startsWith('/admin');
-  
+
   // Verificar si el usuario puede cambiar a modo dueño (solo DUENIO, no ADMIN)
   const canSwitchToOwnerMode = isDuenio() && !isAdmin();
 
@@ -70,8 +68,18 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
               <Globe className="h-4 w-4" />
             </button>
 
+            {/* Login button for guests */}
+            {!user && (
+              <button
+                onClick={onLoginClick}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+              >
+                Iniciar Sesión
+              </button>
+            )}
+
             {/* User menu */}
-            <UserMenu 
+            <UserMenu
               onLoginClick={onLoginClick}
               onSignupClick={onSignupClick}
               onLogout={onLogout}
@@ -79,13 +87,7 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
           </div>
         </div>
 
-        {/* Mobile search bar */}
-        <div className="md:hidden pb-3">
-          <SearchBar 
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </div>
+
       </div>
 
       {/* Admin Tab Bar - Solo visible en rutas admin */}
