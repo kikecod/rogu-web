@@ -3,132 +3,129 @@ import React, { useEffect, useState } from 'react';
 import type { FavoriteRecord } from '../types/favorite.types';
 import FavoriteButton from './FavoriteButton';
 import { getImageUrl } from '@/core/config/api';
-import type { FavoriteFoto } from '../types/favorite.types';
-import { fetchCanchaImage } from '@/core/lib/helpers';
+import { Star, Building2 } from 'lucide-react';
+
 
 interface Props {
   favorite: FavoriteRecord;
-  onRemove: (idCancha: number) => void;
-  onReserve?: (idCancha: number) => void;
+  onRemove: (idSede: number) => void;
+  onViewDetails?: (idSede: number) => void;
 }
 
-const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
-  const c = favorite.cancha;
-
-  // Resolver foto: primero usar la que venga en favorite.cancha; si no hay, llamar API /cancha/:id para obtenerla
+const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) => {
+  const sede = favorite.sede;
   const [imgSrc, setImgSrc] = useState<string>('');
 
   useEffect(() => {
-    let mounted = true;
-    const resolveCanchaFotoPath = (f: any): string => {
-      if (!f) return '';
-      return (
-        f.urlFoto?.trim?.() || f.url?.trim?.() || f.path?.trim?.() || f.ruta?.trim?.() || ''
-      );
-    };
-
-    const init = async () => {
-      const rawFoto: FavoriteFoto | undefined = c?.fotos?.[0];
-      const fotoPath = resolveCanchaFotoPath(rawFoto);
-      if (fotoPath) {
-        const url = fotoPath.startsWith('http') ? fotoPath : getImageUrl(fotoPath);
-        if (mounted) setImgSrc(url);
-        return;
+    // Resolver foto de la sede
+    if (sede?.fotos && sede.fotos.length > 0) {
+      const fotoUrl = sede.fotos[0].url;
+      if (fotoUrl) {
+        const url = fotoUrl.startsWith('http') ? fotoUrl : getImageUrl(fotoUrl);
+        setImgSrc(url);
       }
-      // No vino foto en el favorito: traerla desde el backend
-      try {
-        const url = await fetchCanchaImage(favorite.idCancha);
-        if (mounted) setImgSrc(url);
-      } catch {
-        if (mounted) setImgSrc('');
-      }
-    };
+    }
+  }, [sede?.fotos]);
 
-    init();
-    return () => {
-      mounted = false;
-    };
-  }, [favorite.idCancha, c?.fotos]);
+
+  // Renderizar estrellas de rating
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const stars = [];
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <div key={i} className="relative w-4 h-4">
+            <Star className="w-4 h-4 text-gray-300" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          </div>
+        );
+      } else {
+        stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />);
+      }
+    }
+
+    return stars;
+  };
 
   return (
     <div className="rounded-2xl bg-gradient-to-tr from-rose-500/30 via-fuchsia-500/30 to-indigo-500/30 p-[1.2px] transition hover:from-rose-500/50 hover:to-indigo-500/50">
       <div className="group relative h-full overflow-hidden rounded-[14px] bg-white shadow-sm transition hover:shadow-xl">
-        {/* Imagen principal (sólo desde backend); si no llega, se mantiene el fondo gris */}
+        {/* Imagen principal */}
         <div className="relative h-44 w-full overflow-hidden bg-gray-100 sm:h-48">
-          {imgSrc && (
+          {imgSrc ? (
             <img
               src={imgSrc}
-              alt={c?.nombre || `Cancha ${favorite.idCancha}`}
+              alt={sede?.nombre || `Sede ${favorite.idSede}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
               onError={() => setImgSrc('')}
             />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Building2 className="w-16 h-16 text-gray-300" />
+            </div>
           )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-transparent opacity-60 transition group-hover:opacity-70" />
           <div className="absolute right-2 top-2">
-            <FavoriteButton idCancha={favorite.idCancha} className="bg-white/70 backdrop-blur hover:bg-white" />
+            <FavoriteButton idSede={favorite.idSede} className="bg-white/70 backdrop-blur hover:bg-white" />
           </div>
         </div>
 
         {/* Contenido */}
         <div className="p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="text-base font-semibold tracking-tight text-gray-900 line-clamp-1">
-                {c?.nombre || `Cancha ${favorite.idCancha}`}
+                {sede?.nombre || `Sede ${favorite.idSede}`}
               </h3>
 
-              {c?.superficie && (
-                <div className="mt-1 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-rose-50 text-rose-600 border border-rose-100">
-                    {c.superficie}
-                  </span>
-                  {typeof c?.aforoMax === 'number' && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100">
-                      Aforo {c.aforoMax}
-                    </span>
-                  )}
-                </div>
+              {sede?.descripcion && (
+                <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                  {sede.descripcion}
+                </p>
               )}
-              {/* Disciplinas chips si vienen en cancha.parte.disciplina */}
-              {Array.isArray((c as any)?.parte) && (c as any).parte.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1 max-h-12 overflow-hidden">
-                  {(c as any).parte.slice(0,3).map((p: any, idx: number) => (
-                    <span
-                      key={p.idDisciplina + '-' + idx}
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm"
-                    >
-                      {p?.disciplina?.nombre || 'Disciplina'}
-                    </span>
-                  ))}
-                  {(c as any).parte.length > 3 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-white border border-gray-200 text-gray-600">
-                      +{(c as any).parte.length - 3}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-3 text-gray-700">
-              {c?.precio !== undefined && (
-                <span className="font-bold text-gray-900">
-                  <span className="text-xs align-super mr-0.5">Bs</span>
-                  <span className="text-lg">{c.precio}</span>
-                </span>
+              {/* Rating */}
+              {sede?.ratingFinal !== undefined && sede.ratingFinal > 0 && (
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="flex">
+                    {renderStars(sede.ratingFinal)}
+                  </div>
+                  <span className="text-sm text-gray-600 ml-1">
+                    {sede.ratingFinal.toFixed(1)}
+                  </span>
+                </div>
               )}
-              {c?.rating !== undefined && (
-                <span
-                  className="inline-flex items-center gap-1 text-amber-600 font-medium"
-                  aria-label={`Calificación ${c.rating?.toFixed(1)} de 5`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                    <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.57a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.507a.562.562 0 01-.84-.61l1.285-5.386a.563.563 0 00-.182-.557l-4.204-3.57a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                  </svg>
-                  {c.rating?.toFixed(1)}
-                </span>
+
+              {/* Canchas disponibles */}
+              {sede?.canchas && sede.canchas.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">
+                    {sede.canchas.length} {sede.canchas.length === 1 ? 'cancha' : 'canchas'} disponibles:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {sede.canchas.slice(0, 3).map((cancha) => (
+                      <span
+                        key={cancha.idCancha}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-100"
+                      >
+                        {cancha.nombre}
+                      </span>
+                    ))}
+                    {sede.canchas.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-gray-600">
+                        +{sede.canchas.length - 3} más
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -139,17 +136,17 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
 
           <div className="mt-1 flex gap-2">
             <button
-              onClick={() => onRemove(favorite.idCancha)}
+              onClick={() => onRemove(favorite.idSede)}
               className="text-xs px-3 py-2 rounded-lg bg-white border border-gray-200 text-red-600 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
             >
               Remover
             </button>
-            {onReserve && (
+            {onViewDetails && (
               <button
-                onClick={() => onReserve(favorite.idCancha)}
-                className="text-xs px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition shadow-sm"
+                onClick={() => onViewDetails(favorite.idSede)}
+                className="flex-1 text-xs px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition shadow-sm"
               >
-                Reservar
+                Ver detalles
               </button>
             )}
           </div>
@@ -160,4 +157,3 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onReserve }) => {
 };
 
 export default FavoriteCard;
- 

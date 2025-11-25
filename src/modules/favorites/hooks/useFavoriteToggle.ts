@@ -8,7 +8,7 @@ interface UseFavoriteToggleResult {
   toggle: () => Promise<void>;
 }
 
-export function useFavoriteToggle(idCancha: number): UseFavoriteToggleResult {
+export function useFavoriteToggle(idSede: number): UseFavoriteToggleResult {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -18,11 +18,11 @@ export function useFavoriteToggle(idCancha: number): UseFavoriteToggleResult {
     const init = async () => {
       if (!token) {
         const localFavs = getLocalFavorites();
-        if (mounted) setIsFavorite(localFavs.includes(idCancha));
+        if (mounted) setIsFavorite(localFavs.includes(idSede));
         return;
       }
       try {
-        const fav = await favoritesService.check(idCancha);
+        const fav = await favoritesService.check(idSede);
         if (mounted) setIsFavorite(fav);
       } catch {
         if (mounted) setIsFavorite(false);
@@ -30,27 +30,27 @@ export function useFavoriteToggle(idCancha: number): UseFavoriteToggleResult {
     };
     init();
     return () => { mounted = false; };
-  }, [idCancha, token]);
+  }, [idSede, token]);
 
   const toggle = useCallback(async () => {
     if (!token) {
-      const nowFav = toggleLocalFavorite(idCancha);
+      const nowFav = toggleLocalFavorite(idSede);
       setIsFavorite(nowFav);
       return;
     }
     setLoading(true);
     try {
       if (isFavorite) {
-        await favoritesService.remove(idCancha);
+        await favoritesService.remove(idSede);
         setIsFavorite(false);
       } else {
-        await favoritesService.add(idCancha);
+        await favoritesService.add(idSede);
         setIsFavorite(true);
       }
     } catch (e: any) {
       // Si está sin autenticar, usar fallback local
       if (e?.message === 'UNAUTHORIZED') {
-        const nowFav = toggleLocalFavorite(idCancha);
+        const nowFav = toggleLocalFavorite(idSede);
         setIsFavorite(nowFav);
       } else {
         console.error(e);
@@ -58,7 +58,8 @@ export function useFavoriteToggle(idCancha: number): UseFavoriteToggleResult {
     } finally {
       setLoading(false);
     }
-  }, [idCancha, token, isFavorite]);
+  }, [idSede, token, isFavorite]);
 
   return { isFavorite, loading, toggle };
 }
+

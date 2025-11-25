@@ -1,7 +1,7 @@
 import React from 'react';
 import { Star, MapPin, Clock } from 'lucide-react';
 import type { SportField } from '../types/field.types';
-import FavoriteButton from '../../favorites/components/FavoriteButton';
+
 
 interface SportFieldCardProps {
   field: SportField;
@@ -31,10 +31,8 @@ const SportFieldCard: React.FC<SportFieldCardProps> = ({ field, onClick }) => {
             e.currentTarget.src = 'https://placehold.co/400x300/22c55e/ffffff?text=Cancha';
           }}
         />
-        {/* Botón favorito */}
-        <div className="absolute top-2 right-2">
-          <FavoriteButton idCancha={Number(field.id)} size="sm" />
-        </div>
+
+
         {/* Disciplinas dinámicas */}
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1 flex-wrap max-w-[80%]">
           {disciplinaNombres.slice(0, 2).map((name, idx) => (

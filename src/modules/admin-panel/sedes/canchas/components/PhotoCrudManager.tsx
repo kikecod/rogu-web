@@ -59,7 +59,8 @@ const PhotoCrudManager = ({ canchaId, canchaNombre, onFotosChange }: Props) => {
       for (const file of Array.from(selectedFiles)) {
         if (!validateFile(file)) continue;
         try {
-          await photoService.upload(canchaId, file);
+          await photoService.uploadCanchaPhoto(canchaId, file);
+
         } catch (err: any) {
           console.error('Error subiendo foto:', err);
           setError(err?.message || 'Error al subir la foto');
