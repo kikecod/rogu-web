@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
+import {
   Star, MapPin, Share2, ChevronLeft, ChevronRight,
   Clock, Calendar, Shield, Sparkles, Check, X,
   MessageCircle, Phone, Users, Plus, Minus
@@ -11,17 +11,17 @@ import ReviewList from '@/reviews/components/ReviewList';
 import type { SportField } from '../types/field.types';
 import { fetchCanchaById, fetchReservasByFecha, generateAvailabilitySlots, formatDateLocal } from '@/core/lib/helpers';
 import { useAuth } from '@/auth/hooks/useAuth';
-import FavoriteButton from '../../favorites/components/FavoriteButton';
+
 import { ROUTES } from '@/config/routes';
 
 const SportFieldDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id, idCancha } = useParams<{ id?: string; idCancha?: string; idSede?: string }>();
   const { user, isLoggedIn } = useAuth();
-  
+
   // Usar idCancha si está disponible, sino usar id (para rutas legacy)
   const canchaId = idCancha || id;
-  
+
   // Estados
   const [field, setField] = useState<SportField | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ const SportFieldDetailPage: React.FC = () => {
         setLoading(true);
         setError(null);
         console.log('🔍 Cargando cancha con ID:', canchaId);
-        
+
         const fieldData = await fetchCanchaById(canchaId);
         setField(fieldData);
         console.log('✅ Cancha cargada:', fieldData);
@@ -84,10 +84,10 @@ const SportFieldDetailPage: React.FC = () => {
       try {
         setLoadingSlots(true);
         console.log('🔄 Actualizando horarios para fecha:', formatDateLocal(selectedDate), '(hora local Bolivia)');
-        
+
         // Obtener reservas para la fecha seleccionada
         const reservasPorFecha = await fetchReservasByFecha(canchaId, selectedDate);
-        
+
         // Generar nuevos slots de disponibilidad
         const newAvailability = generateAvailabilitySlots(
           field.openingHours?.open || '06:00',
@@ -96,13 +96,13 @@ const SportFieldDetailPage: React.FC = () => {
           field.price,
           selectedDate
         );
-        
+
         // Actualizar el field con los nuevos slots
         setField(prev => prev ? { ...prev, availability: newAvailability } : null);
-        
+
         // Limpiar horarios seleccionados al cambiar de fecha
         setSelectedTimeSlots([]);
-        
+
         console.log('✅ Horarios actualizados:', newAvailability);
       } catch (error) {
         console.error('❌ Error al actualizar horarios:', error);
@@ -117,14 +117,14 @@ const SportFieldDetailPage: React.FC = () => {
   // Handlers
   const nextImage = () => {
     if (!field) return;
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === field.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
     if (!field) return;
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? field.images.length - 1 : prev - 1
     );
   };
@@ -139,19 +139,19 @@ const SportFieldDetailPage: React.FC = () => {
 
   const confirmBooking = () => {
     if (!selectedDate || selectedTimeSlots.length === 0 || !field) return;
-    
+
     // Verificar autenticación
     if (!isLoggedIn || !user) {
       alert('Debes iniciar sesión para hacer una reserva');
       return;
     }
-    
+
     // Calcular precio total sumando todos los horarios seleccionados
     const totalPrice = selectedTimeSlots.reduce((sum, timeSlot) => {
       const slot = field.availability.find(s => `${s.startTime} - ${s.endTime}` === timeSlot);
       return sum + (slot?.price || field.price);
     }, 0);
-    
+
     // Navegar al checkout con los detalles de la reserva
     navigate(ROUTES.checkout, {
       state: {
@@ -166,11 +166,11 @@ const SportFieldDetailPage: React.FC = () => {
           fieldImage: field.images[0],
           sedeName: field.owner?.name || 'Sede',
           address: `${field.location?.address || ''}, ${field.location?.city || ''}`,
-          date: selectedDate.toLocaleDateString('es-MX', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          date: selectedDate.toLocaleDateString('es-MX', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           }),
           participants: participants,
           timeSlot: selectedTimeSlots.join(', '),
@@ -223,9 +223,8 @@ const SportFieldDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Sticky Header */}
-      <div className={`sticky top-0 z-40 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'
-      }`}>
+      <div className={`sticky top-0 z-40 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-4'
+        }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
             onClick={() => navigate(`/venues/${field.id}`)}
@@ -234,10 +233,10 @@ const SportFieldDetailPage: React.FC = () => {
             <ChevronLeft className="h-5 w-5" />
             <span className="font-medium">Volver</span>
           </button>
-          
+
           <div className="flex items-center gap-3">
             {/* Botón de favoritos funcional */}
-            {id && <FavoriteButton idCancha={Number(id)} size="sm" />}
+
             <button className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
               <Share2 className="h-5 w-5" />
             </button>
@@ -256,7 +255,7 @@ const SportFieldDetailPage: React.FC = () => {
                 alt={field.name}
                 className="w-full h-full object-cover"
               />
-              
+
               {/* Navigation Arrows */}
               <button
                 onClick={prevImage}
@@ -302,11 +301,10 @@ const SportFieldDetailPage: React.FC = () => {
                 <div
                   key={idx}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`relative rounded-xl overflow-hidden cursor-pointer transition-all h-[118px] ${
-                    currentImageIndex === idx 
-                      ? 'ring-4 ring-blue-500 scale-105' 
-                      : 'hover:scale-105 opacity-80 hover:opacity-100'
-                  }`}
+                  className={`relative rounded-xl overflow-hidden cursor-pointer transition-all h-[118px] ${currentImageIndex === idx
+                    ? 'ring-4 ring-blue-500 scale-105'
+                    : 'hover:scale-105 opacity-80 hover:opacity-100'
+                    }`}
                 >
                   <img
                     src={img}
@@ -329,16 +327,16 @@ const SportFieldDetailPage: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
                   {field.name}
                 </h1>
-                <FavoriteButton idCancha={Number(field.id)} size="md" />
+
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-3 text-gray-600 mb-5">
                 <div className="flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full">
                   <Star className="h-4 w-4 fill-blue-600 text-blue-600" />
                   <span className="font-bold text-blue-900 text-sm">{field.rating}</span>
                   <span className="text-xs">({field.reviews} reseñas)</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-blue-600" />
                   <span className="text-xs">{field.location?.address || ""}</span>
@@ -382,7 +380,7 @@ const SportFieldDetailPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col gap-2">
                   <button className="p-2 bg-white hover:bg-blue-50 rounded-lg transition-colors border border-blue-200">
                     <MessageCircle className="h-4 w-4 text-blue-600" />
@@ -432,7 +430,7 @@ const SportFieldDetailPage: React.FC = () => {
                 <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
                 Reseñas y Calificaciones
               </h2>
-              
+
               {canchaId && <ReviewList idCancha={parseInt(canchaId)} />}
             </div>
           </div>
@@ -455,7 +453,7 @@ const SportFieldDetailPage: React.FC = () => {
                   className="w-full px-3 py-2.5 text-sm font-medium border-2 border-blue-200 rounded-lg hover:border-blue-400 focus:border-blue-500 transition-all bg-white flex items-center justify-between group"
                 >
                   <span className="text-gray-900">
-                    {selectedDate.toLocaleDateString('es-MX', { 
+                    {selectedDate.toLocaleDateString('es-MX', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric'
@@ -463,7 +461,7 @@ const SportFieldDetailPage: React.FC = () => {
                   </span>
                   <Calendar className="h-4 w-4 text-blue-600" />
                 </button>
-                
+
                 {/* Inline Calendar */}
                 {showCalendar && (
                   <div className="mt-3">
@@ -491,28 +489,26 @@ const SportFieldDetailPage: React.FC = () => {
                   <button
                     onClick={() => setParticipants(Math.max(1, participants - 1))}
                     disabled={participants <= 1}
-                    className={`p-1.5 rounded-lg transition-all ${
-                      participants <= 1
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
+                    className={`p-1.5 rounded-lg transition-all ${participants <= 1
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  
+
                   <div className="text-center">
                     <div className="text-xl font-extrabold text-gray-900">{participants}</div>
                     <div className="text-xs text-gray-500">de {field.capacity || 22}</div>
                   </div>
-                  
+
                   <button
                     onClick={() => setParticipants(Math.min(field.capacity || 22, participants + 1))}
                     disabled={participants >= (field.capacity || 22)}
-                    className={`p-1.5 rounded-lg transition-all ${
-                      participants >= (field.capacity || 22)
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
+                    className={`p-1.5 rounded-lg transition-all ${participants >= (field.capacity || 22)
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -533,45 +529,44 @@ const SportFieldDetailPage: React.FC = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 scrollbar-hide">
                     {field.availability.length > 0 ? (
-                    field.availability.map((slot) => {
-                      const timeSlot = `${slot.startTime} - ${slot.endTime}`;
-                      const isSelected = selectedTimeSlots.includes(timeSlot);
-                      return (
-                        <button
-                          key={timeSlot}
-                          onClick={() => {
-                            if (!slot.available) return;
-                            setSelectedTimeSlots(prev => 
-                              isSelected 
-                                ? prev.filter(t => t !== timeSlot)
-                                : [...prev, timeSlot]
-                            );
-                          }}
-                          disabled={!slot.available}
-                          className={`p-2.5 rounded-lg text-xs font-medium transition-all ${
-                            isSelected
+                      field.availability.map((slot) => {
+                        const timeSlot = `${slot.startTime} - ${slot.endTime}`;
+                        const isSelected = selectedTimeSlots.includes(timeSlot);
+                        return (
+                          <button
+                            key={timeSlot}
+                            onClick={() => {
+                              if (!slot.available) return;
+                              setSelectedTimeSlots(prev =>
+                                isSelected
+                                  ? prev.filter(t => t !== timeSlot)
+                                  : [...prev, timeSlot]
+                              );
+                            }}
+                            disabled={!slot.available}
+                            className={`p-2.5 rounded-lg text-xs font-medium transition-all ${isSelected
                               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md scale-105 ring-2 ring-blue-400'
                               : slot.available
-                              ? 'bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                          }`}
-                        >
-                          <div className={`font-bold ${!slot.available ? 'line-through' : ''}`}>
-                            {timeSlot}
-                          </div>
-                          {slot.available && slot.price && (
-                            <div className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
-                              Bs {slot.price}
+                                ? 'bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                              }`}
+                          >
+                            <div className={`font-bold ${!slot.available ? 'line-through' : ''}`}>
+                              {timeSlot}
                             </div>
-                          )}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="col-span-2 text-center py-4 text-gray-500">
-                      ✅ Todos los horarios disponibles
-                    </div>
-                  )}
+                            {slot.available && slot.price && (
+                              <div className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
+                                Bs {slot.price}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="col-span-2 text-center py-4 text-gray-500">
+                        ✅ Todos los horarios disponibles
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -600,11 +595,10 @@ const SportFieldDetailPage: React.FC = () => {
               <button
                 onClick={handleReservation}
                 disabled={selectedTimeSlots.length === 0}
-                className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
-                  selectedTimeSlots.length > 0
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${selectedTimeSlots.length > 0
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
               >
                 {selectedTimeSlots.length > 0 ? '✨ Reservar ahora' : '⏰ Selecciona horario(s)'}
               </button>

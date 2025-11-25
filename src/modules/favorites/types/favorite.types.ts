@@ -1,6 +1,6 @@
 export interface FavoriteFoto {
   idFoto?: number;
-  urlFoto: string; // backend principal field
+  url: string;
   descripcion?: string | null;
   creadoEn?: string;
 }
@@ -8,29 +8,25 @@ export interface FavoriteFoto {
 export interface FavoriteCancha {
   idCancha: number;
   nombre: string;
-  superficie?: string;
-  precio?: number;
-  cubierta?: boolean;
-  iluminacion?: string;
-  aforoMax?: number;
-  fotos?: FavoriteFoto[]; // backend returns {urlFoto}
-  rating?: number;
-  numReviews?: number;
-  parte?: Array<{
-    idParte?: number;
-    idDisciplina?: number;
-    disciplina?: { idDisciplina: number; nombre: string };
-  }>;
+}
+
+export interface FavoriteSede {
+  idSede: number;
+  nombre: string;
+  descripcion?: string;
+  ratingFinal?: number;
+  fotos?: FavoriteFoto[];
+  canchas?: FavoriteCancha[];
 }
 
 export interface FavoriteRecord {
-  idCancha: number;
+  idSede: number;
   idCliente: number;
   creadoEn: string;
   notificacionesActivas: boolean;
-  etiquetas?: string[];
+  etiquetas?: string[] | null;
   notas?: string | null;
-  cancha?: FavoriteCancha; // cuando el backend la incluya en el find
+  sede?: FavoriteSede; // cuando el backend la incluya en el find
 }
 
 export interface FavoritesResponse {

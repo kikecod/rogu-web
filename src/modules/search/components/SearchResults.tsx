@@ -3,6 +3,9 @@ import { Star, MapPin, Clock, Users, Calendar, CheckCircle, XCircle } from 'luci
 import { useAvailability } from '../hooks';
 import type { Cancha, SearchResponse } from '../types';
 
+
+
+
 interface SearchResultsProps {
   searchResponse: SearchResponse | null;
   loading?: boolean;
@@ -183,7 +186,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {results.map((cancha) => {
           const isCheckingThisCancha = checkingAvailability.has(cancha.idCancha);
-          
+
           return (
             <div
               key={cancha.idCancha}
@@ -202,19 +205,22 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     <MapPin className="w-12 h-12 text-gray-400" />
                   </div>
                 )}
-                
+
                 {/* BADGE DE DISPONIBILIDAD */}
                 {cancha.disponible !== undefined && (
                   <div className={`
                     absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium
-                    ${cancha.disponible 
-                      ? 'bg-green-100 text-green-800' 
+                    ${cancha.disponible
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                     }
                   `}>
                     {cancha.disponible ? 'Disponible' : 'Ocupada'}
                   </div>
                 )}
+
+
+
               </div>
 
               {/* CONTENIDO */}
@@ -284,7 +290,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     {formatPrice(cancha.precio)}
                     <span className="text-sm font-normal text-gray-600">/hora</span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     {/* BOTÓN DE DISPONIBILIDAD RÁPIDA */}
                     <button
@@ -325,7 +331,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 {availability.availability && (
                   <div className={`
                     mt-2 p-2 rounded-md text-xs
-                    ${availability.isAvailable 
+                    ${availability.isAvailable
                       ? 'bg-green-50 text-green-700 border border-green-200'
                       : 'bg-red-50 text-red-700 border border-red-200'
                     }
@@ -337,7 +343,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                         <XCircle className="w-4 h-4 mr-1" />
                       )}
                       <span>
-                        {availability.isAvailable 
+                        {availability.isAvailable
                           ? 'Disponible para las próximas 2 horas'
                           : 'No disponible en el horario consultado'
                         }
@@ -357,7 +363,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           <div className="text-sm text-gray-600">
             Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} resultados
           </div>
-          
+
           {pagination.hasNext && onLoadMore && (
             <button
               onClick={onLoadMore}

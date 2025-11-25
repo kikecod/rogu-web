@@ -5,13 +5,13 @@ import { useFavoriteToggle } from '../hooks/useFavoriteToggle';
 type Size = 'sm' | 'md' | 'lg';
 
 interface Props {
-  idCancha: number;
+  idSede: number;
   size?: Size;
   className?: string;
 }
 
-const FavoriteButton: React.FC<Props> = ({ idCancha, size = 'md', className = '' }) => {
-  const { isFavorite, loading, toggle } = useFavoriteToggle(idCancha);
+const FavoriteButton: React.FC<Props> = ({ idSede, size = 'md', className = '' }) => {
+  const { isFavorite, loading, toggle } = useFavoriteToggle(idSede);
   const prev = useRef<boolean>(isFavorite);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 

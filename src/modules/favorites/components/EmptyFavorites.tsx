@@ -40,9 +40,10 @@ const EmptyFavorites: React.FC = () => {
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-gray-600 text-center">
-            Guarda tus canchas favoritas para acceder rápidamente a ellas y
+            Guarda tus sedes deportivas favoritas para acceder rápidamente a ellas y
             recibir promociones personalizadas y disponibilidad prioritaria.
           </p>
+
 
           <div className="mt-6 flex justify-center">
             <button

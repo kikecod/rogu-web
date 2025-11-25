@@ -1,5 +1,5 @@
 // Helpers para manejar favoritos locales (usuario no autenticado)
-const KEY = 'rogu_local_favorites_v1';
+const KEY = 'rogu_local_favorites_sedes_v1';
 
 export function getLocalFavorites(): number[] {
   try {
@@ -14,15 +14,15 @@ export function setLocalFavorites(ids: number[]) {
   localStorage.setItem(KEY, JSON.stringify(ids));
 }
 
-export function toggleLocalFavorite(idCancha: number): boolean {
+export function toggleLocalFavorite(idSede: number): boolean {
   const list = getLocalFavorites();
-  const exists = list.includes(idCancha);
-  const next = exists ? list.filter(id => id !== idCancha) : [...list, idCancha];
+  const exists = list.includes(idSede);
+  const next = exists ? list.filter(id => id !== idSede) : [...list, idSede];
   setLocalFavorites(next);
   return !exists;
 }
 
-export async function syncLocalFavorites(addFn: (idCancha: number) => Promise<any>) {
+export async function syncLocalFavorites(addFn: (idSede: number) => Promise<any>) {
   const list = getLocalFavorites();
   if (!list.length) return;
   for (const id of list) {
@@ -30,3 +30,4 @@ export async function syncLocalFavorites(addFn: (idCancha: number) => Promise<an
   }
   localStorage.removeItem(KEY);
 }
+

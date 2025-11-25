@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  MapPin, Phone, Mail, Star, ChevronLeft, Shield, 
+import {
+  MapPin, Phone, Mail, Star, ChevronLeft, Shield,
   Clock, Users, Building2, AlertCircle, Loader2
 } from 'lucide-react';
 import Footer from '@/components/Footer';
@@ -9,11 +9,13 @@ import MapView from '@/components/MapView';
 import { venueService } from '../services/venueService';
 import type { SedeDetalle, CanchaResumen, CalificacionSede } from '../types/venue-search.types';
 import { ROUTES } from '@/config/routes';
+import FavoriteButton from '@/favorites/components/FavoriteButton';
+
 
 const VenueDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { idSede } = useParams<{ idSede: string }>();
-  
+
   const [venue, setVenue] = useState<SedeDetalle | null>(null);
   const [fields, setFields] = useState<CanchaResumen[]>([]);
   const [reviews, setReviews] = useState<CalificacionSede[]>([]);
@@ -21,8 +23,8 @@ const VenueDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-      window.scrollTo(0, 0);
-    }, []);
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const loadVenueData = async () => {
@@ -34,7 +36,7 @@ const VenueDetailPage: React.FC = () => {
 
       try {
         setLoading(true);
-        
+
         // Cargar datos en paralelo
         const [venueResponse, fieldsResponse, reviewsResponse] = await Promise.all([
           venueService.getVenueById(Number(idSede)),
@@ -113,7 +115,7 @@ const VenueDetailPage: React.FC = () => {
               alt={venue.nombre}
               className="w-full h-full object-cover"
             />
-            
+
             {/* Sede Badge y Verificación */}
             <div className="absolute top-4 left-4 flex gap-2">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg flex items-center gap-2">
@@ -135,10 +137,14 @@ const VenueDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-5">
             {/* Title and Rating */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">
-                {venue.nombre}
-              </h1>
-              
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                  {venue.nombre}
+                </h1>
+                <FavoriteButton idSede={venue.idSede} size="md" />
+              </div>
+
+
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <div className="flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full">
                   <Star className="h-4 w-4 fill-blue-600 text-blue-600" />
@@ -149,7 +155,7 @@ const VenueDetailPage: React.FC = () => {
                     ({venue.estadisticas.totalResenasSede + venue.estadisticas.totalResenasCanchas} reseñas)
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="h-4 w-4 text-blue-600" />
                   <span className="text-xs">
@@ -268,7 +274,7 @@ const VenueDetailPage: React.FC = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 Ubicación
               </h2>
-              
+
               {/* Mapa */}
               {venue.latitude && venue.longitude ? (
                 <div className="mb-4">
@@ -289,7 +295,7 @@ const VenueDetailPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Información de dirección */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start gap-3">

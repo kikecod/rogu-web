@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, MapPin, Building, Phone, Mail, AlertCircle, Image } from 'lucide-react';
 import type { ApiSede } from '../types/venue.types';
 import SedeFormWizard from './SedeFormWizard';
+import { SedePhotoManagement } from '@/admin-panel/sedes/components';
 
 interface Sede extends Partial<ApiSede> {
   idSede: number;
@@ -31,6 +32,8 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingSede, setEditingSede] = useState<Sede | null>(null);
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [selectedSedeForPhotos, setSelectedSedeForPhotos] = useState<Sede | null>(null);
 
   const loadSedes = async () => {
     try {
@@ -87,6 +90,11 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
     setShowForm(false);
     setEditingSede(null);
     loadSedes();
+  };
+
+  const handleManagePhotos = (sede: Sede) => {
+    setSelectedSedeForPhotos(sede);
+    setPhotoManagementOpen(true);
   };
 
   if (loading) {
@@ -211,11 +219,10 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
 
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    sede.estado === 'Activo' 
-                      ? 'bg-green-100 text-green-800' 
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sede.estado === 'Activo'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
-                  }`}>
+                    }`}>
                     {sede.estado}
                   </span>
                   <span className="text-sm text-gray-500">
@@ -228,10 +235,29 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                 >
                   Gestionar Canchas
                 </button>
+                <button
+                  onClick={() => handleManagePhotos(sede)}
+                  className="w-full mt-2 bg-purple-50 text-purple-600 hover:bg-purple-100 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Gestionar Fotos
+                </button>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Modal de gestión de fotos */}
+      {selectedSedeForPhotos && (
+        <SedePhotoManagement
+          sede={{ idSede: selectedSedeForPhotos.idSede, nombre: selectedSedeForPhotos.nombre }}
+          isOpen={photoManagementOpen}
+          onClose={() => {
+            setPhotoManagementOpen(false);
+            setSelectedSedeForPhotos(null);
+          }}
+        />
       )}
     </div>
   );

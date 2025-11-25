@@ -2,6 +2,8 @@ import React from 'react';
 import { MapPin, Star, Building2, CheckCircle } from 'lucide-react';
 import { getImageUrl } from '@/core/config/api';
 import type { SedeCard as SedeCardType } from '../types/venue-search.types';
+import FavoriteButton from '@/favorites/components/FavoriteButton';
+
 
 interface Props {
   sede: SedeCardType;
@@ -9,20 +11,20 @@ interface Props {
 }
 
 const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
-  const { 
-    nombre, 
-    city, 
+  const {
+    nombre,
+    city,
     stateProvince,
     fotoPrincipal,
     fotos,
     estadisticas,
-    verificada 
+    verificada
   } = sede;
 
   // Usar la foto principal o la primera foto disponible
   // Procesar la URL de la imagen para manejar rutas relativas del backend
   const imagenPath = fotoPrincipal || fotos?.[0]?.urlFoto;
-  const imagenPrincipal = imagenPath 
+  const imagenPrincipal = imagenPath
     ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
     : '/placeholder-venue.jpg';
 
@@ -41,7 +43,7 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
             (e.target as HTMLImageElement).src = '/placeholder-venue.jpg';
           }}
         />
-        
+
         {/* Badge de verificación */}
         {verificada && (
           <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-lg">
@@ -50,11 +52,17 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
           </div>
         )}
 
+        {/* Botón de favorito */}
+        <div className="absolute top-3 left-3" onClick={(e) => e.stopPropagation()}>
+          <FavoriteButton idSede={sede.idSede} size="md" className="bg-white/80 backdrop-blur hover:bg-white shadow-lg" />
+        </div>
+
         {/* Número de canchas */}
         <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-900 shadow-md flex items-center gap-1">
           <Building2 className="h-4 w-4 text-blue-600" />
           {estadisticas.totalCanchas} {estadisticas.totalCanchas === 1 ? 'cancha' : 'canchas'}
         </div>
+
       </div>
 
       {/* Contenido */}
@@ -107,7 +115,7 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
             <span className="text-s text-black-500">Bs</span>
             <span className="text-sm font-medium">
               {estadisticas.precioDesde}
-              {estadisticas.precioDesde !== estadisticas.precioHasta && 
+              {estadisticas.precioDesde !== estadisticas.precioHasta &&
                 `${estadisticas.precioHasta}`
               }
             </span>
