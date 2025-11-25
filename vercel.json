@@ -5,6 +5,10 @@
       "destination": "http://3.239.94.188/api/:path*"
     },
     {
+      "source": "/uploads/:path*",
+      "destination": "http://3.239.94.188/uploads/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

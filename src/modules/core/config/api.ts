@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
-  serverURL: import.meta.env.VITE_SERVER_URL || 'http://localhost:3000', // URL del servidor sin /api
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  serverURL: import.meta.env.VITE_SERVER_URL, // URL del servidor sin /api
   endpoints: {
     canchas: '/cancha',
     sedes: '/sede',
