@@ -60,13 +60,13 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
       const foundDept = departments.find(dept => dept.name === initialData.stateProvince);
       if (foundDept) {
         setSelectedDepartment(foundDept.id);
-        
+
         if (initialData.city) {
           const cities = getCitiesByDepartment(foundDept.id);
           const foundCity = cities.find(city => city.name === initialData.city);
           if (foundCity) {
             setSelectedCity(foundCity.id);
-            
+
             if (initialData.district) {
               const districts = getDistrictsByCity(foundCity.id);
               const foundDistrict = districts.find(district => district.name === initialData.district);
@@ -85,7 +85,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
     if (isEditing && initialData?.idSede) {
       try {
         const response = await fetch(
-          `http://localhost:3000/api/sede/${initialData.idSede}/licencia`,
+          `${import.meta.env.VITE_API_BASE_URL}/sede/${initialData.idSede}/licencia`,
           {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -120,7 +120,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
     setSelectedDepartment(departmentId);
     setSelectedCity('');
     setSelectedDistrict('');
-    
+
     const departmentData = getDepartments().find(dep => dep.id === departmentId);
     if (departmentData) {
       const addressData = getFullAddress(departmentId, '', '');
@@ -136,7 +136,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
   const handleCityChange = (cityId: string) => {
     setSelectedCity(cityId);
     setSelectedDistrict('');
-    
+
     if (selectedDepartment && cityId) {
       const addressData = getFullAddress(selectedDepartment, cityId, '');
       setFormData(prev => ({
@@ -149,7 +149,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
 
   const handleDistrictChange = (districtId: string) => {
     setSelectedDistrict(districtId);
-    
+
     if (selectedDepartment && selectedCity && districtId) {
       const addressData = getFullAddress(selectedDepartment, selectedCity, districtId);
       setFormData(prev => ({
@@ -163,7 +163,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setLicenseFile(file);
-      
+
       // Crear preview URL
       const url = URL.createObjectURL(file);
       setLicensePreview(url);
@@ -222,18 +222,18 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
     try {
       const sanitizedData = {
         ...formData,
-        ...(formData.latitude !== null && !isNaN(Number(formData.latitude)) 
-          ? { latitude: Number(formData.latitude) } 
+        ...(formData.latitude !== null && !isNaN(Number(formData.latitude))
+          ? { latitude: Number(formData.latitude) }
           : {}),
-        ...(formData.longitude !== null && !isNaN(Number(formData.longitude)) 
-          ? { longitude: Number(formData.longitude) } 
+        ...(formData.longitude !== null && !isNaN(Number(formData.longitude))
+          ? { longitude: Number(formData.longitude) }
           : {}),
       };
 
       const url = isEditing && initialData?.idSede
-        ? `http://localhost:3000/api/sede/${initialData.idSede}`
-        : 'http://localhost:3000/api/sede';
-      
+        ? `${import.meta.env.VITE_API_BASE_URL}/sede/${initialData.idSede}`
+        : `${import.meta.env.VITE_API_BASE_URL}/sede`;
+
       const method = isEditing ? 'PATCH' : 'POST';
       const payload = isEditing ? sanitizedData : { ...sanitizedData, idPersonaD };
 
@@ -272,7 +272,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
       formDataUpload.append('licencia', licenseFile);
 
       const response = await fetch(
-        `http://localhost:3000/api/sede/${createdSedeId}/licencia`,
+        `${import.meta.env.VITE_API_BASE_URL}/sede/${createdSedeId}/licencia`,
         {
           method: 'POST',
           headers: {
@@ -291,7 +291,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
       // Si se cambió la licencia en modo edición, actualizar verificada a false
       if (isEditing && wantToChangeLicense) {
         await fetch(
-          `http://localhost:3000/api/sede/${createdSedeId}`,
+          `${import.meta.env.VITE_API_BASE_URL}/sede/${createdSedeId}`,
           {
             method: 'PATCH',
             headers: {
@@ -339,14 +339,14 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Progress Steps */}
           <div className="flex items-center justify-between mb-8">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.number;
               const isCompleted = currentStep > step.number;
-              
+
               return (
                 <React.Fragment key={step.number}>
                   <div className="flex flex-col items-center flex-1">
@@ -366,9 +366,8 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
                     </span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`h-1 flex-1 mx-2 rounded ${
-                      currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div className={`h-1 flex-1 mx-2 rounded ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'
+                      }`} />
                   )}
                 </React.Fragment>
               );
@@ -382,7 +381,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
           {currentStep === 1 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -483,7 +482,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
                 <MapPin className="h-5 w-5 mr-2" />
                 Ubicación Geográfica
               </h3>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-blue-800">
                   Esta información será utilizada para mostrar tu sede en el mapa y permitir que los usuarios te encuentren.
@@ -630,14 +629,14 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
           {currentStep === 3 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Documentación Legal</h3>
-              
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-yellow-800">Documento Requerido</p>
                     <p className="text-sm text-yellow-700 mt-1">
-                      {isEditing 
+                      {isEditing
                         ? 'Puedes cambiar tu Licencia de Funcionamiento. Al hacerlo, deberás esperar una nueva verificación.'
                         : 'Debes subir tu Licencia de Funcionamiento en formato PDF. Este documento será verificado por nuestro equipo.'}
                     </p>
@@ -778,31 +777,30 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
           {/* Paso 4: Verificación */}
           {currentStep === 4 && (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${
-                isEditing && !wantToChangeLicense ? 'bg-green-100' : 'bg-yellow-100'
-              }`}>
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${isEditing && !wantToChangeLicense ? 'bg-green-100' : 'bg-yellow-100'
+                }`}>
                 {isEditing && !wantToChangeLicense ? (
                   <Check className="w-12 h-12 text-green-600" />
                 ) : (
                   <AlertCircle className="w-12 h-12 text-yellow-600" />
                 )}
               </div>
-              
+
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {isEditing 
+                {isEditing
                   ? (wantToChangeLicense ? '¡Sede Actualizada - Requiere Verificación!' : '¡Sede Actualizada Exitosamente!')
                   : '¡Sede Creada Exitosamente!'}
               </h3>
-              
+
               <div className="max-w-2xl text-center space-y-4 mb-8">
                 <p className="text-gray-600">
-                  {isEditing 
-                    ? (wantToChangeLicense 
+                  {isEditing
+                    ? (wantToChangeLicense
                       ? 'Tu sede ha sido actualizada y la nueva licencia ha sido enviada para verificación.'
                       : 'Los cambios en tu sede han sido guardados correctamente.')
                     : 'Tu sede ha sido creada y la documentación ha sido enviada para verificación.'}
                 </p>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-left">
                   <h4 className="font-semibold text-blue-900 mb-3">¿Qué sigue?</h4>
                   <ul className="space-y-2 text-sm text-blue-800">
@@ -852,7 +850,7 @@ const SedeFormWizard: React.FC<SedeFormWizardProps> = ({
                 {(wantToChangeLicense || !isEditing) && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      <strong>Tiempo estimado de verificación:</strong> 24-48 horas hábiles<br/>
+                      <strong>Tiempo estimado de verificación:</strong> 24-48 horas hábiles<br />
                       <strong className="text-red-600">Importante:</strong> Tu sede no será visible al público hasta completar la verificación.
                     </p>
                   </div>

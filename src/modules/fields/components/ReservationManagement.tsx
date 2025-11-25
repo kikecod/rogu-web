@@ -61,7 +61,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
   // Cargar reservas de la cancha
   const loadReservas = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/reservas/cancha/${cancha.idCancha}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reservas/cancha/${cancha.idCancha}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -70,27 +70,27 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
       if (response.ok) {
         const reservasData = await response.json();
         console.log('Estructura completa de reservasData:', JSON.stringify(reservasData, null, 2));
-        
+
         // Para cada reserva, intentar cargar los datos del usuario y persona
         const reservasConUsuario = await Promise.all(
           reservasData.map(async (reserva: ApiReservaCancha) => {
             console.log('Reserva individual:', JSON.stringify(reserva, null, 2));
-            
+
             // Buscar el idCliente o idUsuario en la reserva
             const clienteId = reserva.idCliente || reserva.idUsuario;
-            
+
             if (!clienteId) {
               console.warn('Reserva sin idCliente/idUsuario:', reserva);
               return reserva;
             }
-            
+
             try {
-              const usuarioResponse = await fetch(`http://localhost:3000/api/usuarios/persona/${clienteId}`, {
+              const usuarioResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuarios/persona/${clienteId}`, {
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
               });
-              
+
               console.log('Usuario response status:', usuarioResponse.status);
               console.log('Reserva being processed:', reserva);
               console.log('Cliente ID usado:', clienteId)
@@ -104,7 +104,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
             }
           })
         );
-        
+
         setReservas(reservasConUsuario);
         filtrarReservasPorFecha(reservasConUsuario, fechaFiltro);
       } else {
@@ -198,7 +198,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
     const diffMs = finDate.getTime() - inicioDate.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (diffHours > 0) {
       return `${diffHours}h ${diffMinutes > 0 ? diffMinutes + 'm' : ''}`;
     }
@@ -249,11 +249,11 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
               Reservas de {cancha.nombre}
             </h2>
             <p className="text-gray-600">
-              {fechaFiltro 
+              {fechaFiltro
                 ? `Reservas del ${(() => {
-                    const [year, month, day] = fechaFiltro.split('-');
-                    return `${day}/${month}/${year}`;
-                  })()}`
+                  const [year, month, day] = fechaFiltro.split('-');
+                  return `${day}/${month}/${year}`;
+                })()}`
                 : 'Todas las reservas'
               }
             </p>
@@ -290,7 +290,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
           <Calendar className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No hay reservas</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {fechaFiltro 
+            {fechaFiltro
               ? 'No hay reservas para la fecha seleccionada.'
               : 'Esta cancha no tiene reservas registradas.'
             }
@@ -302,7 +302,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
             // Combinar fecha y hora para los formatos esperados
             const iniciaEn = combinarFechaHora(reserva.fecha, reserva.horaInicio);
             const terminaEn = combinarFechaHora(reserva.fecha, reserva.horaFin);
-            
+
             const inicioFormat = formatDateTime(iniciaEn);
             const finFormat = formatDateTime(terminaEn);
             const duracion = calcularDuracion(iniciaEn, terminaEn);
@@ -323,14 +323,14 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                         Reserva #{reserva.idReserva}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {reserva.usuario?.persona 
+                        {reserva.usuario?.persona
                           ? `${reserva.usuario.persona.nombres} ${reserva.usuario.persona.paterno} ${reserva.usuario.persona.materno}`
                           : `Cliente ID: ${reserva.idCliente || reserva.idUsuario || 'No disponible'}`
                         }
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoInfo.color}`}>
                       {estadoInfo.estado}
@@ -437,7 +437,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Nombre Completo</label>
                     <p className="text-sm text-gray-900">
-                      {selectedReserva.usuario?.persona 
+                      {selectedReserva.usuario?.persona
                         ? `${selectedReserva.usuario.persona.nombres} ${selectedReserva.usuario.persona.paterno} ${selectedReserva.usuario.persona.materno}`
                         : `Cliente ID: ${selectedReserva.idCliente}`
                       }
@@ -445,7 +445,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                   </div>
                   {selectedReserva.usuario?.persona && (
                     <>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-500">Teléfono</label>
                         <p className="text-sm text-gray-900">{selectedReserva.usuario.persona.telefono || 'No disponible'}</p>
@@ -628,7 +628,7 @@ const ReservaManagement: React.FC<ReservaManagementProps> = ({ cancha, onBack })
                   Mañana
                 </button>
               </div>
-              
+
               <div>
                 <button
                   onClick={() => setShowFiltroModal(false)}

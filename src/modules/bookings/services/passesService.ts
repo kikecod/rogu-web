@@ -1,6 +1,6 @@
 import { getAuthToken } from '@/core/config/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
 
 export interface PaseAcceso {
   idPaseAcceso: number;
@@ -25,30 +25,30 @@ export interface PaseAcceso {
 export const getPassByReserva = async (idReserva: number): Promise<PaseAcceso> => {
   console.log('🔍 [passesService] Fetching pass for reserva:', idReserva);
   console.log('🌐 [passesService] API Base URL:', API_BASE_URL);
-  
+
   try {
     const url = `${API_BASE_URL}/api/pases-acceso/reserva/${idReserva}`;
     console.log('📍 [passesService] Full URL:', url);
-    
+
     // Obtener token de autenticación
     const token = getAuthToken();
     console.log('🔑 [passesService] Token present:', !!token);
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers,
     });
-    
+
     console.log('📡 [passesService] Response status:', response.status);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ [passesService] Error response:', {
@@ -58,7 +58,7 @@ export const getPassByReserva = async (idReserva: number): Promise<PaseAcceso> =
       });
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     console.log('✅ [passesService] Pass fetched successfully:', data);
     return data;
@@ -73,21 +73,21 @@ export const getPassByReserva = async (idReserva: number): Promise<PaseAcceso> =
  */
 export const getQRImageUrl = async (idPaseAcceso: number): Promise<string> => {
   console.log('🎨 [passesService] Fetching QR image for:', idPaseAcceso);
-  
+
   try {
     const url = `${API_BASE_URL}/api/pases-acceso/${idPaseAcceso}/qr`;
     console.log('📍 [passesService] QR Image URL:', url);
-    
+
     // Obtener token de autenticación
     const token = getAuthToken();
-    
+
     const headers: HeadersInit = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(url, { headers });
-    
+
     if (!response.ok) {
       console.error('❌ [passesService] Failed to fetch QR image:', {
         status: response.status,
@@ -95,7 +95,7 @@ export const getQRImageUrl = async (idPaseAcceso: number): Promise<string> => {
       });
       throw new Error(`Error al cargar QR: ${response.statusText}`);
     }
-    
+
     // Convertir a blob y luego a Data URL
     const blob = await response.blob();
     const dataUrl = await new Promise<string>((resolve) => {
@@ -103,7 +103,7 @@ export const getQRImageUrl = async (idPaseAcceso: number): Promise<string> => {
       reader.onloadend = () => resolve(reader.result as string);
       reader.readAsDataURL(blob);
     });
-    
+
     console.log('✅ [passesService] QR image loaded as Data URL');
     return dataUrl;
   } catch (error) {
@@ -120,23 +120,23 @@ export const downloadQR = async (idPaseAcceso: number, codigoAcceso: string): Pr
     idPaseAcceso,
     codigoAcceso
   });
-  
+
   try {
     const url = `${API_BASE_URL}/api/pases-acceso/${idPaseAcceso}/qr?styled=true`;
     console.log('🔗 [passesService] Download URL:', url);
-    
+
     // Obtener token de autenticación
     const token = getAuthToken();
-    
+
     const headers: HeadersInit = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(url, {
       headers
     });
-    
+
     if (!response.ok) {
       console.error('❌ [passesService] Download failed:', {
         status: response.status,
@@ -144,13 +144,13 @@ export const downloadQR = async (idPaseAcceso: number, codigoAcceso: string): Pr
       });
       throw new Error(`Error al descargar QR: ${response.statusText}`);
     }
-    
+
     const blob = await response.blob();
     console.log('📦 [passesService] Blob received:', {
       size: blob.size,
       type: blob.type
     });
-    
+
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
@@ -159,7 +159,7 @@ export const downloadQR = async (idPaseAcceso: number, codigoAcceso: string): Pr
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
-    
+
     console.log('✅ [passesService] QR downloaded successfully');
   } catch (error) {
     console.error('❌ [passesService] Error downloading QR:', error);
@@ -176,7 +176,7 @@ export const shareQR = async (codigoAcceso: string, fieldName: string): Promise<
     fieldName,
     shareSupported: !!navigator.share
   });
-  
+
   if (navigator.share) {
     try {
       await navigator.share({

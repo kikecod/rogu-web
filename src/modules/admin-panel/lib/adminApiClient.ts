@@ -6,7 +6,7 @@ import { getAuthToken } from '@/core/config/api';
 // CONFIGURACIÓN BASE API ADMIN
 // ==========================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 class AdminApiClient {
   private client: AxiosInstance;
@@ -43,12 +43,12 @@ class AdminApiClient {
           localStorage.removeItem('user');
           window.location.href = '/login';
         }
-        
+
         if (error.response?.status === 403) {
           // No tiene permisos de admin
           console.error('Acceso denegado: Se requieren permisos de administrador');
         }
-        
+
         return Promise.reject(error);
       }
     );

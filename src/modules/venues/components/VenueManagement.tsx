@@ -37,7 +37,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
 
   const loadSedes = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sede/duenio/${idPersonaD}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/duenio/${idPersonaD}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -63,7 +63,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
     if (!confirm('¿Estás seguro de que quieres eliminar esta sede?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/sede/${idSede}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/${idSede}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -220,8 +220,8 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sede.estado === 'Activo'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
                     }`}>
                     {sede.estado}
                   </span>

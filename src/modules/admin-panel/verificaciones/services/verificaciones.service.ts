@@ -26,28 +26,28 @@ export const verificacionesService = {
   getPendientes: async (): Promise<RespuestaVerificaciones> => {
     const response = await apiClient.get<any>('/sede?verificada=false');
     const data = response.data;
-    
+
     console.log('Datos recibidos de /sede?verificada=false:', data);
-    
+
     let sedesRaw = Array.isArray(data) ? data : (data.sedes || []);
-    
+
     // Filtrar solo las que realmente tienen verificada=false
     sedesRaw = sedesRaw.filter((sede: any) => sede.verificada === false);
-    
+
     console.log('Sedes después de filtrar verificada=false:', sedesRaw);
-    
+
     // Mapear datos de la API al formato esperado
     const sedesMapeadas: SedeVerificacion[] = sedesRaw.map((sede: any) => {
       console.log('Sede individual completa:', sede);
       console.log('Objeto duenio:', sede.duenio);
-      
+
       return {
         idSede: sede.idSede,
         nombre: sede.nombre,
         direccion: sede.direccion || sede.Direccion || 'Sin dirección',
         ciudad: sede.ciudad || sede.city || sede.Ciudad || 'Sin ciudad',
         licenciaFuncionamiento: sede.LicenciaFuncionamiento || sede.licenciaFuncionamiento || null,
-        nombreDuenio: sede.duenio 
+        nombreDuenio: sede.duenio
           ? `${sede.duenio.persona?.nombre || ''} ${sede.duenio.persona?.apellidoPaterno || ''}`.trim() || sede.duenio.usuario
           : 'Sin dueño',
         emailDuenio: sede.duenio?.correo || sede.email || 'Sin email',
@@ -56,9 +56,9 @@ export const verificacionesService = {
         verificada: sede.verificada || false,
       };
     });
-    
+
     console.log('Sedes mapeadas:', sedesMapeadas);
-    
+
     return {
       sedes: sedesMapeadas,
       total: sedesMapeadas.length,
@@ -69,7 +69,7 @@ export const verificacionesService = {
    * Verifica una sede
    */
   verificarSede: async (id: number): Promise<{ mensaje: string }> => {
-    const response = await fetch(`http://localhost:3000/api/sede/${id}/verificar`, {
+    const response = await fetch(`${API_CONFIG.baseURL}/sede/${id}/verificar`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -79,11 +79,11 @@ export const verificacionesService = {
         verificada: true
       })
     });
-    
+
     if (!response.ok) {
       throw new Error('Error al verificar la sede');
     }
-    
+
     return response.json();
   },
 

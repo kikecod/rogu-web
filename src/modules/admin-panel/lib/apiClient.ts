@@ -5,7 +5,7 @@ import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 // CONFIGURACIÓN BASE API GENERAL
 // ==========================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 class ApiClient {
   private client: AxiosInstance;
@@ -41,11 +41,11 @@ class ApiClient {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
-        
+
         if (error.response?.status === 403) {
           console.error('❌ Acceso denegado: No tienes permisos para esta acción');
         }
-        
+
         return Promise.reject(error);
       }
     );
