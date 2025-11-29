@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Star, MapPin, Share2, ChevronLeft, ChevronRight,
-  Clock, Calendar, Shield, Sparkles, Check, X,
+  Calendar, Shield, Sparkles, Check, X,
   MessageCircle, Phone, Plus, Minus,
   AlertCircle, Loader2
 } from 'lucide-react';
