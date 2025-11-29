@@ -24,6 +24,9 @@ const ProfileDangerZone: React.FC = () => {
     setDeleteConfirmation('');
   };
 
+  const errorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : typeof error === 'string' ? error : fallback;
+
   const handleExportData = async () => {
     setFeedback(null);
     try {
@@ -39,10 +42,10 @@ const ProfileDangerZone: React.FC = () => {
 
       setFeedback({
         type: 'success',
-        message: 'Se generó la exportación de tus datos. Revisa tu carpeta de descargas.',
+        message: 'Se genero la exportacion de tus datos. Revisa tu carpeta de descargas.',
       });
-    } catch (error: any) {
-      setFeedback({ type: 'error', message: error?.message ?? 'No se pudo exportar la información.' });
+    } catch (error: unknown) {
+      setFeedback({ type: 'error', message: errorMessage(error, 'No se pudo exportar la informacion.') });
     } finally {
       setExporting(false);
     }
@@ -51,7 +54,7 @@ const ProfileDangerZone: React.FC = () => {
   const handleDeactivate = async () => {
     setFeedback(null);
     const confirm = window.confirm(
-      '¿Seguro que deseas desactivar temporalmente tu cuenta? Podrás reactivarla iniciando sesión nuevamente.',
+      'Seguro que deseas desactivar temporalmente tu cuenta? Podras reactivarla iniciando sesion nuevamente.',
     );
     if (!confirm) return;
 
@@ -60,12 +63,12 @@ const ProfileDangerZone: React.FC = () => {
       await profileService.deactivateAccount({});
       setFeedback({
         type: 'success',
-        message: 'Tu cuenta ha sido desactivada. Te cerraremos la sesión por seguridad.',
+        message: 'Tu cuenta ha sido desactivada. Cerraremos la sesion por seguridad.',
       });
       await logout();
       window.location.href = '/';
-    } catch (error: any) {
-      setFeedback({ type: 'error', message: error?.message ?? 'No se pudo desactivar la cuenta.' });
+    } catch (error: unknown) {
+      setFeedback({ type: 'error', message: errorMessage(error, 'No se pudo desactivar la cuenta.') });
     } finally {
       setDeactivating(false);
     }
@@ -76,11 +79,11 @@ const ProfileDangerZone: React.FC = () => {
     setFeedback(null);
 
     if (!deletePassword || deleteConfirmation.trim().toUpperCase() !== 'ELIMINAR') {
-      setFeedback({ type: 'error', message: 'Debes ingresar tu contraseña y escribir la palabra ELIMINAR.' });
+      setFeedback({ type: 'error', message: 'Debes ingresar tu contrasena y escribir la palabra ELIMINAR.' });
       return;
     }
 
-    const confirm = window.confirm('Esta acción es permanente. ¿Deseas continuar?');
+    const confirm = window.confirm('Esta accion es permanente. Deseas continuar?');
     if (!confirm) return;
 
     try {
@@ -92,8 +95,8 @@ const ProfileDangerZone: React.FC = () => {
       setFeedback({ type: 'success', message: 'Tu cuenta ha sido eliminada permanentemente.' });
       await logout();
       window.location.href = '/';
-    } catch (error: any) {
-      setFeedback({ type: 'error', message: error?.message ?? 'No se pudo eliminar la cuenta.' });
+    } catch (error: unknown) {
+      setFeedback({ type: 'error', message: errorMessage(error, 'No se pudo eliminar la cuenta.') });
     } finally {
       setDeleting(false);
       resetDeleteForm();
@@ -101,115 +104,106 @@ const ProfileDangerZone: React.FC = () => {
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-red-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition space-y-4">
-      {/* Header */}
-      <header className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-600" />
-          <h2 className="text-base sm:text-lg font-semibold text-red-700">Zona de peligro</h2>
-        </div>
-        <p className="text-sm text-red-600/80">
-          Acciones permanentes que impactan tu cuenta y datos.
-        </p>
-      </header>
-
-      {/* Feedback */}
-      {feedback && (
-        <div
-          className={`inline-flex items-start gap-2 px-3 py-2 rounded-lg border text-sm ${
-            feedback.type === 'success'
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-red-50 text-red-700 border-red-200'
-          }`}
-          role={feedback.type === 'success' ? 'status' : 'alert'}
-          aria-live={feedback.type === 'success' ? 'polite' : 'assertive'}
-        >
-          {feedback.type === 'success' ? (
-            <CheckCircle2 className="mt-0.5 h-4 w-4" />
-          ) : (
-            <AlertTriangle className="mt-0.5 h-4 w-4" />
-          )}
-          <span className="break-words">{feedback.message}</span>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="space-y-6">
-        {/* Exportar datos */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-amber-800">Exportar mis datos</h3>
-            <p className="text-xs text-amber-700/80">
-              Descarga un archivo con la información almacenada en tu perfil.
-            </p>
+    <section className="relative overflow-hidden rounded-3xl border border-red-200 bg-white text-slate-900 shadow-lg shadow-red-100">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(248,113,113,0.12),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(139,92,246,0.08),transparent_35%)]" />
+      <div className="relative space-y-6 px-6 py-7 sm:px-8 sm:py-8">
+        <header className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <h2 className="text-xl font-semibold text-slate-900">Zona de peligro</h2>
           </div>
-          <button
-            type="button"
-            onClick={handleExportData}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-300 bg-white text-sm text-amber-800 hover:bg-amber-100 transition disabled:opacity-70"
+          <p className="text-sm text-red-600/80">Acciones criticas sobre tu cuenta y datos.</p>
+        </header>
+
+        {feedback && (
+          <div
+            className={`inline-flex items-start gap-2 rounded-xl border px-3 py-2 text-sm ${
+              feedback.type === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-red-200 bg-red-50 text-red-700'
+            }`}
+            role={feedback.type === 'success' ? 'status' : 'alert'}
+            aria-live={feedback.type === 'success' ? 'polite' : 'assertive'}
           >
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-            Exportar datos
-          </button>
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4" />
+            )}
+            <span className="break-words">{feedback.message}</span>
+          </div>
+        )}
+
+        <div className="space-y-5">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-slate-900">Exportar mis datos</h3>
+              <p className="text-xs text-slate-600">Descarga un archivo con la informacion almacenada en tu perfil.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportData}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-800 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              Exportar datos
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-slate-900">Desactivar cuenta temporalmente</h3>
+              <p className="text-xs text-indigo-900/80">Puedes volver a activarla iniciando sesion nuevamente.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDeactivate}
+              disabled={deactivating}
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 disabled:opacity-60"
+            >
+              {deactivating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Desactivar cuenta
+            </button>
+          </div>
+
+          <form onSubmit={handleDelete} className="rounded-2xl border border-red-200 bg-red-50 p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-red-800">
+                Eliminar cuenta permanentemente
+              </h3>
+              <p className="mt-1 text-xs text-red-700">
+                Esta accion no se puede deshacer. Se perderan tus datos, reservas y preferencias almacenadas.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <input
+                type="password"
+                placeholder="Contrasena actual"
+                value={deletePassword}
+                onChange={(event) => setDeletePassword(event.target.value)}
+                className="w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-red-900 placeholder:text-red-400 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-300/60"
+              />
+              <input
+                type="text"
+                placeholder="Escribe ELIMINAR para confirmar"
+                value={deleteConfirmation}
+                onChange={(event) => setDeleteConfirmation(event.target.value)}
+                className="w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm uppercase text-red-900 placeholder:text-red-400 focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-300/60"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={deleting}
+              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-500 disabled:opacity-60"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Eliminar cuenta
+            </button>
+          </form>
         </div>
-
-        {/* Desactivar cuenta */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-blue-800">Desactivar cuenta temporalmente</h3>
-            <p className="text-xs text-blue-700/80">
-              Puedes volver a activarla iniciando sesión nuevamente.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleDeactivate}
-            disabled={deactivating}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-600/90 active:bg-blue-700 disabled:opacity-70 transition"
-          >
-            {deactivating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Desactivar cuenta
-          </button>
-        </div>
-
-        {/* Eliminar cuenta */}
-        <form onSubmit={handleDelete} className="rounded-xl border border-red-300 bg-red-50 p-4 space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold text-red-800 uppercase tracking-wide">
-              Eliminar cuenta permanentemente
-            </h3>
-            <p className="mt-1 text-xs text-red-700">
-              Esta acción no se puede deshacer. Se perderán tus datos, reservas y preferencias almacenadas.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              type="password"
-              placeholder="Contraseña actual"
-              value={deletePassword}
-              onChange={(event) => setDeletePassword(event.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400 transition"
-            />
-            <input
-              type="text"
-              placeholder="Escribe ELIMINAR para confirmar"
-              value={deleteConfirmation}
-              onChange={(event) => setDeleteConfirmation(event.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400 transition uppercase"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={deleting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium shadow-sm hover:bg-red-600/90 active:bg-red-700 disabled:opacity-70 transition"
-          >
-            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Eliminar cuenta
-          </button>
-        </form>
       </div>
     </section>
   );
