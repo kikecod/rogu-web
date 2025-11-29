@@ -31,7 +31,7 @@ const SportFieldDetailPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [participants, setParticipants] = useState(1);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -70,11 +70,7 @@ const SportFieldDetailPage: React.FC = () => {
   }, [canchaId]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.scrollTo(0, 0);
   }, []);
 
   // Actualizar horarios disponibles cuando cambie la fecha seleccionada
@@ -223,29 +219,26 @@ const SportFieldDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Navbar Flotante */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-4'
-        }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <button
-            onClick={() => navigate(`/venues/${field.id}`)}
-            className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-gray-100 text-gray-900' : 'bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm'
-              }`}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-
-          <div className="flex items-center gap-3">
-            <button className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-gray-100 text-gray-900' : 'bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm'
-              }`}>
-              <Share2 className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Gallery */}
       <div className="relative h-[50vh] min-h-[400px] lg:h-[60vh] bg-gray-900 group">
+        {/* Local Navigation Controls (Absolute) */}
+        <div className="absolute top-4 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => navigate(`/venues/${field.id}`)}
+              className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <button className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm transition-colors">
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         <img
           src={field.images[currentImageIndex]}
           alt={field.name}
@@ -518,7 +511,7 @@ const SportFieldDetailPage: React.FC = () => {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowBookingModal(false)}

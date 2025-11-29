@@ -22,13 +22,8 @@ const VenueDetailPage: React.FC = () => {
   const [reviews, setReviews] = useState<CalificacionSede[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -100,30 +95,27 @@ const VenueDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Navbar Flotante / Transparente */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-4'
-        }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <button
-            onClick={() => navigate(ROUTES.home)}
-            className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-gray-100 text-gray-900' : 'bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm'
-              }`}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-
-          <div className="flex items-center gap-3">
-            <FavoriteButton idSede={venue.idSede} size="md" />
-            <button className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-gray-100 text-gray-900' : 'bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm'
-              }`}>
-              <Share2 className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section Immersivo */}
       <div className="relative h-[60vh] min-h-[400px] w-full overflow-hidden">
+        {/* Local Navigation Controls (Absolute) */}
+        <div className="absolute top-4 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => navigate(ROUTES.home)}
+              className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <FavoriteButton idSede={venue.idSede} size="md" />
+              <button className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm transition-colors">
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="absolute inset-0 bg-gray-900">
           <img
             src={venue.fotos?.[0]?.urlFoto || '/placeholder-venue.jpg'}
