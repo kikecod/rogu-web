@@ -418,7 +418,14 @@ const VenueDetailPage: React.FC = () => {
                 <button
                   onClick={() => {
                     const element = document.querySelector('.lg\\:col-span-8 > div:nth-child(2)');
-                    element?.scrollIntoView({ behavior: 'smooth' });
+                    if (element) {
+                      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                      const offsetPosition = elementPosition - 100; // 80px navbar + 20px padding
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      });
+                    }
                   }}
                   className="w-full bg-white text-blue-600 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg relative z-10"
                 >
