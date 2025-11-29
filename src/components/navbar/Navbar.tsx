@@ -65,11 +65,6 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
               </Link>
             )}
 
-            {/* Language selector - hidden on small screens */}
-            <button className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all">
-              <Globe className="h-5 w-5" />
-            </button>
-
             {/* Login button for guests */}
             {!user && (
               <button
