@@ -119,7 +119,7 @@ const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children })
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-indigo-500/70">
+              <p className="text-[11px] uppercase tracking-[0.32em] text-indigo-900">
                 Perfil de usuario
               </p>
               <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 leading-tight">

@@ -13,6 +13,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
 
   const [email, setEmail] = useState(usuario.correo);
   const [username, setUsername] = useState(usuario.usuario);
+  const [currentPwd, setCurrentPwd] = useState('');
   const [pwd, setPwd] = useState('');
   const [pwd2, setPwd2] = useState('');
 
@@ -60,25 +61,30 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
 
   const onChangePassword = async () => {
     resetAlerts();
+    if (!currentPwd) {
+      setErr('Debes ingresar tu contraseña actual');
+      return;
+    }
     if (!pwd || pwd.length < 8 || pwd.length > 20) {
-      setErr('La contrasena debe tener entre 8 y 20 caracteres');
+      setErr('La contraseña debe tener entre 8 y 20 caracteres');
       return;
     }
     if (pwd !== pwd2) {
-      setErr('Las contrasenas no coinciden');
+      setErr('Las contraseñas no coinciden');
       return;
     }
     try {
       setSavingPwd(true);
-      await profileService.changePasswordSimple({
-        idUsuario: usuario.idUsuario,
+      await profileService.changePassword({
+        contrasenaActual: currentPwd,
         nuevaContrasena: pwd,
       });
+      setCurrentPwd('');
       setPwd('');
       setPwd2('');
-      setMsg('Contrasena actualizada');
+      setMsg('Contraseña actualizada');
     } catch (error: unknown) {
-      setErr(errorMessage(error, 'No se pudo cambiar la contrasena'));
+      setErr(errorMessage(error, 'No se pudo cambiar la contraseña'));
     } finally {
       setSavingPwd(false);
     }
@@ -93,7 +99,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
             <Shield className="h-5 w-5 text-indigo-500" />
             <h2 className="text-xl font-semibold text-slate-900">Cuenta y seguridad</h2>
           </div>
-          <p className="text-sm text-slate-600">Gestiona correo, usuario y contrasena en un solo lugar.</p>
+          <p className="text-sm text-slate-600">Gestiona correo, usuario y contraseña en un solo lugar.</p>
         </header>
 
         {msg ? (
@@ -140,7 +146,15 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-inner">
-            <label className="mb-1 block text-sm font-semibold text-slate-800">Nueva contrasena</label>
+            <label className="mb-1 block text-sm font-semibold text-slate-800">Contraseña actual</label>
+            <input
+              type="password"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              value={currentPwd}
+              onChange={(e) => setCurrentPwd(e.target.value)}
+            />
+
+            <label className="mb-1 mt-3 block text-sm font-semibold text-slate-800">Nueva contraseña</label>
             <input
               type="password"
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -148,7 +162,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
               onChange={(e) => setPwd(e.target.value)}
             />
 
-            <label className="mb-1 mt-3 block text-sm font-semibold text-slate-800">Confirmar contrasena</label>
+            <label className="mb-1 mt-3 block text-sm font-semibold text-slate-800">Confirmar contraseña</label>
             <input
               type="password"
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -163,7 +177,7 @@ const ProfileAccountSettings: React.FC<Props> = ({ usuario }) => {
               className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-purple-500 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {savingPwd ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-              Cambiar contrasena
+              Cambiar contraseña
             </button>
           </div>
         </div>
