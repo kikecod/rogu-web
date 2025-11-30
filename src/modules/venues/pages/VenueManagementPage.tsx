@@ -10,11 +10,14 @@ import { SedePhotoManagement } from '@/admin-panel/sedes/components';
 import { ROUTES } from '@/config/routes';
 import { getImageUrl } from '@/core/config/api';
 import MapPicker from '../components/MapPicker';
+import FieldManagementCard from '../components/FieldManagementCard';
+import type { CanchaResumen } from '../types/venue-search.types';
 
 const VenueDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sede, setSede] = useState<any>(null);
+  const [fields, setFields] = useState<CanchaResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
@@ -33,8 +36,13 @@ const VenueDetailPage: React.FC = () => {
     if (!id) return;
     try {
       setLoading(true);
-      const data = await venueService.getVenueById(Number(id));
-      setSede(data.sede);
+      // Load venue and fields in parallel
+      const [venueData, fieldsData] = await Promise.all([
+        venueService.getVenueById(Number(id)),
+        venueService.getVenueFields(Number(id))
+      ]);
+      setSede(venueData.sede);
+      setFields(fieldsData.canchas);
     } catch (err: any) {
       console.error('Error loading venue:', err);
       setError(err.message || 'Error al cargar la sede');
@@ -386,39 +394,22 @@ const VenueDetailPage: React.FC = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                   <Building className="h-5 w-5 text-blue-600" />
-                  Canchas ({sede.canchas?.length || 0})
+                  Canchas Disponibles ({fields.length})
                 </h2>
-                <button
-                  onClick={() => {
-                    // Navigate to manage courts or open modal
-                  }}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Ver todas
-                </button>
               </div>
 
-              {(!sede.canchas || sede.canchas.length === 0) ? (
+              {fields.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                   <p className="text-gray-500">No hay canchas registradas.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sede.canchas.map((cancha: any) => (
-                    <div key={cancha.idCancha} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-gray-900">{cancha.nombre}</h3>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${cancha.estado === 'Disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {cancha.estado}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">{cancha.deporte?.nombre || 'Deporte no especificado'}</p>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-gray-900">Bs {cancha.precio}</span>
-                        <span className="text-gray-500">{cancha.superficie}</span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {fields.map((field) => (
+                    <FieldManagementCard
+                      key={field.idCancha}
+                      field={field}
+                      onClick={() => navigate(ROUTES.owner.venueFieldManagement(id!, field.idCancha))}
+                    />
                   ))}
                 </div>
               )}

@@ -40,10 +40,16 @@ const VenueManagementCard: React.FC<VenueCardProps> = ({ sede, onClick }) => {
     } = sede;
 
     // Image handling
-    const imagenPath = fotoPrincipal || fotos?.[0]?.urlFoto;
+    // Some endpoints return 'url' instead of 'urlFoto', so we check both
+    const firstPhoto = fotos?.[0];
+    const photoUrl = firstPhoto ? (firstPhoto.urlFoto || (firstPhoto as any).url) : null;
+    const imagenPath = fotoPrincipal || photoUrl;
+
+
     const imagenPrincipal = imagenPath
         ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
         : '/placeholder-venue.jpg';
+
 
     const isActive = estado === 'Activo';
     const courtCount = canchas?.length || 0;

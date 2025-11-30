@@ -124,6 +124,9 @@ export const ROUTES = {
     reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
     venueDetail: (idSede: number | string) => `/owner/spaces/${idSede}/detail`,
     venueDetailPattern: '/owner/spaces/:id/detail',
+    venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
+      `/owner/spaces/${idSede}/fields/${idCancha}`,
+    venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
   },
 
   // ==========================================

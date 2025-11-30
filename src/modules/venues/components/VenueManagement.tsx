@@ -52,7 +52,34 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD }) => {
       if (response.ok) {
         const allSedes = await response.json();
         const mySedes = allSedes.filter((sede: any) => sede.idPersonaD === idPersonaD);
-        setSedes(mySedes);
+
+        // Load photos for each sede
+        const sedesWithPhotos = await Promise.all(
+          mySedes.map(async (sede: any) => {
+            try {
+              const detailResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/${sede.idSede}`, {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+              });
+
+              if (detailResponse.ok) {
+                const detailData = await detailResponse.json();
+                return {
+                  ...sede,
+                  fotos: detailData.sede?.fotos || [],
+                  fotoPrincipal: detailData.sede?.fotoPrincipal
+                };
+              }
+            } catch (error) {
+              console.error(`Error loading photos for sede ${sede.idSede}:`, error);
+            }
+            return sede;
+          })
+        );
+
+        console.log('📸 Sedes with photos loaded:', sedesWithPhotos);
+        setSedes(sedesWithPhotos);
       }
     } catch (error) {
       console.error('Error loading sedes:', error);
