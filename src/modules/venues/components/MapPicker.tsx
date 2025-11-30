@@ -54,8 +54,8 @@ export default function MapPicker({
   readOnly = false,
   className = ''
 }: MapPickerProps) {
-  // Centro por defecto: Lima, Perú
-  const defaultCenter: [number, number] = [-12.046374, -77.042793];
+  // Centro por defecto: La Paz, Bolivia
+  const defaultCenter: [number, number] = [-16.4897, -68.1193];
 
   // Validar y convertir coordenadas a números
   const getValidPosition = (lat: number | null, lng: number | null): [number, number] | null => {
@@ -69,12 +69,46 @@ export default function MapPicker({
   const [position, setPosition] = useState<[number, number] | null>(
     getValidPosition(latitude, longitude)
   );
+  const [centerMap, setCenterMap] = useState<[number, number]>(defaultCenter);
+
+  // Intentar obtener la ubicación actual del dispositivo
+  useEffect(() => {
+    // Solo intentar obtener ubicación si no hay una posición inicial específica
+    if (!latitude && !longitude) {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const userLocation: [number, number] = [
+              pos.coords.latitude,
+              pos.coords.longitude
+            ];
+            setCenterMap(userLocation);
+            // Si no hay posición seleccionada, usar la ubicación del usuario
+            if (!position) {
+              setPosition(userLocation);
+              onLocationSelect(userLocation[0], userLocation[1]);
+            }
+          },
+          (error) => {
+            console.log('No se pudo obtener la ubicación:', error.message);
+            // Mantener La Paz, Bolivia como predeterminado
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      }
+    }
+  }, []);
 
   // Actualizar posición cuando cambian las props
   useEffect(() => {
     const validPos = getValidPosition(latitude, longitude);
     if (validPos) {
       setPosition(validPos);
+      setCenterMap(validPos);
     }
   }, [latitude, longitude]);
 
@@ -83,8 +117,8 @@ export default function MapPicker({
     onLocationSelect(lat, lng);
   };
 
-  // Centro del mapa: si hay posición seleccionada, usar esa, sino el default
-  const mapCenter = position || defaultCenter;
+  // Centro del mapa: usar centerMap que puede ser la ubicación del usuario o La Paz
+  const mapCenter = centerMap;
 
   // Clave única para forzar re-render cuando cambia la posición inicial
   const mapKey = position ? `${position[0]}-${position[1]}` : 'default';
