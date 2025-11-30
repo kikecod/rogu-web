@@ -20,9 +20,13 @@ import {
   XCircle,
   Loader2,
   Image,
+  Eye,
+  Download,
+  X,
 } from 'lucide-react';
 import { useSedeDetalle } from '../hooks';
 import { sedesService } from '../services/sedes.service';
+import { verificacionesService } from '../../verificaciones/services/verificaciones.service';
 import MapPicker from '../../../venues/components/MapPicker';
 import { ROUTES } from '@/config/routes';
 import { useCanchasDeSede } from '../canchas/hooks/useCanchasDeSede';
@@ -34,6 +38,9 @@ const SedeDetallePage = () => {
   const { sede, loading, error, recargar } = useSedeDetalle(Number(id));
   const [procesando, setProcesando] = useState(false);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const {
     canchas: canchasSede,
     loading: loadingCanchas,
@@ -108,6 +115,30 @@ const SedeDetallePage = () => {
       alert(err.response?.data?.message || 'Error al desactivar la sede');
     } finally {
       setProcesando(false);
+    }
+  };
+
+  const handleVerLicencia = async () => {
+    if (!sede) return;
+    try {
+      setLoadingPreview(true);
+      const blob = await verificacionesService.getLicenciaBlob(sede.idSede);
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error al cargar la licencia:', error);
+      alert('Error al cargar el documento de la licencia');
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const closePreview = () => {
+    setShowPreview(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
     }
   };
 
@@ -299,9 +330,25 @@ const SedeDetallePage = () => {
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Licencia de Funcionamiento</p>
-                <p className="font-semibold text-gray-900">
-                  {sede.LicenciaFuncionamiento || 'No especificado'}
-                </p>
+                <div className="flex items-center">
+                  {sede.LicenciaFuncionamiento ? (
+                    <button
+                      onClick={handleVerLicencia}
+                      disabled={loadingPreview}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium w-full justify-center"
+                      title="Ver licencia"
+                    >
+                      {loadingPreview ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                      Ver Licencia
+                    </button>
+                  ) : (
+                    <span className="text-gray-500 italic">No especificado</span>
+                  )}
+                </div>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg flex items-start gap-3">
                 <Phone size={20} className="text-gray-500 mt-0.5" />
@@ -544,6 +591,44 @@ const SedeDetallePage = () => {
           isOpen={photoManagementOpen}
           onClose={() => setPhotoManagementOpen(false)}
         />
+      )}
+
+      {/* Modal de Previsualización de Licencia */}
+      {showPreview && previewUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                Licencia de Funcionamiento - {sede.nombre}
+              </h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewUrl}
+                  download={`licencia-${sede.idSede}.pdf`}
+                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Descargar PDF"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+                <button
+                  onClick={closePreview}
+                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 p-4 bg-gray-100 overflow-hidden">
+              <iframe
+                src={previewUrl}
+                className="w-full h-full rounded-lg border border-gray-300 bg-white"
+                title={`Licencia ${sede.nombre}`}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

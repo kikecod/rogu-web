@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Building2,
-  CheckCircle,
   Flag,
   BarChart3,
   Settings,
@@ -29,11 +28,7 @@ const AdminSidebar = () => {
       icon: Users,
       path: ROUTES.admin.usuarios,
     },
-    {
-      name: 'Verificaciones',
-      icon: CheckCircle,
-      path: ROUTES.admin.verificaciones,
-    },
+
     {
       name: 'Sedes',
       icon: Building2,
@@ -66,9 +61,8 @@ const AdminSidebar = () => {
 
   return (
     <aside
-      className={`bg-gray-900 text-white transition-all duration-300 ${
-        isCollapsed ? 'w-20' : 'w-64'
-      } flex flex-col`}
+      className={`bg-gray-900 text-white transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+        } flex flex-col`}
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
@@ -91,11 +85,10 @@ const AdminSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive(item.path)
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-gray-800'
-              }`}
+                }`}
               title={isCollapsed ? item.name : undefined}
             >
               <Icon size={20} className="flex-shrink-0" />
