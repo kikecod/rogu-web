@@ -351,6 +351,7 @@ const VenueCreationPage: React.FC = () => {
                                         })}
                                     </div>
                                 )}
+                                <p className="text-xs text-gray-500 mt-2">Separa las reglas con comas (ej: No fumar, Traer toalla)</p>
                             </div>
                         </div>
                     </div>
@@ -375,7 +376,7 @@ const VenueCreationPage: React.FC = () => {
                                         value={formData.telefono}
                                         onChange={handleInputChange}
                                         className="w-full pl-16 pr-4 py-4 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg"
-                                        placeholder="+591 70000000"
+                                        placeholder="70000000"
                                     />
                                 </div>
                             </div>

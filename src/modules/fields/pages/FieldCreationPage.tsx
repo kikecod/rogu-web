@@ -299,7 +299,7 @@ const FieldCreationPage: React.FC = () => {
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                                     <LayoutGrid className="w-4 h-4 text-green-500" />
-                                    Nombre de la Cancha <span className="text-red-500">*</span>
+                                    Nombre de la Cancha <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(Debe tener 5 o mas caracteres)</span>
                                 </label>
                                 <input
                                     type="text"
@@ -486,6 +486,7 @@ const FieldCreationPage: React.FC = () => {
                                         })}
                                     </div>
                                 )}
+                                <p className="text-xs text-gray-500 mt-2">Separa las reglas con comas (ej: No fumar, Traer toalla)</p>
                             </div>
                         </div>
                     </div>

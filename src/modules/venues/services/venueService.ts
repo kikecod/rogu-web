@@ -323,6 +323,52 @@ class VenueService {
       throw error;
     }
   }
+  /**
+   * Actualizar datos de una sede
+   * PATCH /api/sede/:id
+   */
+  async updateVenue(id: number, data: any): Promise<any> {
+    try {
+      const response = await fetch(getApiUrl(`/sede/${id}`), {
+        method: 'PATCH',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message || `Error al actualizar sede: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en updateVenue:', error);
+      throw error;
+    }
+  }
+  /**
+   * Actualizar datos de una cancha
+   * PATCH /api/cancha/:id
+   */
+  async updateField(idCancha: number, data: any): Promise<any> {
+    try {
+      const response = await fetch(getApiUrl(`/cancha/${idCancha}`), {
+        method: 'PATCH',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message || `Error al actualizar cancha: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error en updateField:', error);
+      throw error;
+    }
+  }
 }
 
 export const venueService = new VenueService();

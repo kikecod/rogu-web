@@ -51,7 +51,7 @@ const VenueManagementCard: React.FC<VenueCardProps> = ({ sede, onClick }) => {
         : '/placeholder-venue.jpg';
 
 
-    const isActive = estado === 'Activo';
+
     const courtCount = canchas?.length || 0;
     const location = city && stateProvince ? `${city}, ${stateProvince}` : (addressLine || direccion || 'Sin ubicación');
 
@@ -73,9 +73,13 @@ const VenueManagementCard: React.FC<VenueCardProps> = ({ sede, onClick }) => {
 
                 {/* Status Badge */}
                 <div className="absolute top-3 right-3">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${estado === 'Activo'
+                            ? 'bg-green-100 text-green-800'
+                            : estado === 'Mantenimiento'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
                         }`}>
-                        {isActive ? 'Activo' : 'Inactivo'}
+                        {estado}
                     </span>
                 </div>
 

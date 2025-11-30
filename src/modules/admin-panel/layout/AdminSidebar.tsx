@@ -10,6 +10,7 @@ import {
   FileText,
   Menu,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 
@@ -33,6 +34,11 @@ const AdminSidebar = () => {
       name: 'Sedes',
       icon: Building2,
       path: ROUTES.admin.sedes,
+    },
+    {
+      name: 'Verificaciones',
+      icon: ShieldCheck,
+      path: ROUTES.admin.verificaciones,
     },
     {
       name: 'Reportes',
@@ -86,8 +92,8 @@ const AdminSidebar = () => {
               key={item.path}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-gray-800'
                 }`}
               title={isCollapsed ? item.name : undefined}
             >
