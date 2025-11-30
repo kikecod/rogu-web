@@ -21,6 +21,7 @@ import TermsPage from '@/core/pages/TermsPage';
 import FieldDetailPage from '@/fields/pages/FieldDetailPage';
 import VenueDetailPage from '@/venues/pages/VenueDetailPage';
 import VenueManagementPage from '@/venues/pages/VenueManagementPage';
+import VenueCreationPage from '@/venues/pages/VenueCreationPage';
 import FieldManagementPage from '@/fields/pages/FieldManagementPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
@@ -355,6 +356,14 @@ const AppContent = () => {
                                         element={
                                                 <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                                         <AdminSpacesOwnerPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+                                <Route
+                                        path={ROUTES.owner.createVenue}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <VenueCreationPage />
                                                 </ProtectedRoute>
                                         }
                                 />
