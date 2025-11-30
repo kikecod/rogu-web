@@ -7,6 +7,7 @@ import { TablaUsuarios } from '../components/TablaUsuarios';
 import { Paginacion } from '../components/Paginacion';
 import { ROUTES } from '@/config/routes';
 import type { Usuario } from '../../types';
+import { adminButtons } from '../../layout/adminTheme';
 
 const UsuariosListPage = () => {
   const navigate = useNavigate();
@@ -51,54 +52,47 @@ const UsuariosListPage = () => {
   const mostrandoHasta = Math.min((filtros.page || 1) * limit, total);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="admin-card p-5 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Administra todos los usuarios del sistema
-          </p>
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Gestion de usuarios</p>
+          <h1 className="text-2xl font-semibold text-[var(--text-main)]">Control total del sistema</h1>
+          <p className="text-sm text-[var(--muted)]">Roles, estados, actividad reciente</p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => refrescar()}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-          >
-            <RefreshCw size={20} />
+        <div className="flex gap-2">
+          <button onClick={() => refrescar()} className={`${adminButtons.ghost} whitespace-nowrap`}>
+            <RefreshCw size={16} />
             Refrescar
           </button>
           <button
             onClick={() => navigate(ROUTES.admin.usuariosNuevo)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className={`${adminButtons.primary} whitespace-nowrap`}
           >
-            <UserPlus size={20} />
-            Nuevo Usuario
+            <UserPlus size={16} />
+            Nuevo usuario
           </button>
         </div>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">Total Usuarios</div>
-          <div className="mt-1 text-3xl font-semibold text-gray-900">{total}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="admin-card p-4">
+          <p className="text-xs text-[var(--muted)]">Total usuarios</p>
+          <p className="text-2xl font-semibold text-[var(--text-main)]">{total}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">Mostrando</div>
-          <div className="mt-1 text-3xl font-semibold text-gray-900">{usuarios.length}</div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-[var(--muted)]">Mostrando</p>
+          <p className="text-2xl font-semibold text-[var(--text-main)]">{usuarios.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">Página Actual</div>
-          <div className="mt-1 text-3xl font-semibold text-gray-900">{filtros.page}</div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-[var(--muted)]">Pagina actual</p>
+          <p className="text-2xl font-semibold text-[var(--text-main)]">{filtros.page}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm font-medium text-gray-500">Total Páginas</div>
-          <div className="mt-1 text-3xl font-semibold text-gray-900">{paginas}</div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-[var(--muted)]">Total paginas</p>
+          <p className="text-2xl font-semibold text-[var(--text-main)]">{paginas}</p>
         </div>
       </div>
 
-      {/* Filtros */}
       <FiltrosUsuarios
         onBuscar={buscar}
         onFiltrarRol={filtrarPorRol}
@@ -108,21 +102,14 @@ const UsuariosListPage = () => {
         busquedaActual={filtros.buscar}
       />
 
-      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="admin-card p-4 border border-[var(--danger)]/40 text-[var(--danger)]">
+          <p>{error}</p>
         </div>
       )}
 
-      {/* Tabla */}
-      <TablaUsuarios
-        usuarios={usuarios}
-        onEliminar={setUsuarioAEliminar}
-        loading={loading}
-      />
+      <TablaUsuarios usuarios={usuarios} onEliminar={setUsuarioAEliminar} loading={loading} />
 
-      {/* Paginación */}
       {!loading && usuarios.length > 0 && (
         <Paginacion
           paginaActual={filtros.page || 1}
@@ -134,49 +121,46 @@ const UsuariosListPage = () => {
         />
       )}
 
-      {/* Modal de confirmación de eliminación */}
       {usuarioAEliminar && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Confirmar baja de usuario
-            </h3>
-            <p className="text-gray-600 mb-4">
-              ¿Estás seguro de dar de baja a{' '}
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="admin-card max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-[var(--text-main)]">Confirmar baja de usuario</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Estas seguro de dar de baja a{' '}
               <strong>
                 {usuarioAEliminar.persona?.nombre} {usuarioAEliminar.persona?.apellidoPaterno}
               </strong>
               ?
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">
                 Motivo de la baja (opcional)
               </label>
               <textarea
                 value={motivoBaja}
                 onChange={(e) => setMotivoBaja(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                 rows={3}
                 placeholder="Describe el motivo..."
               />
             </div>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-2 justify-end">
               <button
                 onClick={() => {
                   setUsuarioAEliminar(null);
                   setMotivoBaja('');
                 }}
                 disabled={eliminando}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                className={`${adminButtons.muted} disabled:opacity-60`}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleEliminar}
                 disabled={eliminando}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                className={`${adminButtons.primary} bg-[var(--danger)] hover:brightness-105 disabled:opacity-60`}
               >
-                {eliminando ? 'Eliminando...' : 'Confirmar Baja'}
+                {eliminando ? 'Eliminando...' : 'Confirmar baja'}
               </button>
             </div>
           </div>

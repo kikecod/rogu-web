@@ -1,10 +1,9 @@
 
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Globe, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { useMode } from '../../core/hooks/useMode';
 import { ROUTES } from '@/config/routes';
-import { AdminTabBar } from '@/core/navigation/AdminTabBar';
 import Logo from './Logo';
 import UserMenu from './UserMenu';
 
@@ -17,11 +16,8 @@ interface NavbarProps {
 const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
   const { isDuenio, isAdmin, user } = useAuth();
   const { mode, toggleMode } = useMode();
-  const location = useLocation();
-  const navigate = useNavigate();
 
-  // Detectar si estamos en rutas admin
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const navigate = useNavigate();
 
   // Verificar si el usuario puede cambiar a modo dueño (solo DUENIO, no ADMIN)
   const canSwitchToOwnerMode = isDuenio() && !isAdmin();
@@ -90,10 +86,6 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
 
       </div>
 
-      {/* Admin Tab Bar - Solo visible en rutas admin */}
-      {isAdminRoute && user?.roles && user.roles.includes('ADMIN') && (
-        <AdminTabBar />
-      )}
     </header>
   );
 };

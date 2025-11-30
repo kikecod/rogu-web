@@ -1,9 +1,12 @@
 // File: components/FavoriteCard.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { FavoriteRecord } from '../types/favorite.types';
 import FavoriteButton from './FavoriteButton';
 import { getImageUrl } from '@/core/config/api';
 import { Star, Building2 } from 'lucide-react';
+import { generatePlaceholderImage } from '@/core/lib/helpers';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/config/routes';
 
 
 interface Props {
@@ -13,8 +16,17 @@ interface Props {
 }
 
 const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) => {
+  const navigate = useNavigate();
   const sede = favorite.sede;
-  const [imgSrc, setImgSrc] = useState<string>('');
+  const placeholderImage = useMemo(() => generatePlaceholderImage(600, 360, 'Sin foto'), []);
+  const [imgSrc, setImgSrc] = useState<string>(placeholderImage);
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(favorite.idSede);
+    } else {
+      navigate(ROUTES.venue(favorite.idSede), { state: { fromFavorites: true } });
+    }
+  };
 
   useEffect(() => {
     // Resolver foto de la sede
@@ -24,8 +36,10 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) =>
         const url = fotoUrl.startsWith('http') ? fotoUrl : getImageUrl(fotoUrl);
         setImgSrc(url);
       }
+    } else {
+      setImgSrc(placeholderImage);
     }
-  }, [sede?.fotos]);
+  }, [sede?.fotos, placeholderImage]);
 
 
   // Renderizar estrellas de rating
@@ -65,7 +79,7 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) =>
               alt={sede?.nombre || `Sede ${favorite.idSede}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
-              onError={() => setImgSrc('')}
+              onError={() => setImgSrc(placeholderImage)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -143,7 +157,7 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) =>
             </button>
             {onViewDetails && (
               <button
-                onClick={() => onViewDetails(favorite.idSede)}
+                onClick={handleViewDetails}
                 className="flex-1 text-xs px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition shadow-sm"
               >
                 Ver detalles

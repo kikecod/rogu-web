@@ -29,6 +29,7 @@ export const sedesService = {
     if (filtros?.verificada !== undefined) queryParams.append('verificada', filtros.verificada.toString());
     if (filtros?.activa !== undefined) queryParams.append('activa', filtros.activa.toString());
     if (filtros?.idDuenio) queryParams.append('idDuenio', filtros.idDuenio.toString());
+    if (filtros?.calificacionMin !== undefined) queryParams.append('calificacionMin', filtros.calificacionMin.toString());
     if (filtros?.page) queryParams.append('page', filtros.page.toString());
     if (filtros?.limit) queryParams.append('limit', filtros.limit.toString());
     if (filtros?.ordenarPor) queryParams.append('ordenarPor', filtros.ordenarPor);

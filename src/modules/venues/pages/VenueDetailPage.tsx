@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   MapPin, Phone, Mail, Star, ChevronLeft, Shield,
   Clock, Users, Building2, AlertCircle, Loader2
@@ -14,6 +14,7 @@ import FavoriteButton from '@/favorites/components/FavoriteButton';
 
 const VenueDetailPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { idSede } = useParams<{ idSede: string }>();
 
   const [venue, setVenue] = useState<SedeDetalle | null>(null);
@@ -21,6 +22,8 @@ const VenueDetailPage: React.FC = () => {
   const [reviews, setReviews] = useState<CalificacionSede[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldImageErrors, setFieldImageErrors] = useState<Record<number, boolean>>({});
+  const fromFavorites = (location.state as { fromFavorites?: boolean } | null)?.fromFavorites;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -62,6 +65,18 @@ const VenueDetailPage: React.FC = () => {
     navigate(`/venues/${idSede}/fields/${field.idCancha}`);
   };
 
+  const handleFieldImageError = (idCancha: number) => {
+    setFieldImageErrors((prev) => ({ ...prev, [idCancha]: true }));
+  };
+
+  const handleBack = () => {
+    if (fromFavorites) {
+      navigate(ROUTES.favoritos);
+    } else {
+      navigate(ROUTES.home);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
@@ -97,7 +112,7 @@ const VenueDetailPage: React.FC = () => {
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
-            onClick={() => navigate(ROUTES.home)}
+            onClick={handleBack}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -109,12 +124,21 @@ const VenueDetailPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Image */}
         <div className="mb-8">
-          <div className="relative rounded-2xl overflow-hidden h-[400px]">
-            <img
-              src={venue.fotos?.[0]?.urlFoto || '/placeholder-venue.jpg'}
-              alt={venue.nombre}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative rounded-2xl overflow-hidden h-[400px] bg-black flex items-center justify-center text-white">
+            {venue.fotos && venue.fotos.length > 0 && venue.fotos[0]?.urlFoto ? (
+              <img
+                src={venue.fotos[0].urlFoto}
+                alt={venue.nombre}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center font-semibold text-lg uppercase tracking-wide">
+                Sin foto
+              </div>
+            )}
 
             {/* Sede Badge y Verificación */}
             <div className="absolute top-4 left-4 flex gap-2">
@@ -220,12 +244,19 @@ const VenueDetailPage: React.FC = () => {
                       className="cursor-pointer transform transition-transform hover:scale-105"
                     >
                       <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200">
-                        <div className="h-48 overflow-hidden">
-                          <img
-                            src={field.fotos?.[0]?.urlFoto || '/placeholder-field.jpg'}
-                            alt={field.nombre}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="h-48 overflow-hidden bg-black flex items-center justify-center text-white">
+                          {field.fotos && field.fotos.length > 0 && field.fotos[0]?.urlFoto && !fieldImageErrors[field.idCancha] ? (
+                            <img
+                              src={field.fotos[0].urlFoto}
+                              alt={field.nombre}
+                              className="w-full h-full object-cover"
+                              onError={() => handleFieldImageError(field.idCancha)}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-sm uppercase tracking-wide">
+                              Sin foto
+                            </div>
+                          )}
                         </div>
                         <div className="p-4">
                           <h3 className="font-bold text-gray-900 text-base mb-2">{field.nombre}</h3>

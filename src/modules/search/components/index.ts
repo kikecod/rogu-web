@@ -1,5 +1,4 @@
 // Componentes existentes
-export { default as SearchBar } from './SearchBar';
 export { default as Filters } from './Filters';
 
 // Componentes integrados con la nueva API

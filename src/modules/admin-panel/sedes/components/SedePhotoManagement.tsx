@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle } from 'lucide-react';
-import { getApiUrl } from '@/core/config/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { getApiUrl, getImageUrl } from '@/core/config/api';
 
 interface Foto {
     idFoto: number;
@@ -14,9 +14,12 @@ interface SedePhotoManagementProps {
     };
     isOpen: boolean;
     onClose: () => void;
+    fallbackFotos?: Foto[]; // opcional: fotos ya conocidas del detalle de la sede
 }
 
-const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen, onClose }) => {
+const resolveUrl = (urlFoto: string) => (urlFoto?.startsWith('http') ? urlFoto : getImageUrl(urlFoto || ''));
+
+const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen, onClose, fallbackFotos }) => {
     const [fotos, setFotos] = useState<Foto[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -26,8 +29,20 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
         fotoId: null
     });
 
+    const normalizedFallback = useMemo(() => {
+        return Array.isArray(fallbackFotos)
+            ? fallbackFotos.map((f) => ({ ...f, urlFoto: resolveUrl(f.urlFoto) }))
+            : [];
+    }, [fallbackFotos]);
+
     // Cargar fotos de la sede
     const loadFotos = async () => {
+        // Si ya tenemos fotos en fallback, úsalas y evita llamar al endpoint 404
+        if (normalizedFallback.length > 0) {
+            setFotos(normalizedFallback);
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await fetch(getApiUrl(`/fotos/sede/${sede.idSede}`), {
@@ -38,8 +53,17 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
 
             if (response.ok) {
                 const sedeFotos = await response.json();
-                // S3 URLs are already complete public URLs, no normalization needed
-                setFotos(sedeFotos);
+                const normalized = Array.isArray(sedeFotos)
+                  ? sedeFotos.map((f: Foto) => ({ ...f, urlFoto: resolveUrl(f.urlFoto) }))
+                  : [];
+                setFotos(normalized);
+            } else {
+                if (response.status === 404) {
+                    console.warn(`[SedePhotoManagement] No se encontraron fotos para la sede ${sede.idSede} (404).`);
+                    setFotos([]);
+                } else {
+                    console.error('[SedePhotoManagement] Error al obtener fotos:', response.status, response.statusText);
+                }
             }
         } catch (error) {
             console.error('Error loading fotos:', error);
@@ -52,7 +76,7 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
         if (isOpen) {
             loadFotos();
         }
-    }, [isOpen, sede.idSede]);
+    }, [isOpen, sede.idSede, normalizedFallback]);
 
     // Función para validar imagen
     const validateImage = (file: File): boolean => {
@@ -248,7 +272,7 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
 
                     {loading ? (
                         <div className="flex justify-center items-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                         </div>
                     ) : fotos.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">

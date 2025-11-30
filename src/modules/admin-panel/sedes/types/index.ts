@@ -169,6 +169,7 @@ export interface FiltrosSedes {
   verificada?: boolean;
   activa?: boolean;
   idDuenio?: number;
+  calificacionMin?: number;
   page?: number;
   limit?: number;
   ordenarPor?: 'nombre' | 'fecha' | 'calificacion' | 'reservas';

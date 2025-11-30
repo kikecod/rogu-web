@@ -34,6 +34,7 @@ const SportFieldDetailPage: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [participants, setParticipants] = useState(1);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -67,6 +68,11 @@ const SportFieldDetailPage: React.FC = () => {
 
     loadField();
   }, [canchaId]);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setImageError(false);
+  }, [field?.id]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,14 +122,16 @@ const SportFieldDetailPage: React.FC = () => {
 
   // Handlers
   const nextImage = () => {
-    if (!field) return;
+    if (!field || !field.images || field.images.length === 0) return;
+    setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === field.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
-    if (!field) return;
+    if (!field || !field.images || field.images.length === 0) return;
+    setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === 0 ? field.images.length - 1 : prev - 1
     );
@@ -220,6 +228,9 @@ const SportFieldDetailPage: React.FC = () => {
     );
   }
 
+  const hasImages = Array.isArray(field.images) && field.images.length > 0;
+  const currentImage = hasImages ? field.images[currentImageIndex] : '';
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Sticky Header */}
@@ -249,12 +260,19 @@ const SportFieldDetailPage: React.FC = () => {
         <div className="mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
             {/* Main Image */}
-            <div className="lg:col-span-3 relative rounded-2xl overflow-hidden group h-[400px] lg:h-[500px]">
-              <img
-                src={field.images[currentImageIndex]}
-                alt={field.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="lg:col-span-3 relative rounded-2xl overflow-hidden group h-[400px] lg:h-[500px] bg-black flex items-center justify-center text-white">
+              {hasImages && !imageError ? (
+                <img
+                  src={currentImage}
+                  alt={field.name}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-semibold text-lg uppercase tracking-wide">
+                  Sin foto
+                </div>
+              )}
 
               {/* Navigation Arrows */}
               <button
@@ -271,9 +289,11 @@ const SportFieldDetailPage: React.FC = () => {
               </button>
 
               {/* Image Counter */}
-              <div className="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium z-10">
-                {currentImageIndex + 1} / {field.images.length}
-              </div>
+              {hasImages && field.images.length > 1 && !imageError && (
+                <div className="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium z-10">
+                  {currentImageIndex + 1} / {field.images.length}
+                </div>
+              )}
 
               {/* Disciplinas Badge (dinámicas) */}
               {Array.isArray(field.disciplinas) && field.disciplinas.length > 0 && (
@@ -297,10 +317,13 @@ const SportFieldDetailPage: React.FC = () => {
 
             {/* Thumbnail Grid */}
             <div className="hidden lg:flex flex-col gap-3">
-              {field.images.slice(0, 4).map((img, idx) => (
+              {hasImages && field.images.slice(0, 4).map((img, idx) => (
                 <div
                   key={idx}
-                  onClick={() => setCurrentImageIndex(idx)}
+                  onClick={() => {
+                    setImageError(false);
+                    setCurrentImageIndex(idx);
+                  }}
                   className={`relative rounded-xl overflow-hidden cursor-pointer transition-all h-[118px] ${currentImageIndex === idx
                     ? 'ring-4 ring-blue-500 scale-105'
                     : 'hover:scale-105 opacity-80 hover:opacity-100'
