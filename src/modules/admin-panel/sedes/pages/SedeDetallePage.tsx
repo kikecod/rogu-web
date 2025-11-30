@@ -220,7 +220,7 @@ const SedeDetallePage = () => {
             Pendiente de verificación
           </span>
         )}
-        {sede.activa ? (
+        {sede.activa || sede.estado === 'ACTIVA' ? (
           <span className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
             Activa
           </span>

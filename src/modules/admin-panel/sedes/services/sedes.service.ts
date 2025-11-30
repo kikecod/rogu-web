@@ -87,7 +87,7 @@ export const sedesService = {
    * Verifica una sede (admin)
    */
   verificar: async (id: number): Promise<{ mensaje: string }> => {
-    const response = await apiClient.patch(`/sede/${id}/verificar`);
+    const response = await apiClient.patch(`/sede/${id}/verificar`, { verificada: true });
     return response.data;
   },
 
