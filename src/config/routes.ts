@@ -127,6 +127,8 @@ export const ROUTES = {
     venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
       `/owner/spaces/${idSede}/fields/${idCancha}`,
     venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
+    createField: (idSede: number | string) => `/owner/spaces/${idSede}/fields/new`,
+    createFieldPattern: '/owner/spaces/:id/fields/new',
     createVenue: '/owner/create-venue',
   },
 

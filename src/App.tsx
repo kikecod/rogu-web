@@ -23,6 +23,7 @@ import VenueDetailPage from '@/venues/pages/VenueDetailPage';
 import VenueManagementPage from '@/venues/pages/VenueManagementPage';
 import VenueCreationPage from '@/venues/pages/VenueCreationPage';
 import FieldManagementPage from '@/fields/pages/FieldManagementPage';
+import FieldCreationPage from '@/fields/pages/FieldCreationPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
 import EsperandoPagoPage from '@/bookings/pages/EsperandoPagoPage';
@@ -320,6 +321,15 @@ const AppContent = () => {
                                         element={
                                                 <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                                         <VenueManagementPage />
+                                                </ProtectedRoute>
+                                        }
+                                />
+
+                                <Route
+                                        path={ROUTES.owner.createFieldPattern}
+                                        element={
+                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                                        <FieldCreationPage />
                                                 </ProtectedRoute>
                                         }
                                 />

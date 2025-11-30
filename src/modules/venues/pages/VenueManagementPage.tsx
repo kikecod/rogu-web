@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, FileText,
   Building, CheckCircle, AlertCircle, Image as ImageIcon,
-  LayoutGrid, Loader2, Eye, Upload, Download, X
+  Loader2, Eye, Upload, Download, X, Plus, Shield
 } from 'lucide-react';
 import { venueService } from '../services/venueService';
 import { SedePhotoManagement } from '@/admin-panel/sedes/components';
@@ -288,7 +288,7 @@ const VenueDetailPage: React.FC = () => {
 
         <div className="absolute top-4 left-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(ROUTES.owner.mode)}
             className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white p-2 rounded-full transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -344,6 +344,24 @@ const VenueDetailPage: React.FC = () => {
                 {sede.descripcion || 'Sin descripción disponible.'}
               </p>
             </div>
+
+            {/* Policies Card */}
+            {sede.politicas && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  Políticas
+                </h2>
+                <ul className="space-y-3">
+                  {sede.politicas.split(',').map((policy: string, index: number) => (
+                    <li key={index} className="flex items-start gap-3 text-gray-600">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                      <span>{policy.trim()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Location Map */}
             {sede.latitude && sede.longitude && (
@@ -417,12 +435,12 @@ const VenueDetailPage: React.FC = () => {
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <button
                   onClick={() => {
-                    alert("Funcionalidad de gestión de canchas pendiente de refactorización para página completa.");
+                    navigate(ROUTES.owner.createField(id!));
                   }}
                   className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
                 >
-                  <LayoutGrid className="h-4 w-4" />
-                  Gestionar Canchas
+                  <Plus className="h-4 w-4" />
+                  Nueva Cancha
                 </button>
               </div>
             </div>

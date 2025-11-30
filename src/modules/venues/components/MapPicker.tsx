@@ -21,14 +21,15 @@ interface MapPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
   height?: string;
   readOnly?: boolean; // Nueva prop para modo solo lectura
+  className?: string; // Nueva prop para clases CSS personalizadas
 }
 
 // Componente interno para manejar clicks en el mapa
-function LocationMarker({ 
-  position, 
+function LocationMarker({
+  position,
   onLocationSelect,
   readOnly = false
-}: { 
+}: {
   position: [number, number] | null;
   onLocationSelect: (lat: number, lng: number) => void;
   readOnly?: boolean;
@@ -45,16 +46,17 @@ function LocationMarker({
   return position ? <Marker position={position} /> : null;
 }
 
-export default function MapPicker({ 
-  latitude, 
-  longitude, 
+export default function MapPicker({
+  latitude,
+  longitude,
   onLocationSelect,
   height = '400px',
-  readOnly = false
+  readOnly = false,
+  className = ''
 }: MapPickerProps) {
   // Centro por defecto: Lima, Perú
   const defaultCenter: [number, number] = [-12.046374, -77.042793];
-  
+
   // Validar y convertir coordenadas a números
   const getValidPosition = (lat: number | null, lng: number | null): [number, number] | null => {
     if (lat === null || lng === null) return null;
@@ -63,7 +65,7 @@ export default function MapPicker({
     if (isNaN(numLat) || isNaN(numLng)) return null;
     return [numLat, numLng];
   };
-  
+
   const [position, setPosition] = useState<[number, number] | null>(
     getValidPosition(latitude, longitude)
   );
@@ -83,7 +85,7 @@ export default function MapPicker({
 
   // Centro del mapa: si hay posición seleccionada, usar esa, sino el default
   const mapCenter = position || defaultCenter;
-  
+
   // Clave única para forzar re-render cuando cambia la posición inicial
   const mapKey = position ? `${position[0]}-${position[1]}` : 'default';
 
@@ -99,10 +101,10 @@ export default function MapPicker({
           </span>
         )}
       </div>
-      
-      <div 
-        className="rounded-lg overflow-hidden border-2 border-gray-300 shadow-sm"
-        style={{ height }}
+
+      <div
+        className={`rounded-lg overflow-hidden border-2 border-gray-300 shadow-sm ${className}`}
+        style={{ height: className ? undefined : height }}
       >
         <MapContainer
           key={mapKey}
@@ -115,16 +117,16 @@ export default function MapPicker({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <LocationMarker 
-            position={position} 
+          <LocationMarker
+            position={position}
             onLocationSelect={handleLocationSelect}
             readOnly={readOnly}
           />
         </MapContainer>
       </div>
-      
+
       <p className="text-xs text-gray-500 italic">
-        {readOnly 
+        {readOnly
           ? '📍 Ubicación de la sede'
           : '💡 Haz clic en el mapa para seleccionar la ubicación exacta de la sede'
         }
