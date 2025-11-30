@@ -20,6 +20,7 @@ import FAQPage from '@/core/pages/FAQPage';
 import TermsPage from '@/core/pages/TermsPage';
 import FieldDetailPage from '@/fields/pages/FieldDetailPage';
 import VenueDetailPage from '@/venues/pages/VenueDetailPage';
+import VenueManagementPage from '@/venues/pages/VenueManagementPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
 import EsperandoPagoPage from '@/bookings/pages/EsperandoPagoPage';
@@ -316,7 +317,7 @@ const AppContent = () => {
                                         path={ROUTES.owner.venueDetailPattern}
                                         element={
                                                 <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                                        <VenueDetailPage />
+                                                        <VenueManagementPage />
                                                 </ProtectedRoute>
                                         }
                                 />
