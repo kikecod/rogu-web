@@ -7,7 +7,6 @@ import AuthModal from '@/auth/components/AuthModal';
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
 import OwnerModePage from './modules/admin-owner/pages/OwnerModePage';
-import AnalyticsDashboardPage from './modules/analytics/pages/AnalyticsDashboardPage';
 import ResenasPage from './modules/analytics/pages/ResenasPage';
 
 // import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
@@ -131,7 +130,9 @@ const AppContent = () => {
                                 <Route path={ROUTES.esperandoPago} element={<EsperandoPagoPage />} />
 
                                 <Route path={ROUTES.bookings} element={<MyBookingsPage />} />
-                                <Route path={ROUTES.profile} element={<ProfilePage />} />        {/* Favoritos PROTEGIDO */}
+                                <Route path={ROUTES.profile} element={<ProfilePage />} />
+
+                                {/* Favoritos PROTEGIDO */}
                                 <Route
                                         path={ROUTES.favoritos}
                                         element={
@@ -270,7 +271,6 @@ const AppContent = () => {
                                                 </ProtectedRoute>
                                         }
                                 />
-
                                 <Route
                                         path={ROUTES.admin.sedeCanchaDetallePattern}
                                         element={
@@ -303,8 +303,6 @@ const AppContent = () => {
                                         }
                                 />
 
-                                {/* Modo Dueño ahora se maneja desde la ruta raíz "/" con HomeRouter */}
-                                {/* La ruta /owner-mode se mantiene como alternativa directa */}
                                 <Route
                                         path={ROUTES.owner.mode}
                                         element={
@@ -314,23 +312,15 @@ const AppContent = () => {
                                         }
                                 />
 
-                                {/* Rutas legacy de dueños - mantener para compatibilidad */}
                                 <Route
-                                        path={ROUTES.owner.adminSpaces}
+                                        path={ROUTES.owner.venueDetailPattern}
                                         element={
                                                 <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                                        <AdminSpacesOwnerPage />
+                                                        <VenueDetailPage />
                                                 </ProtectedRoute>
                                         }
                                 />
-                                <Route
-                                        path={ROUTES.owner.dashboard}
-                                        element={
-                                                <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                                        <AnalyticsDashboardPage />
-                                                </ProtectedRoute>
-                                        }
-                                />
+
                                 <Route
                                         path={ROUTES.owner.resenas}
                                         element={

@@ -42,7 +42,7 @@ class VenueService {
       }
 
       const sedes = await response.json();
-      
+
       if (!Array.isArray(sedes)) {
         return [];
       }
@@ -58,7 +58,7 @@ class VenueService {
           urlFoto: getImageUrl(foto.urlFoto),
         })) || [],
       }));
-      
+
     } catch (error) {
       console.error('Error en findVenues:', error);
       throw error;
@@ -68,7 +68,7 @@ class VenueService {
   async searchVenues(filters: VenueSearchFilters = {}): Promise<VenueSearchResponse> {
     try {
       const params = new URLSearchParams();
-      
+
       if (filters.city) params.append('city', filters.city);
       if (filters.stateProvince) params.append('stateProvince', filters.stateProvince);
       if (filters.district) params.append('district', filters.district);
@@ -120,16 +120,16 @@ class VenueService {
       }
 
       const data = await response.json();
-      
+
       // Transformar coordenadas de string a number si es necesario
       if (data.sede) {
-        data.sede.latitude = typeof data.sede.latitude === 'string' 
-          ? parseFloat(data.sede.latitude) 
+        data.sede.latitude = typeof data.sede.latitude === 'string'
+          ? parseFloat(data.sede.latitude)
           : data.sede.latitude;
-        data.sede.longitude = typeof data.sede.longitude === 'string' 
-          ? parseFloat(data.sede.longitude) 
+        data.sede.longitude = typeof data.sede.longitude === 'string'
+          ? parseFloat(data.sede.longitude)
           : data.sede.longitude;
-          
+
         // Transformar fotos con URLs completas
         if (data.sede.fotos && Array.isArray(data.sede.fotos)) {
           data.sede.fotos = data.sede.fotos.map((foto: any) => ({
@@ -138,7 +138,7 @@ class VenueService {
           }));
         }
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error en getVenueById:', error);
@@ -173,7 +173,7 @@ class VenueService {
   ): Promise<SedeCanchasResponse> {
     try {
       const params = new URLSearchParams();
-      
+
       if (filters.deporte) params.append('deporte', filters.deporte);
       if (filters.precioMin) params.append('precioMin', filters.precioMin.toString());
       if (filters.precioMax) params.append('precioMax', filters.precioMax.toString());
@@ -194,7 +194,7 @@ class VenueService {
       }
 
       const data = await response.json();
-      
+
       // Transformar las canchas para convertir strings a números
       return {
         ...data,
