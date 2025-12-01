@@ -1,4 +1,5 @@
 // Generic formatters used across the application
+import { generatePlaceholderImage as generatePlaceholderImageFromHelpers } from './helpers';
 
 export const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('es-BO', {
@@ -49,11 +50,9 @@ export const formatDateTime = (value: string | Date | null | undefined): string 
 };
 
 export const generatePlaceholderImage = (width: number, height: number, text?: string): string => {
-  const baseUrl = 'https://placehold.co';
-  const textParam = text ? `?text=${encodeURIComponent(text)}` : '';
-  return `${baseUrl}/${width}x${height}/22c55e/ffffff${textParam}`;
+  return generatePlaceholderImageFromHelpers(width, height, text);
 };
 
 export const generateAvatarUrl = (name: string): string => {
-  return generatePlaceholderImage(100, 100, name.charAt(0).toUpperCase());
+  return generatePlaceholderImageFromHelpers(100, 100, name.charAt(0).toUpperCase());
 };

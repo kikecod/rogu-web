@@ -1,366 +1,91 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, AlertCircle, Search, X } from 'lucide-react';
-import SportsSearchBar, { type SportSearchParams } from '../components/SearchBar';
-import SedeCard from '../../venues/components/SedeCard';
-import Filters from '../components/Filters';
+import { useEffect, useRef } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import PublicHero from '@/modules/public/components/PublicHero';
+import PublicFilters from '@/modules/public/components/PublicFilters';
+import PublicVenueGrid from '@/modules/public/components/PublicVenueGrid';
+import { usePublicVenues } from '@/modules/public/hooks/usePublicVenues';
 import Footer from '@/components/Footer';
-import { venueService } from '../../venues/services/venueService';
-import { searchApiService } from '../services/searchApi.service';
-import type { SedeCard as SedeCardType } from '../../venues/types/venue-search.types';
-import type { FilterState } from '../components/Filters';
 
-const HomePage: React.FC = () => {
+const HomePage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [allVenues, setAllVenues] = useState<SedeCardType[]>([]);
-  const [filteredVenues, setFilteredVenues] = useState<SedeCardType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSearchBarSticky, setIsSearchBarSticky] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [showMobileSearchModal, setShowMobileSearchModal] = useState(false);
-
-  // Estado compartido del SearchBar
-  const [searchValues, setSearchValues] = useState<SportSearchParams>({
-    venue: '',
-    venueId: undefined,
-    date: '',
-    startTime: '',
-    endTime: '',
-    discipline: '',
-    disciplineId: undefined,
-  });
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const {
+    filters,
+    setFilters,
+    venues,
+    loading,
+    error,
+    total,
+    loadMore,
+    totalPages,
+    page,
+    refetch,
+  } = usePublicVenues({}, 12);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      // El SearchBar se vuelve sticky cuando se scrollea más allá del hero (más compacto ahora)
-      setIsSearchBarSticky(window.scrollY > 80);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const loadSedes = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const sedes = await venueService.findVenues();
-        console.log('Sedes cargadas:', sedes);
-        setAllVenues(sedes);
-        setFilteredVenues(sedes);
-      } catch (err) {
-        console.error('Error al cargar sedes:', err);
-        setError('No se pudieron cargar las sedes. Por favor, intenta de nuevo.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSedes();
-  }, []);
-
-  const handleFiltersChange = (filters: FilterState) => {
-    let filtered = [...allVenues];
-
-    if (filters.sport.length > 0) {
-      filtered = filtered.filter(venue =>
-        filters.sport.some(sport => venue.estadisticas.deportesDisponibles.includes(sport))
-      );
-    }
-
-    filtered = filtered.filter(venue =>
-      venue.estadisticas.precioDesde >= filters.priceRange[0] &&
-      venue.estadisticas.precioDesde <= filters.priceRange[1]
-    );
-
-    if (filters.rating > 0) {
-      filtered = filtered.filter(venue => venue.estadisticas.ratingFinal >= filters.rating);
-    }
-
-    setFilteredVenues(filtered);
+  const handleExplore = () => {
+    listRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSportSearch = async (params: SportSearchParams) => {
-    console.log('Searching with sports params:', params);
-
-    // Actualizar el estado compartido para mantener sincronizados ambos SearchBars
-    setSearchValues(params);
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      setHasSearched(true);
-
-      // Construir parámetros para la API
-      const searchParams: any = {
-        page: 1,
-        limit: 50,
-      };
-
-      // Agregar parámetros opcionales solo si tienen valor
-      // Solo agregar IDs si fueron seleccionados del dropdown (tienen ID válido)
-      if (params.venueId && params.venueId > 0) {
-        searchParams.idSede = params.venueId;
-      }
-
-      if (params.date) {
-        searchParams.fecha = params.date;
-      }
-
-      if (params.startTime) {
-        searchParams.horaInicio = params.startTime;
-      }
-
-      if (params.endTime) {
-        searchParams.horaFin = params.endTime;
-      }
-
-      if (params.disciplineId && params.disciplineId > 0) {
-        searchParams.idDisciplina = params.disciplineId;
-      }
-
-      // Llamar al endpoint de búsqueda
-      const response = await searchApiService.searchMain(searchParams);
-
-      console.log('Resultados de búsqueda:', response);
-
-      // Extraer los resultados de la respuesta
-      const sedes = response.results || [];
-      setFilteredVenues(sedes as any);
-      setAllVenues(sedes as any);
-
-    } catch (err) {
-      console.error('Error en búsqueda:', err);
-      setError('No se pudieron cargar los resultados. Por favor, intenta de nuevo.');
-      setFilteredVenues([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const canLoadMore = page < totalPages && !loading;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-primary-50 via-white to-secondary-50">
-      <div className="flex-grow">
-        {/* Alerta de autenticación requerida */}
-        {location.state?.from && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <div className="max-w-7xl mx-auto flex items-start">
-              <AlertCircle className="h-5 w-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm text-yellow-800">
-                  <strong>Autenticación requerida:</strong> Necesitas iniciar sesión para acceder a <code className="bg-yellow-100 px-2 py-0.5 rounded">{location.state.from.pathname}</code>
-                </p>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Por favor, haz clic en "Iniciar sesión" en el menú superior.
-                </p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-b from-[#eef2fb] via-white to-[#f3f6ff]">
+      <section className="w-full">
+        <PublicHero onExplore={handleExplore} />
+      </section>
+
+      <section className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
+        <PublicFilters values={filters} onChange={setFilters} onSubmit={() => refetch()} />
+      </section>
+
+      <section ref={listRef} className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pb-14">
+        <div className="space-y-5 bg-white/65 backdrop-blur rounded-3xl border border-[#E9ECF5] shadow-lg shadow-black/5 p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-[#0F172A]/60 font-semibold">
+                Exploración pública
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">Sedes disponibles</h2>
+              <p className="text-sm text-[#0F172A]/70">
+                Busca, filtra y visualiza. Al reservar te pediremos iniciar sesión.
+              </p>
+            </div>
+            <div className="text-sm px-4 py-2 rounded-xl bg-white/80 border border-[#E9ECF5] text-[#0F172A]/80 shadow-sm">
+              {loading ? 'Cargando...' : `${total} sedes`}
+            </div>
+          </div>
+
+          <PublicVenueGrid
+            venues={venues}
+            loading={loading}
+            error={error}
+            onSelect={(sede) => navigate(`/venues/${sede.idSede}`)}
+            emptyMessage="No encontramos sedes con estos filtros. Ajusta ciudad, fecha o deporte."
+          />
+
+          {canLoadMore && (
+            <div className="flex justify-center">
               <button
-                onClick={() => navigate(location.pathname, { replace: true })}
-                className="text-yellow-800 hover:text-yellow-900 ml-4"
+                onClick={loadMore}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-[#3A6FF8] to-[#6C63FF] text-white font-semibold shadow-md hover:-translate-y-0.5 transition"
               >
-                <span className="text-xl">&times;</span>
+                Mostrar más
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Hero Section - Compacto con colores ROGU */}
-        <div className="relative bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 overflow-hidden pt-20 pb-12">
-          {/* Decorative Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-40 -right-40 w-96 h-96 bg-secondary-400 opacity-20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-300 opacity-20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-            {/* Pattern overlay */}
-            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
-          </div>
-        </div>
-
-        {/* Search Bar - Normal position (below hero) - Hidden on mobile */}
-        <div className="relative -mt-8 mb-6 z-20 hidden md:block">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <SportsSearchBar
-              idPrefix="main-"
-              onSearch={handleSportSearch}
-              initialVenue={searchValues.venue}
-              initialVenueId={searchValues.venueId}
-              initialDate={searchValues.date}
-              initialStartTime={searchValues.startTime}
-              initialEndTime={searchValues.endTime}
-              initialDiscipline={searchValues.discipline}
-              initialDisciplineId={searchValues.disciplineId}
-            />
-          </div>
-        </div>
-
-        {/* Mobile Search Button - Only visible on mobile */}
-        <div className="relative -mt-8 mb-6 z-20 md:hidden">
-          <div className="max-w-7xl mx-auto px-4">
-            <button
-              onClick={() => setShowMobileSearchModal(true)}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white shadow-lg rounded-xl border border-primary-200 hover:border-primary-400 hover:shadow-xl transition-all"
-            >
-              <Search className="h-5 w-5 text-primary-500" />
-              <span className="text-gray-600 font-medium">Buscar canchas deportivas...</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Search Modal */}
-        {showMobileSearchModal && (
-          <div className="fixed inset-0 bg-white z-[100] md:hidden overflow-y-auto">
-            <div className="min-h-screen flex flex-col">
-              {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900">Buscar canchas</h2>
-                <button
-                  onClick={() => setShowMobileSearchModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="h-6 w-6 text-gray-600" />
-                </button>
-              </div>
-
-              {/* Search Form */}
-              <div className="flex-1 p-4">
-                <SportsSearchBar
-                  idPrefix="modal-"
-                  onSearch={(params) => {
-                    handleSportSearch(params);
-                    setShowMobileSearchModal(false);
-                  }}
-                  initialVenue={searchValues.venue}
-                  initialVenueId={searchValues.venueId}
-                  initialDate={searchValues.date}
-                  initialStartTime={searchValues.startTime}
-                  initialEndTime={searchValues.endTime}
-                  initialDiscipline={searchValues.discipline}
-                  initialDisciplineId={searchValues.disciplineId}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search Bar - Sticky version (appears on scroll) - Hidden on mobile */}
-        <div className={`fixed top-16 sm:top-20 left-0 right-0 z-40 transition-all duration-300 hidden md:block ${isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-          }`}>
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 shadow-xl border-b-2 border-primary-500">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-              <SportsSearchBar
-                idPrefix="sticky-"
-                onSearch={handleSportSearch}
-                initialVenue={searchValues.venue}
-                initialVenueId={searchValues.venueId}
-                initialDate={searchValues.date}
-                initialStartTime={searchValues.startTime}
-                initialEndTime={searchValues.endTime}
-                initialDiscipline={searchValues.discipline}
-                initialDisciplineId={searchValues.disciplineId}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Sticky Search Button (appears on scroll) */}
-        <div className={`fixed top-14 left-0 right-0 z-40 transition-all duration-300 md:hidden ${isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-          }`}>
-          <div className="bg-white shadow-lg border-b border-gray-200 px-4 py-3">
-            <button
-              onClick={() => setShowMobileSearchModal(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg shadow-md hover:from-primary-600 hover:to-secondary-600 transition-all"
-            >
-              <Search className="h-4 w-4" />
-              <span className="font-medium">Buscar</span>
-            </button>
-          </div>
-        </div>
-
-
-        {/* Listings Section */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-12 sm:py-16">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-              <p className="font-medium">Error al cargar canchas</p>
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="text-center py-16">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-              <p className="text-gray-600">Cargando espacios deportivos...</p>
-            </div>
-          ) : (
-            <>
-              {/* Results Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600 mb-2">
-                    Espacios Deportivos
-                  </h2>
-                  <p className="text-gray-600 text-base">
-                    {filteredVenues.length > 0 ? `${filteredVenues.length} sedes disponibles` : 'No hay sedes disponibles'}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3 mt-4 sm:mt-0">
-                  <Filters onFiltersChange={handleFiltersChange} />
-                  <button className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-all font-semibold text-sm">
-                    <span>Ver Mapa</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Venues Grid */}
-              {filteredVenues.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredVenues.map((sede) => (
-                    <SedeCard
-                      key={sede.idSede}
-                      sede={sede}
-                      onClick={() => navigate(`/venues/${sede.idSede}`)}
-                    />
-                  ))}
-                </div>
-              ) : hasSearched ? (
-                <div className="text-center py-16 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border-2 border-primary-200">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600 mb-3">
-                    No se encontraron resultados
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    No hay espacios disponibles con los criterios de búsqueda seleccionados. Intenta con otros parámetros.
-                  </p>
-                </div>
-              ) : null}
-
-              {/* Load More Button */}
-              {filteredVenues.length > 0 && filteredVenues.length >= 12 && (
-                <div className="text-center mt-12">
-                  <button className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-10 py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all font-semibold shadow-lg hover:shadow-xl">
-                    Mostrar más espacios
-                  </button>
-                </div>
-              )}
-            </>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
       <Footer />
-    </div >
+    </div>
   );
 };
 

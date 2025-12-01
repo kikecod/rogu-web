@@ -21,6 +21,8 @@ export default defineConfig({
       '@/components': '/src/components',
       '@/admin-panel': '/src/modules/admin-panel',
       '@/config': '/src/config',
+      '@/modules/public': '/src/modules/public',
+      '@/public': '/src/modules/public',
     }
   }
 })

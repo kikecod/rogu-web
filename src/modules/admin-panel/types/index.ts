@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+
 // ==========================================
 // TIPOS GLOBALES DEL PANEL ADMINISTRATIVO
 // ==========================================
@@ -329,10 +331,16 @@ export interface EntityCardData {
   badge: {
     text: string;
     value?: number;
+    tone?: 'success' | 'warning' | 'danger' | 'info';
   };
   route: string;
-  icon: string;
-  iconColor: string;
+  icon: LucideIcon;
+  iconColor?: string;
+  accent?: 'primary' | 'secondary' | 'accent';
+  meta?: {
+    label: string;
+    value: string;
+  };
 }
 
 export interface MetricCardData {
@@ -344,8 +352,12 @@ export interface MetricCardData {
   trend?: {
     value: number;
     direction: 'up' | 'down';
+    label?: string;
   };
   format?: 'number' | 'currency' | 'percentage';
+  accent?: 'primary' | 'secondary' | 'accent-1' | 'accent-2';
+  sparkline?: number[];
+  target?: string;
 }
 
 export interface DashboardData {

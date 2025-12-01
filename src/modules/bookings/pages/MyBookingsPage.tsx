@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar, Clock, Users, Edit, Trash2,
@@ -641,7 +641,7 @@ const MyBookingsPage: React.FC = () => {
         />
       )}
 
-      <Footer />
+     <Footer /> 
     </div>
   );
 };

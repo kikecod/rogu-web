@@ -1,4 +1,4 @@
-import { Building2, MapPin, Star, Calendar, Check, AlertCircle } from 'lucide-react';
+import { Building2, MapPin, Star, Calendar, Check, AlertCircle, User } from 'lucide-react';
 import type { Sede } from '../types';
 
 interface SedeCardProps {
@@ -9,105 +9,106 @@ interface SedeCardProps {
 }
 
 export const SedeCard = ({ sede, onClick, onEdit, onDelete }: SedeCardProps) => {
-  const getEstadoBadge = () => {
-    if (!sede.activa) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>;
-    }
-    if (!sede.verificada) {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>;
-    }
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Activa</span>;
+  const estadoLabel = () => {
+    if (!sede.activa) return { text: 'Inactiva', color: 'bg-danger/15 text-danger' };
+    if (!sede.verificada) return { text: 'Pendiente', color: 'bg-warning/15 text-warning' };
+    return { text: 'Activa', color: 'bg-success/15 text-success' };
   };
+
+  const estado = estadoLabel();
+  const hasOcupacion = !!sede.totalReservas;
 
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
+      className="bg-surface backdrop-blur-xl border border-border rounded-card shadow-soft p-4 cursor-pointer hover:-translate-y-0.5 transition-all"
     >
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <Building2 className="text-blue-600" size={20} />
-            <h3 className="font-semibold text-lg text-gray-900">{sede.nombre}</h3>
+      <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-primary to-secondary mb-3" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-soft">
+            <Building2 size={20} />
           </div>
-          <div className="flex items-center gap-1 text-sm text-gray-600">
-            <MapPin size={14} />
-            <span>{sede.ciudad || sede.city || 'Ciudad no especificada'}</span>
+          <div>
+            <h3 className="text-lg font-semibold text-text-main leading-tight">{sede.nombre}</h3>
+            <div className="flex items-center gap-1 text-sm text-muted">
+              <MapPin size={14} />
+              <span>{sede.ciudad || sede.city || 'Ciudad no especificada'}</span>
+            </div>
           </div>
         </div>
-        {getEstadoBadge()}
+        <span
+          className={`inline-flex items-center rounded-input px-3 py-1 text-xs font-semibold border border-border ${estado.color}`}
+        >
+          {estado.text}
+        </span>
       </div>
 
-      {/* Descripción */}
-      {sede.descripcion && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{sede.descripcion}</p>
-      )}
+      {sede.descripcion && <p className="text-sm text-muted mt-2 line-clamp-2">{sede.descripcion}</p>}
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-3 gap-2 mb-3 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
         <div className="text-center">
-          <p className="text-xs text-gray-500">Canchas</p>
-          <p className="text-lg font-semibold text-gray-900">{sede.totalCanchas || 0}</p>
+          <p className="text-[11px] text-muted">Canchas</p>
+          <p className="text-xl font-semibold text-text-main">{sede.totalCanchas || 0}</p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-gray-500">Reservas</p>
-          <p className="text-lg font-semibold text-gray-900">{sede.totalReservas || 0}</p>
+          <p className="text-[11px] text-muted">Reservas</p>
+          <p className="text-xl font-semibold text-text-main">{sede.totalReservas || 0}</p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-gray-500">Rating</p>
+          <p className="text-[11px] text-muted">Rating</p>
           <div className="flex items-center justify-center gap-1">
             <Star className="text-yellow-500 fill-yellow-500" size={14} />
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-xl font-semibold text-text-main">
               {sede.promedioCalificacion ? sede.promedioCalificacion.toFixed(1) : 'N/A'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Estado de verificación */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mt-3 flex items-center gap-2 text-sm flex-wrap">
         {sede.verificada ? (
-          <div className="flex items-center gap-1 text-green-600 text-sm">
-            <Check size={16} />
-            <span>Verificada</span>
-          </div>
+          <span className="inline-flex items-center gap-1 rounded-input px-2 py-1 text-[12px] bg-success/15 text-success border border-success/30">
+            <Check size={14} />
+            Verificada
+          </span>
         ) : (
-          <div className="flex items-center gap-1 text-yellow-600 text-sm">
-            <AlertCircle size={16} />
-            <span>Pendiente de verificación</span>
-          </div>
+          <span className="inline-flex items-center gap-1 rounded-input px-2 py-1 text-[12px] bg-warning/15 text-warning border border-warning/30">
+            <AlertCircle size={14} />
+            Pendiente
+          </span>
+        )}
+        {sede.duenio && (
+          <span className="inline-flex items-center gap-1 rounded-input px-2 py-1 text-[12px] border border-border bg-white/80 text-text-main">
+            <User size={14} />
+            Dueno: {sede.duenio.persona.nombre}
+          </span>
         )}
       </div>
 
-      {/* Información del dueño */}
-      {sede.duenio && (
-        <div className="text-xs text-gray-500 mb-2">
-          <span className="font-medium">Dueño:</span> {sede.duenio.persona.nombre} {sede.duenio.persona.apellidoPaterno}
-        </div>
-      )}
+      <div className="mt-3">
+        <p className="text-[11px] text-muted mb-1">Ocupacion semanal</p>
+        {hasOcupacion ? (
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 7 }).map((_, idx) => (
+              <span
+                key={idx}
+                className="block rounded-full bg-primary/25"
+                style={{ height: `${Math.min(((sede.totalReservas || 0) / 7) + idx * 2, 100)}%` }}
+                title={`${Math.min(((sede.totalReservas || 0) / 7) + idx * 2, 100)}%`}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted">Sin datos de ocupacion</p>
+        )}
+      </div>
 
-      {/* Contacto */}
-      {(sede.telefono || sede.email) && (
-        <div className="text-xs text-gray-500 mb-3 space-y-1">
-          {sede.telefono && (
-            <div className="flex items-center gap-1">
-              <span className="font-medium">Tel:</span> {sede.telefono}
-            </div>
-          )}
-          {sede.email && (
-            <div className="flex items-center gap-1 truncate">
-              <span className="font-medium">Email:</span> {sede.email}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Fecha de creación */}
-      <div className="flex items-center gap-1 text-xs text-gray-500">
+      <div className="flex items-center gap-2 text-xs text-muted mt-3">
         <Calendar size={12} />
         <span>
-          Creado: {new Date(sede.creadoEn).toLocaleDateString('es-ES', {
+          Creado:{' '}
+          {new Date(sede.creadoEn).toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -115,16 +116,15 @@ export const SedeCard = ({ sede, onClick, onEdit, onDelete }: SedeCardProps) => 
         </span>
       </div>
 
-      {/* Acciones */}
       {(onEdit || onDelete) && (
-        <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+        <div className="flex gap-2 mt-4 pt-3 border-t border-border">
           {onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
-              className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              className="flex-1 px-3 py-2 rounded-input border border-border bg-white/80 text-text-main hover:bg-white transition"
             >
               Editar
             </button>
@@ -135,7 +135,7 @@ export const SedeCard = ({ sede, onClick, onEdit, onDelete }: SedeCardProps) => 
                 e.stopPropagation();
                 onDelete();
               }}
-              className="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+              className="flex-1 px-3 py-2 rounded-input border border-border bg-white/80 text-danger hover:bg-danger/10 transition"
             >
               Eliminar
             </button>

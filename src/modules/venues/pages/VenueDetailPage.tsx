@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   MapPin, Phone, Mail, Star, ChevronLeft, Shield,
   Clock, Users, Building2, AlertCircle, Loader2,
@@ -15,6 +15,7 @@ import FavoriteButton from '@/favorites/components/FavoriteButton';
 
 const VenueDetailPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { idSede } = useParams<{ idSede: string }>();
 
   const [venue, setVenue] = useState<SedeDetalle | null>(null);
@@ -60,6 +61,18 @@ const VenueDetailPage: React.FC = () => {
 
   const handleFieldClick = (field: CanchaResumen) => {
     navigate(`/venues/${idSede}/fields/${field.idCancha}`);
+  };
+
+  const handleFieldImageError = (idCancha: number) => {
+    setFieldImageErrors((prev) => ({ ...prev, [idCancha]: true }));
+  };
+
+  const handleBack = () => {
+    if (fromFavorites) {
+      navigate(ROUTES.favoritos);
+    } else {
+      navigate(ROUTES.home);
+    }
   };
 
   if (loading) {

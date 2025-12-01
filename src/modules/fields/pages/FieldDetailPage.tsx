@@ -35,6 +35,7 @@ const SportFieldDetailPage: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [participants, setParticipants] = useState(1);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -113,14 +114,16 @@ const SportFieldDetailPage: React.FC = () => {
 
   // Handlers
   const nextImage = () => {
-    if (!field) return;
+    if (!field || !field.images || field.images.length === 0) return;
+    setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === field.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
-    if (!field) return;
+    if (!field || !field.images || field.images.length === 0) return;
+    setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === 0 ? field.images.length - 1 : prev - 1
     );
@@ -216,6 +219,9 @@ const SportFieldDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const hasImages = Array.isArray(field.images) && field.images.length > 0;
+  const currentImage = hasImages ? field.images[currentImageIndex] : '';
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">

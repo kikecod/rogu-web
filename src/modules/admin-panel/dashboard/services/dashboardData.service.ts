@@ -1,166 +1,105 @@
+import { ROUTES } from '@/config/routes';
 import { apiClient } from '../../lib/apiClient';
 import { adminApiClient } from '../../lib/adminApiClient';
-import { ROUTES } from '@/config/routes';
+import { Building2, Users, CalendarClock, CreditCard, ShieldCheck, Sparkles } from 'lucide-react';
 import type { EntityCardData, MetricCardData } from '../../types';
 
 const DASHBOARD_METRICS_ENDPOINT = '/dashboard/metricas';
 
-// ==========================================
-// DATOS POR DEFECTO (FALLBACK)
-// ==========================================
+const ENTITY_BASE: EntityCardData[] = [
+  {
+    id: 'sedes',
+    title: 'Gestion de Sedes',
+    description: 'Administrar sedes deportivas',
+    badge: { text: 'disponibles' },
+    route: ROUTES.admin.sedes,
+    icon: Building2,
+  },
+  {
+    id: 'disciplinas',
+    title: 'Gestion de Disciplinas',
+    description: 'Administrar disciplinas deportivas',
+    badge: { text: 'deportes' },
+    route: ROUTES.admin.disciplinas,
+    icon: Sparkles,
+  },
+  {
+    id: 'personas',
+    title: 'Gestion de Personas',
+    description: 'Administrar clientes y usuarios',
+    badge: { text: 'registrados' },
+    route: ROUTES.admin.usuarios,
+    icon: Users,
+  },
+  {
+    id: 'reservas',
+    title: 'Gestion de Reservas',
+    description: 'Administrar reservas del sistema',
+    badge: { text: 'reservas' },
+    route: ROUTES.admin.reservas,
+    icon: CalendarClock,
+  },
+  {
+    id: 'pagos',
+    title: 'Gestion de Pagos',
+    description: 'Transacciones y conciliacion',
+    badge: { text: 'ingresos' },
+    route: ROUTES.admin.pagos,
+    icon: CreditCard,
+  },
+  {
+    id: 'seguridad',
+    title: 'Control de Accesos',
+    description: 'Verificacion y control QR',
+    badge: { text: 'eventos' },
+    route: ROUTES.admin.verificaciones,
+    icon: ShieldCheck,
+  },
+];
 
-const getDefaultEntityCards = (): EntityCardData[] => {
-  return [
-    {
-      id: 'sedes',
-      title: 'Gestión de Sedes',
-      description: 'Administrar sedes deportivas',
-      badge: { text: 'disponibles', value: 0 },
-      route: ROUTES.admin.sedes,
-      icon: '🏟️',
-      iconColor: 'bg-blue-100',
-    },
-    {
-      id: 'disciplinas',
-      title: 'Gestión de Disciplinas',
-      description: 'Administrar disciplinas deportivas',
-      badge: { text: 'deportes', value: 0 },
-      route: '/admin/disciplinas',
-      icon: '🎯',
-      iconColor: 'bg-purple-100',
-    },
-    {
-      id: 'personas',
-      title: 'Gestión de Personas',
-      description: 'Administrar clientes y usuarios',
-      badge: { text: 'registrados', value: 0 },
-      route: ROUTES.admin.usuarios,
-      icon: '👥',
-      iconColor: 'bg-yellow-100',
-    },
-    {
-      id: 'reservas',
-      title: 'Gestión de Reservas',
-      description: 'Administrar reservas del sistema',
-      badge: { text: 'reservas', value: 0 },
-      route: '/admin/reservas',
-      icon: '📅',
-      iconColor: 'bg-pink-100',
-    },
-    {
-      id: 'pagos',
-      title: 'Gestión de Pagos',
-      description: 'Administrar pagos y transacciones',
-      badge: { text: 'ingresos' },
-      route: '/admin/pagos',
-      icon: '💳',
-      iconColor: 'bg-emerald-100',
-    },
-    {
-      id: 'acceso',
-      title: 'Control de Acceso',
-      description: 'Gestionar acceso QR y asistencias',
-      badge: { text: 'QRs', value: 0 },
-      route: ROUTES.admin.verificaciones,
-      icon: '🔐',
-      iconColor: 'bg-indigo-100',
-    },
-  ];
-};
+const getDefaultEntityCards = (): EntityCardData[] => [];
 
-const getDefaultMetricsCards = (): MetricCardData[] => {
-  return [
-    {
-      id: 'reservas-hoy',
-      label: 'Reservas Hoy',
-      value: 0,
-      period: 'hoy',
-      format: 'number',
-    },
-    {
-      id: 'ingresos-diarios',
-      label: 'Ingresos Diarios',
-      value: 0,
-      period: 'hoy',
-      format: 'currency',
-    },
-    {
-      id: 'ocupacion',
-      label: 'Ocupación',
-      value: 0,
-      format: 'percentage',
-      helperText: 'Canchas ocupadas',
-    },
-    {
-      id: 'nuevos-usuarios',
-      label: 'Nuevos Usuarios',
-      value: 0,
-      period: 'hoy',
-      format: 'number',
-      helperText: 'Registros completados',
-    },
-    {
-      id: 'reservas-pendientes',
-      label: 'Reservas Pendientes',
-      value: 0,
-      format: 'number',
-      helperText: 'Por confirmar',
-    },
-    {
-      id: 'total-usuarios',
-      label: 'Total Usuarios',
-      value: 0,
-      format: 'number',
-      helperText: 'En el sistema',
-    },
-    {
-      id: 'total-canchas',
-      label: 'Total Canchas',
-      value: 0,
-      format: 'number',
-      helperText: 'Activas',
-    },
-    {
-      id: 'total-reservas',
-      label: 'Total Reservas',
-      value: 0,
-      format: 'number',
-      helperText: 'En el sistema',
-    },
-  ];
-};
+const getDefaultMetricsCards = (): MetricCardData[] => [];
 
 const buildEntityCardsFromStats = (stats: any): EntityCardData[] => {
-  const cards = getDefaultEntityCards();
   const sedesStats = stats?.sedes ?? {};
   const usuariosStats = stats?.usuarios ?? {};
   const reservasStats = stats?.reservas ?? {};
 
-  const sedesCard = cards.find((card) => card.id === 'sedes');
-  if (sedesCard) {
-    sedesCard.badge = {
-      text: 'activas',
-      value: Number(sedesStats.activas ?? sedesStats.verificadas ?? sedesStats.total ?? 0),
-    };
-  }
+  return ENTITY_BASE.reduce<EntityCardData[]>((acc, card) => {
+    let value: number | undefined;
+    switch (card.id) {
+      case 'sedes':
+        value = sedesStats.activas ?? sedesStats.verificadas ?? sedesStats.total;
+        break;
+      case 'personas':
+        value = usuariosStats.total;
+        break;
+      case 'reservas':
+        value = reservasStats.totalMes ?? reservasStats.total ?? reservasStats.totalHoy;
+        break;
+      case 'pagos':
+        value = stats?.pagos?.total;
+        break;
+      case 'seguridad':
+        value = stats?.verificaciones?.total;
+        break;
+      default:
+        break;
+    }
 
-  const personasCard = cards.find((card) => card.id === 'personas');
-  if (personasCard) {
-    personasCard.badge = {
-      text: 'registrados',
-      value: Number(usuariosStats.total ?? 0),
-    };
-  }
+    if (value !== undefined && !Number.isNaN(Number(value))) {
+      acc.push({
+        ...card,
+        badge: {
+          ...card.badge,
+          value: Number(value),
+        },
+      });
+    }
 
-  const reservasCard = cards.find((card) => card.id === 'reservas');
-  if (reservasCard) {
-    reservasCard.badge = {
-      text: 'reservas',
-      value: Number(reservasStats.totalMes ?? reservasStats.total ?? 0),
-    };
-  }
-
-  return cards;
+    return acc;
+  }, []);
 };
 
 const buildMetricsFromStats = (stats: any): MetricCardData[] => {
@@ -183,6 +122,8 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: reservasHoy,
       period: 'hoy',
       format: 'number',
+      accent: 'primary',
+      sparkline: [reservasHoy / 2, reservasHoy / 3 + 3, reservasHoy / 2 + 4, reservasHoy],
     },
     {
       id: 'ingresos-diarios',
@@ -190,13 +131,16 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: ingresosDiarios,
       period: 'hoy',
       format: 'currency',
+      accent: 'secondary',
+      sparkline: [ingresosDiarios / 2, ingresosDiarios / 3, ingresosDiarios / 1.5, ingresosDiarios],
     },
     {
       id: 'ocupacion',
-      label: 'Ocupación',
+      label: 'Ocupacion',
       value: Math.min(Math.max(ocupacionValue, 0), 100),
       format: 'percentage',
       helperText: 'Canchas ocupadas',
+      accent: 'accent-1',
     },
     {
       id: 'nuevos-usuarios',
@@ -205,6 +149,7 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       period: 'hoy',
       format: 'number',
       helperText: 'Registros completados',
+      accent: 'accent-2',
     },
     {
       id: 'reservas-pendientes',
@@ -212,6 +157,7 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: Number(reservasStats.pendientes ?? 0),
       format: 'number',
       helperText: 'Por confirmar',
+      accent: 'primary',
     },
     {
       id: 'total-usuarios',
@@ -219,6 +165,7 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: Number(usuariosStats.total ?? 0),
       format: 'number',
       helperText: 'En el sistema',
+      accent: 'secondary',
     },
     {
       id: 'total-canchas',
@@ -226,6 +173,7 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: Number(canchasStats.activas ?? canchasStats.total ?? 0),
       format: 'number',
       helperText: 'Activas',
+      accent: 'accent-2',
     },
     {
       id: 'total-reservas',
@@ -233,6 +181,7 @@ const buildMetricsFromStats = (stats: any): MetricCardData[] => {
       value: Number(reservasStats.totalMes ?? reservasStats.total ?? 0),
       format: 'number',
       helperText: 'En el sistema',
+      accent: 'accent-1',
     },
   ];
 };
@@ -241,7 +190,7 @@ const fetchDashboardStats = async (): Promise<any | null> => {
   try {
     return await adminApiClient.get<any>(DASHBOARD_METRICS_ENDPOINT);
   } catch (error: any) {
-    console.error('Error al obtener métricas del dashboard:', error);
+    console.error('Error al obtener metricas del dashboard:', error);
     return null;
   }
 };
@@ -260,20 +209,12 @@ const getLegacyEntityCardsData = async (): Promise<EntityCardData[]> => {
     const reservas = Array.isArray(reservasRes.data) ? reservasRes.data : [];
     const totalReservas = reservas.length;
 
-    const cards = getDefaultEntityCards();
-    const sedesCard = cards.find((card) => card.id === 'sedes');
-    if (sedesCard) {
-      sedesCard.badge = { text: 'activas', value: sedesDisponibles };
-    }
-    const personasCard = cards.find((card) => card.id === 'personas');
-    if (personasCard) {
-      personasCard.badge = { text: 'registrados', value: totalUsuarios };
-    }
-    const reservasCard = cards.find((card) => card.id === 'reservas');
-    if (reservasCard) {
-      reservasCard.badge = { text: 'reservas', value: totalReservas };
-    }
-    return cards;
+    const stats = {
+      sedes: { activas: sedesDisponibles, total: sedes.length },
+      usuarios: { total: totalUsuarios },
+      reservas: { total: totalReservas },
+    };
+    return buildEntityCardsFromStats(stats);
   } catch (error) {
     console.error('Error al obtener tarjetas legacy:', error);
     return getDefaultEntityCards();
@@ -307,14 +248,12 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
       return fechaCreacion.getTime() === hoy.getTime();
     }).length;
 
-    const reservasPendientes = reservas.filter((r: any) => 
-      r.estado !== 'COMPLETADA' && r.estado !== 'CANCELADA'
+    const reservasPendientes = reservas.filter(
+      (r: any) => r.estado !== 'COMPLETADA' && r.estado !== 'CANCELADA'
     ).length;
 
     const canchasActivas = canchas.filter((c: any) => !c.eliminado).length;
-    const ocupacion = canchasActivas > 0 
-      ? Math.round((reservasHoy / canchasActivas) * 100) 
-      : 0;
+    const ocupacion = canchasActivas > 0 ? Math.round((reservasHoy / canchasActivas) * 100) : 0;
 
     const ingresosDiarios = reservas
       .filter((r: any) => {
@@ -332,6 +271,8 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         period: 'hoy',
         format: 'number',
         trend: { value: 12, direction: 'up' },
+        accent: 'primary',
+        sparkline: [reservasHoy / 3, reservasHoy / 2, reservasHoy / 1.5, reservasHoy],
       },
       {
         id: 'ingresos-diarios',
@@ -340,14 +281,17 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         period: 'hoy',
         format: 'currency',
         trend: { value: 8, direction: 'up' },
+        accent: 'secondary',
+        sparkline: [ingresosDiarios / 4, ingresosDiarios / 2, ingresosDiarios],
       },
       {
         id: 'ocupacion',
-        label: 'Ocupación',
+        label: 'Ocupacion',
         value: Math.min(ocupacion, 100),
         format: 'percentage',
         helperText: 'Canchas ocupadas',
         trend: { value: 5, direction: 'up' },
+        accent: 'accent-1',
       },
       {
         id: 'nuevos-usuarios',
@@ -356,6 +300,7 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         period: 'hoy',
         format: 'number',
         helperText: 'Registros completados',
+        accent: 'accent-2',
       },
       {
         id: 'reservas-pendientes',
@@ -363,6 +308,7 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         value: reservasPendientes,
         format: 'number',
         helperText: 'Por confirmar',
+        accent: 'primary',
       },
       {
         id: 'total-usuarios',
@@ -370,6 +316,7 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         value: usuarios.length,
         format: 'number',
         helperText: 'En el sistema',
+        accent: 'secondary',
       },
       {
         id: 'total-canchas',
@@ -377,6 +324,7 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         value: canchasActivas,
         format: 'number',
         helperText: 'Activas',
+        accent: 'accent-2',
       },
       {
         id: 'total-reservas',
@@ -384,10 +332,11 @@ const getLegacyMetricsCardsData = async (): Promise<MetricCardData[]> => {
         value: reservas.length,
         format: 'number',
         helperText: 'En el sistema',
+        accent: 'accent-1',
       },
     ];
   } catch (error) {
-    console.error('Error al obtener métricas legacy:', error);
+    console.error('Error al obtener metricas legacy:', error);
     return getDefaultMetricsCards();
   }
 };
@@ -404,23 +353,17 @@ export const dashboardDataService = {
     }
   },
 
-  /**
-   * Obtener métricas del dashboard
-   */
   async getMetricsCardsData(): Promise<MetricCardData[]> {
     try {
       const stats = await fetchDashboardStats();
       if (stats) return buildMetricsFromStats(stats);
       return getLegacyMetricsCardsData();
     } catch (error) {
-      console.error('Error al obtener métricas:', error);
+      console.error('Error al obtener metricas:', error);
       return getLegacyMetricsCardsData();
     }
   },
 
-  /**
-   * Obtener todos los datos del dashboard
-   */
   async getAllDashboardData() {
     const [entityCards, metricsCards] = await Promise.all([
       this.getEntityCardsData(),
