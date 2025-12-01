@@ -1,9 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, Clock, MapPin, Users, QrCode, Edit, Trash2, 
+import {
+  Calendar, Clock, Users, Edit, Trash2,
   CheckCircle, XCircle, AlertCircle, ChevronRight, Star,
-  Download, Share2, Filter, Search, CreditCard
+  Download, Share2, Search, CreditCard,
+  ArrowUpRight, History, Wallet
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import EditBookingModal from '../components/EditBookingModal';
@@ -14,40 +15,14 @@ import { useAuth } from '@/auth/hooks/useAuth';
 import { reviewService } from '@/reviews/services/reviewService';
 import { useAccessPass } from '../hooks/useAccessPass';
 import { ROUTES } from '@/config/routes';
-import type { ApiReservaUsuario } from '../types/booking.types';
+import type { ApiReservaUsuario, Booking } from '../types/booking.types';
 
-interface Booking {
-  id: string;
-  fieldId: string;
-  fieldName: string;
-  fieldImage: string;
-  sedeName: string;
-  address: string;
-  date: string;
-  timeSlot: string;
-  participants: number;
-  price: number;
-  totalPaid: number;
-  status: 'active' | 'completed' | 'cancelled' | 'pending';
-  bookingCode: string;
-  rating?: number;
-  reviews?: number;
-  paymentMethod: 'card' | 'qr';
-  completadaEn?: string | null;
-}
-
-/**
- * Parsea una fecha en formato ISO sin conversión de zona horaria
- * Asume que la fecha viene en hora de Bolivia (GMT-4)
- */
+// Helper functions
 const parseDateAsLocal = (dateString: string): Date => {
   const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
   return new Date(year, month - 1, day);
 };
 
-/**
- * Formatea una fecha como string legible en español
- */
 const formatDateLocal = (dateString: string): string => {
   const date = parseDateAsLocal(dateString);
   return date.toLocaleDateString('es-BO', {
@@ -58,64 +33,33 @@ const formatDateLocal = (dateString: string): string => {
   });
 };
 
-const computeStatusFromReserva = (reserva: ApiReservaUsuario): 'active' | 'completed' | 'cancelled' | 'pending' => {
-  const estadoLower = (reserva.estado || '').toLowerCase();
-
-  if (estadoLower.includes('cancel')) return 'cancelled';
-  if (reserva.completadaEn) return 'completed';
-  if (estadoLower.includes('pag') && estadoLower.includes('confirm')) return 'completed';
-  if (estadoLower.includes('pend')) return 'pending';
-  if (estadoLower.includes('confirm')) return 'active';
-
-  return 'active';
-};
-
-const mapReservaToBooking = (reserva: ApiReservaUsuario, imageUrl: string): Booking => {
-  const status = computeStatusFromReserva(reserva);
-
-  return {
-    id: reserva.idReserva.toString(),
-    fieldId: reserva.cancha.idCancha.toString(),
-    fieldName: reserva.cancha.nombre,
-    fieldImage: imageUrl,
-    sedeName: reserva.cancha.sede.nombre,
-    address: '',
-    date: formatDateLocal(reserva.fecha),
-    timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
-    participants: reserva.cantidadPersonas,
-    price: reserva.montoTotal,
-    totalPaid: reserva.montoTotal,
-    status,
-    bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
-    paymentMethod: 'card',
-    completadaEn: reserva.completadaEn
-  };
-};
+type TabId = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 const MyBookingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // State
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState<TabId>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Modals State
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
-  
-  // Estados para sistema de reseñas
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [bookingToReview, setBookingToReview] = useState<Booking | null>(null);
   const [pendingReviews, setPendingReviews] = useState<Set<string>>(new Set());
 
-  // Scroll hacia arriba al montar el componente
+  // Initial Load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Cargar reservas del usuario
   useEffect(() => {
     const loadBookings = async () => {
       if (!user?.idUsuario) {
@@ -127,23 +71,56 @@ const MyBookingsPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const reservasData = await fetchReservasByUserId(user.idUsuario);
-        
-        // Cargar las imágenes de todas las canchas en paralelo
-        const imagePromises = reservasData.map(reserva => 
+
+        const imagePromises = reservasData.map(reserva =>
           fetchCanchaImage(reserva.cancha.idCancha)
         );
         const images = await Promise.all(imagePromises);
-        
-        // Convertir las reservas del API al formato del componente
+
         const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          return mapReservaToBooking(reserva, images[index]);
+          let status: 'active' | 'completed' | 'cancelled' | 'pending' = 'active';
+
+          if (reserva.estado === 'Cancelada') {
+            status = 'cancelled';
+          } else if (reserva.completadaEn) {
+            status = 'completed';
+          } else if (reserva.estado === 'Pendiente') {
+            status = 'pending';
+          } else if (reserva.estado === 'Confirmada') {
+            status = 'active';
+          }
+
+          return {
+            id: reserva.idReserva.toString(),
+            fieldId: reserva.cancha.idCancha.toString(),
+            fieldName: reserva.cancha.nombre,
+            fieldImage: images[index],
+            sedeName: reserva.cancha.sede.nombre,
+            address: '',
+            date: formatDateLocal(reserva.fecha),
+            timeSlot: `${reserva.horaInicio.substring(0, 5)} - ${reserva.horaFin.substring(0, 5)}`,
+            participants: reserva.cantidadPersonas,
+            price: reserva.montoTotal,
+            totalPaid: reserva.montoTotal,
+            status,
+            bookingCode: `ROGU-${reserva.idReserva.toString().padStart(8, '0')}`,
+            paymentMethod: 'card' as const,
+            completadaEn: reserva.completadaEn
+          };
         });
-        
+
+        // Sort by date (newest first)
+        bookingsConverted.sort((a, b) => {
+          // Simple string comparison for now as date format is localized
+          // Ideally we should keep the raw date for sorting
+          return b.id.localeCompare(a.id);
+        });
+
         setBookings(bookingsConverted);
       } catch (err) {
-        console.error('Error al cargar reservas:', err);
+        console.error('Error loading bookings:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar las reservas');
       } finally {
         setLoading(false);
@@ -153,100 +130,47 @@ const MyBookingsPage: React.FC = () => {
     loadBookings();
   }, [user?.idUsuario]);
 
-  // Cargar reservas pendientes de reseñar
+  // Load Pending Reviews
   useEffect(() => {
     const loadPendingReviews = async () => {
-      try {
-        const pending = await reviewService.getPendingBookingsToReview();
-        const pendingIds = new Set(pending.map(p => p.idReserva.toString()));
-        setPendingReviews(pendingIds);
-      } catch (err) {
-        console.error('Error loading pending reviews:', err);
+      if (user) {
+        try {
+          const pending = await reviewService.getPendingBookingsToReview();
+          const pendingIds = new Set(pending.map(p => p.idReserva.toString()));
+          setPendingReviews(pendingIds);
+        } catch (err) {
+          console.error('Error loading pending reviews:', err);
+        }
       }
     };
-
-    if (user) {
-      loadPendingReviews();
-    }
+    loadPendingReviews();
   }, [user, bookings]);
 
+  // Filtering
   const filteredBookings = bookings.filter(booking => {
-    const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
     const matchesSearch = booking.fieldName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.sedeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.bookingCode.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+      booking.sedeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bookingCode.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    switch (activeTab) {
+      case 'upcoming':
+        return booking.status === 'active' || booking.status === 'pending';
+      case 'completed':
+        return booking.status === 'completed';
+      case 'cancelled':
+        return booking.status === 'cancelled';
+      default:
+        return true;
+    }
   });
 
-  const pendingBookings = bookings.filter(b => b.status === 'pending').length;
-  const activeBookings = bookings.filter(b => b.status === 'active').length;
-  const completedBookings = bookings.filter(b => b.status === 'completed').length;
-  const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length;
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-xs font-semibold">
-            <AlertCircle className="h-3.5 w-3.5" />
-            Pendiente
-          </span>
-        );
-      case 'active':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-semibold">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Confirmada
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-semibold">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Completada
-          </span>
-        );
-      case 'cancelled':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full text-xs font-semibold">
-            <XCircle className="h-3.5 w-3.5" />
-            Cancelada
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
+  // Actions
   const handleEditBooking = (booking: Booking) => {
     setBookingToEdit(booking);
     setSelectedBooking(null);
     setShowEditModal(true);
-  };
-
-  const handleEditSuccess = async () => {
-    setShowEditModal(false);
-    setBookingToEdit(null);
-    if (user?.idUsuario) {
-      setLoading(true);
-      try {
-        const reservasData = await fetchReservasByUserId(user.idUsuario);
-        const imagePromises = reservasData.map(reserva => 
-          fetchCanchaImage(reserva.cancha.idCancha)
-        );
-        const images = await Promise.all(imagePromises);
-        
-        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          return mapReservaToBooking(reserva, images[index]);
-        });
-        
-        setBookings(bookingsConverted);
-      } catch (err) {
-        console.error('Error recargando reservas:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
   };
 
   const handleDeleteBooking = (bookingId: string) => {
@@ -259,16 +183,13 @@ const MyBookingsPage: React.FC = () => {
 
   const handlePayPending = (bookingId: string) => {
     const booking = bookings.find(b => b.id === bookingId);
-    if (!booking) {
-      console.error('Reserva no encontrada:', bookingId);
-      return;
-    }
+    if (!booking) return;
 
     const bookingDetails = {
       fieldName: booking.fieldName,
       fieldImage: booking.fieldImage,
       sedeName: booking.sedeName,
-      address: booking.address,
+      address: '',
       date: booking.date,
       participants: booking.participants,
       timeSlot: booking.timeSlot,
@@ -283,10 +204,14 @@ const MyBookingsPage: React.FC = () => {
       'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
       'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
     };
-    const day = parseInt(dateParts[0]);
-    const month = months[dateParts[1].toLowerCase()];
-    const year = parseInt(dateParts[2]);
-    const selectedDate = new Date(year, month, day);
+
+    let selectedDate = new Date();
+    if (dateParts.length === 3) {
+      const day = parseInt(dateParts[0]);
+      const month = months[dateParts[1].toLowerCase()];
+      const year = parseInt(dateParts[2]);
+      selectedDate = new Date(year, month, day);
+    }
 
     navigate(ROUTES.checkout, {
       state: {
@@ -301,212 +226,120 @@ const MyBookingsPage: React.FC = () => {
     });
   };
 
-  const handleCancelSuccess = async () => {
-    setShowDeleteModal(false);
-    setSelectedBooking(null);
-    
-    if (user?.idUsuario) {
-      setLoading(true);
-      try {
-        const reservasData = await fetchReservasByUserId(user.idUsuario);
-        const imagePromises = reservasData.map(reserva => 
-          fetchCanchaImage(reserva.cancha.idCancha)
-        );
-        const images = await Promise.all(imagePromises);
-        
-        const bookingsConverted: Booking[] = reservasData.map((reserva: ApiReservaUsuario, index: number) => {
-          return mapReservaToBooking(reserva, images[index]);
-        });
-        
-        setBookings(bookingsConverted);
-      } catch (err) {
-        console.error('Error recargando reservas:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleViewDetails = (booking: Booking) => {
-    setSelectedBooking(booking);
-  };
-
-  // Componente para mostrar QR en modal de detalles
-  const QRSection: React.FC<{ booking: Booking }> = ({ booking }) => {
-    const { pass, loading, error, qrImageUrl, downloadQR, shareQR } = useAccessPass(
-      booking.status === 'active' ? parseInt(booking.id) : null
-    );
-
-    if (loading) {
-      return (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Cargando código QR...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border border-red-200">
-          <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-            <p className="text-red-600 font-semibold mb-2">Error al cargar el QR</p>
-            <p className="text-gray-600 text-sm text-center">{error}</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (!qrImageUrl || !pass) {
-      return (
-        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 border border-gray-200">
-          <div className="flex flex-col items-center justify-center py-8">
-            <QrCode className="h-16 w-16 text-gray-400 mb-4" />
-            <p className="text-gray-600">QR no disponible</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-          Código QR de acceso
-        </h3>
-        
-        {/* QR Image from Backend */}
-        <div className="bg-white p-6 rounded-xl inline-block mx-auto shadow-sm w-full flex justify-center">
-          <img 
-            src={qrImageUrl} 
-            alt="QR de acceso" 
-            className="h-48 w-48"
-            onError={(e) => {
-              console.error('Error al cargar imagen QR:', qrImageUrl);
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        </div>
-
-        {/* Código y validez */}
-        <div className="mt-4 space-y-3">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">Código de reserva</p>
-            <p className="text-xl font-mono font-bold text-gray-900">{booking.bookingCode}</p>
-          </div>
-
-          {pass && (
-            <div className="bg-white rounded-lg p-3 text-sm border">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Estado:</span>
-                <span className={`font-semibold ${
-                  pass.estado === 'activo' ? 'text-green-600' : 
-                  pass.estado === 'pendiente' ? 'text-yellow-600' : 
-                  pass.estado === 'usado' ? 'text-blue-600' : 'text-gray-600'
-                }`}>
-                  {pass.estado.charAt(0).toUpperCase() + pass.estado.slice(1)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Usos:</span>
-                <span className="font-semibold">{pass.vecesUsado} / {pass.usoMaximo}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Válido hasta:</span>
-                <span className="font-semibold">{new Date(pass.validoHasta).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Botones */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <button
-            onClick={async () => {
-              try {
-                await downloadQR();
-              } catch (error) {
-                console.error('Error al descargar QR:', error);
-                alert('Error al descargar el QR. Por favor intenta de nuevo.');
-              }
-            }}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Descargar
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await shareQR(booking.fieldName);
-              } catch (error) {
-                console.error('Error al compartir:', error);
-                if (error instanceof Error) {
-                  alert(error.message);
-                }
-              }
-            }}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-          >
-            <Share2 className="h-4 w-4" />
-            Compartir
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // Funciones para sistema de reseñas
   const handleLeaveReview = (booking: Booking) => {
     setBookingToReview(booking);
     setShowReviewModal(true);
-  };
-
-  const handleReviewSuccess = async () => {
-    setShowReviewModal(false);
-    setBookingToReview(null);
-    
-    try {
-      const pending = await reviewService.getPendingBookingsToReview();
-      const pendingIds = new Set(pending.map(p => p.idReserva.toString()));
-      setPendingReviews(pendingIds);
-    } catch (err) {
-      console.error('Error reloading pending reviews:', err);
-    }
   };
 
   const canLeaveReview = (booking: Booking): boolean => {
     return booking.status === 'completed' && pendingReviews.has(booking.id);
   };
 
-  // Estados de loading y error
+  // Callbacks
+  const handleEditSuccess = async () => {
+    setShowEditModal(false);
+    setBookingToEdit(null);
+    // Reload logic would go here (simplified to just reload page or trigger re-fetch)
+    window.location.reload();
+  };
+
+  const handleCancelSuccess = async () => {
+    setShowDeleteModal(false);
+    setSelectedBooking(null);
+    window.location.reload();
+  };
+
+  const handleReviewSuccess = async () => {
+    setShowReviewModal(false);
+    setBookingToReview(null);
+    window.location.reload();
+  };
+
+  // UI Components
+  const StatusBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200">
+            <AlertCircle className="h-3.5 w-3.5" />
+            Pendiente de pago
+          </span>
+        );
+      case 'active':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
+            <CheckCircle className="h-3.5 w-3.5" />
+            Confirmada
+          </span>
+        );
+      case 'completed':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200">
+            <History className="h-3.5 w-3.5" />
+            Completada
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">
+            <XCircle className="h-3.5 w-3.5" />
+            Cancelada
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const QRSection: React.FC<{ booking: Booking }> = ({ booking }) => {
+    const { loading, qrImageUrl, downloadQR, shareQR } = useAccessPass(
+      booking.status === 'active' ? parseInt(booking.id) : null
+    );
+
+    if (loading) return <div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>;
+    if (!qrImageUrl) return <div className="p-4 bg-red-50 text-red-600 rounded-lg text-center text-sm">No se pudo cargar el código QR</div>;
+
+    return (
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-4">Código de Acceso</h3>
+        <div className="bg-white p-4 rounded-xl inline-block shadow-md border border-gray-100 mb-4">
+          <img src={qrImageUrl} alt="QR" className="w-48 h-48" />
+        </div>
+        <p className="text-2xl font-mono font-bold text-gray-900 mb-6">{booking.bookingCode}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={downloadQR} className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+            <Download className="h-4 w-4" /> Descargar
+          </button>
+          <button onClick={() => shareQR(booking.fieldName)} className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+            <Share2 className="h-4 w-4" /> Compartir
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Cargando tus reservas...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-gray-500" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 text-center shadow-xl max-w-md w-full">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar reservas</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Algo salió mal</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={() => navigate(ROUTES.home)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            onClick={() => window.location.reload()}
+            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
           >
-            Volver al inicio
+            Intentar de nuevo
           </button>
         </div>
       </div>
@@ -514,276 +347,136 @@ const MyBookingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gray-50 font-sans">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-3">Mis Reservas</h1>
-          <p className="text-xl text-blue-100">
-            Gestiona todas tus reservas en un solo lugar
-          </p>
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-extrabold text-gray-900">Mis Reservas</h1>
+              <p className="text-gray-500 text-sm mt-1">Gestiona tus partidos y actividades deportivas</p>
+            </div>
+            <button
+              onClick={() => navigate(ROUTES.home)}
+              className="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-all flex items-center gap-2 self-start md:self-auto"
+            >
+              <ArrowUpRight className="h-4 w-4" />
+              Reservar nueva cancha
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1 mt-8 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+              { id: 'all', label: 'Todas' },
+              { id: 'upcoming', label: 'Próximas' },
+              { id: 'completed', label: 'Completadas' },
+              { id: 'cancelled', label: 'Canceladas' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabId)}
+                className={`
+                            px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+                            ${activeTab === tab.id
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }
+                        `}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Pendientes</p>
-                <p className="text-3xl font-bold text-yellow-600">{pendingBookings}</p>
-              </div>
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <AlertCircle className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Confirmadas</p>
-                <p className="text-3xl font-bold text-green-600">{activeBookings}</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Completadas</p>
-                <p className="text-3xl font-bold text-blue-600">{completedBookings}</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <CheckCircle className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Canceladas</p>
-                <p className="text-3xl font-bold text-red-600">{cancelledBookings}</p>
-              </div>
-              <div className="bg-red-100 p-3 rounded-full">
-                <XCircle className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search */}
+        <div className="mb-8 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre de cancha, sede o código..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+          />
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, sede o código..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-3">
-              <Filter className="h-5 w-5 text-gray-600" />
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { key: 'all', label: 'Todas', color: 'blue' },
-                  { key: 'pending', label: 'Pendientes', color: 'yellow' },
-                  { key: 'active', label: 'Confirmadas', color: 'green' },
-                  { key: 'completed', label: 'Completadas', color: 'blue' },
-                  { key: 'cancelled', label: 'Canceladas', color: 'red' }
-                ].map(({ key, label, color }) => (
-                  <button
-                    key={key}
-                    onClick={() => setFilterStatus(key as any)}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      filterStatus === key
-                        ? `bg-${color}-600 text-white shadow-sm`
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bookings List */}
+        {/* Bookings Grid */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-200">
-            <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="h-10 w-10 text-gray-400" />
+            </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">No se encontraron reservas</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm 
-                ? 'Intenta con otros términos de búsqueda'
-                : 'Aún no tienes reservas. ¡Haz tu primera reserva ahora!'}
+            <p className="text-gray-500 max-w-md mx-auto">
+              {searchTerm
+                ? 'No hay resultados para tu búsqueda. Intenta con otros términos.'
+                : 'Aún no tienes reservas en esta categoría. ¡Explora las canchas y reserva tu próximo partido!'}
             </p>
-            <button
-              onClick={() => navigate(ROUTES.home)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors"
-            >
-              Explorar canchas
-            </button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
             {filteredBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all"
+                onClick={() => setSelectedBooking(booking)}
+                className="group bg-white rounded-2xl p-2 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer flex flex-col md:flex-row gap-4 md:items-center"
               >
-                <div className="p-6">
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Image */}
-                    <div className="lg:w-48 h-40 rounded-xl overflow-hidden flex-shrink-0">
-                      <img
-                        src={booking.fieldImage}
-                        alt={booking.fieldName}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
+                {/* Image */}
+                <div className="relative w-full md:w-48 h-48 md:h-32 rounded-xl overflow-hidden flex-shrink-0">
+                  <img
+                    src={booking.fieldImage}
+                    alt={booking.fieldName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <StatusBadge status={booking.status} />
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 p-2 md:p-0">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wide mb-1">
+                        {booking.sedeName}
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {booking.fieldName}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-4 w-4" />
+                          {booking.date}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4" />
+                          {booking.timeSlot}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-4 w-4" />
+                          {booking.participants} pers.
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-bold text-gray-900 truncate">
-                              {booking.fieldName}
-                            </h3>
-                            {getStatusBadge(booking.status)}
-                          </div>
-                          <p className="text-gray-600 mb-3">{booking.sedeName}</p>
-                          {booking.rating && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <Star className="h-4 w-4 fill-blue-600 text-blue-600" />
-                              <span className="font-semibold text-sm">{booking.rating}</span>
-                              <span className="text-xs text-gray-600">({booking.reviews} reseñas)</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-blue-600" />
-                          <span className="text-gray-700 font-medium">{booking.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-blue-600" />
-                          <span className="text-gray-700 font-medium">{booking.timeSlot}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-blue-600" />
-                          <span className="text-gray-700 font-medium">{booking.participants} personas</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <QrCode className="h-4 w-4 text-blue-600" />
-                          <span className="text-gray-700 font-medium font-mono">{booking.bookingCode}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <span className="truncate">{booking.address}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                        <div>
-                          <p className="text-sm text-gray-600">Total pagado</p>
-                          <p className="text-2xl font-bold text-blue-600">{booking.totalPaid} BS</p>
-                        </div>
-
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {/* Botón Pagar Ahora - Solo para reservas pendientes */}
-                          {booking.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePayPending(booking.id);
-                                }}
-                                className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold text-sm hover:bg-yellow-600 transition-colors flex items-center gap-2"
-                              >
-                                <CreditCard className="h-4 w-4" />
-                                Pagar Ahora
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteBooking(booking.id);
-                                }}
-                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold text-sm hover:bg-red-200 transition-colors flex items-center gap-2"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Cancelar
-                              </button>
-                            </>
-                          )}
-
-                          <button
-                            onClick={() => handleViewDetails(booking)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
-                          >
-                            Ver detalles
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-
-                          {/* Botón Dejar Reseña - Solo para reservas completadas pendientes */}
-                          {canLeaveReview(booking) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleLeaveReview(booking);
-                              }}
-                              className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold text-sm hover:bg-yellow-600 transition-colors flex items-center gap-2"
-                            >
-                              <Star className="h-4 w-4 fill-white" />
-                              Dejar Reseña
-                            </button>
-                          )}
-
-                          {/* Botones para reservas activas */}
-                          {booking.status === 'active' && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditBooking(booking);
-                                }}
-                                className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-colors"
-                                title="Modificar reserva"
-                              >
-                                <Edit className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteBooking(booking.id);
-                                }}
-                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                title="Cancelar reserva"
-                              >
-                                <Trash2 className="h-5 w-5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                    <div className="flex items-center gap-4 md:flex-col md:items-end md:gap-1">
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Total pagado</p>
+                        <p className="text-xl font-extrabold text-gray-900">Bs {booking.totalPaid}</p>
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="p-2 md:pr-4 flex md:flex-col justify-center">
+                  <button className="p-2 rounded-full hover:bg-gray-100 text-gray-400 group-hover:text-blue-600 transition-colors">
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -791,157 +484,123 @@ const MyBookingsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Booking Details Modal */}
+      {/* Detail Modal */}
       {selectedBooking && !showDeleteModal && !showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Detalles de Reserva</h2>
-                <button
-                  onClick={() => setSelectedBooking(null)}
-                  className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-                >
-                  <XCircle className="h-6 w-6" />
-                </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="relative h-48 bg-gray-900">
+              <img src={selectedBooking.fieldImage} alt={selectedBooking.fieldName} className="w-full h-full object-cover opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+              <div className="absolute bottom-6 left-6 right-6">
+                <StatusBadge status={selectedBooking.status} />
+                <h2 className="text-3xl font-bold text-white mt-2">{selectedBooking.fieldName}</h2>
+                <p className="text-gray-200">{selectedBooking.sedeName}</p>
               </div>
-              {getStatusBadge(selectedBooking.status)}
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Field Image */}
-              <div className="rounded-xl overflow-hidden">
-                <img
-                  src={selectedBooking.fieldImage}
-                  alt={selectedBooking.fieldName}
-                  className="w-full h-48 object-cover"
-                />
-              </div>
-
-              {/* QR Code for Active Bookings */}
+            <div className="p-6 md:p-8 space-y-8">
+              {/* QR Section for Active Bookings */}
               {selectedBooking.status === 'active' && (
                 <QRSection booking={selectedBooking} />
               )}
 
-              {/* Booking Info */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900">{selectedBooking.fieldName}</h3>
-                <p className="text-gray-600">{selectedBooking.sedeName}</p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="h-4 w-4 text-blue-600" />
-                      <p className="text-xs text-gray-600">Fecha</p>
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Detalles</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Fecha</p>
+                        <p className="font-semibold text-gray-900">{selectedBooking.date}</p>
+                      </div>
                     </div>
-                    <p className="font-semibold text-gray-900">{selectedBooking.date}</p>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                      <p className="text-xs text-gray-600">Horario</p>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Horario</p>
+                        <p className="font-semibold text-gray-900">{selectedBooking.timeSlot}</p>
+                      </div>
                     </div>
-                    <p className="font-semibold text-gray-900">{selectedBooking.timeSlot}</p>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <p className="text-xs text-gray-600">Participantes</p>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Participantes</p>
+                        <p className="font-semibold text-gray-900">{selectedBooking.participants} personas</p>
+                      </div>
                     </div>
-                    <p className="font-semibold text-gray-900">{selectedBooking.participants} personas</p>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="h-4 w-4 text-blue-600" />
-                      <p className="text-xs text-gray-600">Ubicación</p>
-                    </div>
-                    <p className="font-semibold text-gray-900 text-sm">{selectedBooking.address}</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Payment Info */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                <h4 className="font-bold text-gray-900 mb-3">Información de pago</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-700">Costo de reserva</span>
-                    <span className="font-semibold">{selectedBooking.price} BS</span>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Pago</h3>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-600 text-sm">Monto total</span>
+                      <span className="text-xl font-extrabold text-gray-900">Bs {selectedBooking.totalPaid}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Pagado con {selectedBooking.paymentMethod === 'card' ? 'Tarjeta' : 'QR'}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-700">Tarifa de servicio</span>
-                    <span className="font-semibold">{(selectedBooking.totalPaid - selectedBooking.price).toFixed(2)} BS</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-green-200">
-                    <span className="font-bold text-gray-900">Total</span>
-                    <span className="font-bold text-green-600 text-lg">{selectedBooking.totalPaid} BS</span>
-                  </div>
-                  <p className="text-xs text-green-700 flex items-center gap-1 mt-2">
-                    <CheckCircle className="h-3 w-3" />
-                    Pagado vía {selectedBooking.paymentMethod === 'card' ? 'Tarjeta' : 'QR'}
-                  </p>
                 </div>
               </div>
 
               {/* Actions */}
-              {selectedBooking.status === 'active' && (
-                <div className="flex gap-3">
+              <div className="pt-6 border-t border-gray-100 flex flex-wrap gap-3">
+                {selectedBooking.status === 'pending' && (
                   <button
-                    onClick={() => {
-                      setSelectedBooking(null);
-                      handleEditBooking(selectedBooking);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
+                    onClick={() => handlePayPending(selectedBooking.id)}
+                    className="flex-1 bg-yellow-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-yellow-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-200"
                   >
-                    <Edit className="h-5 w-5" />
-                    Modificar reserva
+                    <Wallet className="h-5 w-5" />
+                    Completar Pago
                   </button>
-                  <button
-                    onClick={() => {
-                      setSelectedBooking(null);
-                      handleDeleteBooking(selectedBooking.id);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                    Cancelar reserva
-                  </button>
-                </div>
-              )}
+                )}
 
-              {selectedBooking.status === 'pending' && (
-                <div className="flex gap-3">
+                {selectedBooking.status === 'active' && (
+                  <>
+                    <button
+                      onClick={() => handleEditBooking(selectedBooking)}
+                      className="flex-1 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit className="h-5 w-5" />
+                      Modificar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBooking(selectedBooking.id)}
+                      className="flex-1 bg-red-50 text-red-600 px-6 py-3 rounded-xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      Cancelar
+                    </button>
+                  </>
+                )}
+
+                {canLeaveReview(selectedBooking) && (
                   <button
-                    onClick={() => {
-                      setSelectedBooking(null);
-                      handlePayPending(selectedBooking.id);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+                    onClick={() => handleLeaveReview(selectedBooking)}
+                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
                   >
-                    <CreditCard className="h-5 w-5" />
-                    Pagar ahora
+                    <Star className="h-5 w-5" />
+                    Dejar Reseña
                   </button>
-                  <button
-                    onClick={() => {
-                      setSelectedBooking(null);
-                      handleDeleteBooking(selectedBooking.id);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                    Cancelar reserva
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de cancelación */}
+      {/* Modals */}
       {showDeleteModal && selectedBooking && (
         <CancelBookingModal
           booking={{
@@ -958,7 +617,6 @@ const MyBookingsPage: React.FC = () => {
         />
       )}
 
-      {/* Modal de edición */}
       {showEditModal && bookingToEdit && user?.idUsuario && (
         <EditBookingModal
           booking={bookingToEdit}
@@ -971,7 +629,6 @@ const MyBookingsPage: React.FC = () => {
         />
       )}
 
-      {/* Modal de reseña */}
       {showReviewModal && bookingToReview && (
         <CreateReviewModal
           idReserva={parseInt(bookingToReview.id)}

@@ -107,13 +107,13 @@ const FavoriteCard: React.FC<Props> = ({ favorite, onRemove, onViewDetails }) =>
               )}
 
               {/* Rating */}
-              {sede?.ratingFinal !== undefined && sede.ratingFinal > 0 && (
+              {sede?.ratingFinal !== undefined && Number(sede.ratingFinal) > 0 && (
                 <div className="mt-2 flex items-center gap-1">
                   <div className="flex">
-                    {renderStars(sede.ratingFinal)}
+                    {renderStars(Number(sede.ratingFinal))}
                   </div>
                   <span className="text-sm text-gray-600 ml-1">
-                    {sede.ratingFinal.toFixed(1)}
+                    {Number(sede.ratingFinal).toFixed(1)}
                   </span>
                 </div>
               )}
