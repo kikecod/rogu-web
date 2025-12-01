@@ -26,7 +26,7 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
   const imagenPath = fotoPrincipal || fotos?.[0]?.urlFoto;
   const imagenPrincipal = imagenPath
     ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
-    : '/placeholder-venue.jpg';
+    : '';
 
   return (
     <div
@@ -34,15 +34,21 @@ const SedeCard: React.FC<Props> = ({ sede, onClick }) => {
       className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-neutral-200 hover:border-blue-500"
     >
       {/* Imagen */}
-      <div className="relative h-56 overflow-hidden">
-        <img
-          src={imagenPrincipal}
-          alt={nombre}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder-venue.jpg';
-          }}
-        />
+      <div className="relative h-56 overflow-hidden bg-black flex items-center justify-center text-white">
+        {imagenPrincipal ? (
+          <img
+            src={imagenPrincipal}
+            alt={nombre}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-black text-white font-semibold text-sm uppercase tracking-wide">
+            Sin foto
+          </div>
+        )}
 
         {/* Badge de verificación */}
         {verificada && (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -13,6 +13,13 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
+
+type MenuItem = {
+  name: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  badge?: number;
+};
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -63,30 +70,34 @@ const AdminSidebar = () => {
     },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || (path !== ROUTES.admin.dashboard && location.pathname.startsWith(path));
 
   return (
     <aside
       className={`bg-gray-900 text-white transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
         } flex flex-col`}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+      <div className="flex items-center justify-between px-2 py-3">
         {!isCollapsed && (
-          <h1 className="text-xl font-bold">Panel Admin</h1>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-muted">Admin</p>
+            <p className="text-lg font-semibold text-text-main">Panel ROGU</p>
+          </div>
         )}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          className="p-2 rounded-input bg-white/70 border border-border text-text-main shadow-soft"
+          title={isCollapsed ? 'Expandir' : 'Colapsar'}
         >
-          {isCollapsed ? <Menu size={20} /> : <X size={20} />}
+          {isCollapsed ? <Menu size={18} /> : <X size={18} />}
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="mt-2 space-y-1 flex-1 overflow-y-auto pr-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
+          const active = isActive(item.path);
           return (
             <Link
               key={item.path}
@@ -97,26 +108,33 @@ const AdminSidebar = () => {
                 }`}
               title={isCollapsed ? item.name : undefined}
             >
-              <Icon size={20} className="flex-shrink-0" />
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/80 ${
+                  active ? 'shadow-soft' : ''
+                }`}
+              >
+                <Icon size={18} />
+              </span>
               {!isCollapsed && (
-                <span className="flex-1">{item.name}</span>
-              )}
-              {!isCollapsed && item.badge && (
-                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
+                <div className="flex-1 flex items-center">
+                  <span className="text-sm font-semibold text-text-main">{item.name}</span>
+                  {item.badge && (
+                    <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-400">
-            Sesión: Admin
-          </p>
+        <div className="mt-3 px-3 py-4 rounded-card border border-border bg-white/80 shadow-soft">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wide">Sesion</p>
+          <p className="text-sm font-semibold text-text-main mt-1">Administrador</p>
+          <p className="text-xs text-muted">Acceso completo</p>
         </div>
       )}
     </aside>

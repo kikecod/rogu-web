@@ -1,12 +1,5 @@
 // Utility functions for the ROGU app
 
-// Import real sport field images
-import futbolImg from '@/assets/futbol.jpg';
-import basquetbolImg from '@/assets/basquetbol.jpeg';
-import tenisImg from '@/assets/tenis.jpg';
-import voleibolImg from '@/assets/voleibol.png';
-import padelImg from '@/assets/padel.jpeg';
-import hockeyImg from '@/assets/hockey.webp';
 import type { 
   ApiCancha, 
   ApiCanchaDetalle, 
@@ -40,41 +33,24 @@ export const formatDateLocal = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const generatePlaceholderImage = (width: number, height: number, text?: string) => {
-  const baseUrl = 'https://placehold.co';
-  const textParam = text ? `?text=${encodeURIComponent(text)}` : '';
-  return `${baseUrl}/${width}x${height}/22c55e/ffffff${textParam}`;
+export const generatePlaceholderImage = (width: number, height: number, text?: string): string => {
+  const safeWidth = Number.isFinite(width) && width > 0 ? Math.floor(width) : 600;
+  const safeHeight = Number.isFinite(height) && height > 0 ? Math.floor(height) : 400;
+  const safeText = (text && text.trim()) || 'Sin foto';
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${safeWidth}" height="${safeHeight}" viewBox="0 0 ${safeWidth} ${safeHeight}" role="img" aria-label="${safeText}">
+      <rect width="100%" height="100%" fill="#1f2937"/>
+      <text x="50%" y="50%" fill="#ffffff" font-family="Arial, sans-serif" font-size="32" font-weight="600" dominant-baseline="middle" text-anchor="middle">${safeText}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
 };
 
 export const getSportFieldImages = (sport: string): string[] => {
-  const sportImages: { [key: string]: string[] } = {
-    football: [
-      futbolImg,
-      futbolImg, // Using same image twice for now, you can add more variants later
-    ],
-    basketball: [
-      basquetbolImg,
-      basquetbolImg,
-    ],
-    tennis: [
-      tenisImg,
-      tenisImg,
-    ],
-    volleyball: [
-      voleibolImg,
-      voleibolImg,
-    ],
-    paddle: [
-      padelImg,
-      padelImg,
-    ],
-    hockey: [
-      hockeyImg,
-      hockeyImg,
-    ],
-  };
-
-  return sportImages[sport] || [generatePlaceholderImage(600, 400, 'Espacio Deportivo')];
+  const label = sport ? sport.toUpperCase() : 'NO TIENE FOTOS';
+  return [generatePlaceholderImage(600, 400, label)];
 };
 
 export const formatPrice = (price: number): string => {

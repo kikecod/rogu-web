@@ -381,14 +381,16 @@ const SedeDetallePage = () => {
 
               {/* Mapa de Ubicación */}
               {sede.latitud && sede.longitud && (
-                <div className="md:col-span-2">
-                  <MapPicker
-                    latitude={Number(sede.latitud)}
-                    longitude={Number(sede.longitud)}
-                    onLocationSelect={() => { }}
-                    height="350px"
-                    readOnly={true}
-                  />
+                <div className="md:col-span-2 space-y-3 pt-1">
+                  <div className="rounded-xl border border-gray-200 bg-white/90 shadow-sm p-3 relative z-0">
+                    <MapPicker
+                      latitude={Number(sede.latitud)}
+                      longitude={Number(sede.longitud)}
+                      onLocationSelect={() => {}}
+                      height="360px"
+                      readOnly={true}
+                    />
+                  </div>
                 </div>
               )}
               {sede.politicas && (
@@ -589,6 +591,7 @@ const SedeDetallePage = () => {
         <SedePhotoManagement
           sede={{ idSede: sede.idSede, nombre: sede.nombre }}
           isOpen={photoManagementOpen}
+          fallbackFotos={sede.fotos as any}
           onClose={() => setPhotoManagementOpen(false)}
         />
       )}

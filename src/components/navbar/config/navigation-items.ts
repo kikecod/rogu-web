@@ -1,17 +1,5 @@
 import { ROUTES } from '@/config/routes';
-import { 
-  User, 
-  Calendar, 
-  Heart, 
-  Building2, 
-  Store,
-  LayoutDashboard,
-  Users,
-  CheckCircle,
-  FileText,
-  BarChart3,
-  Settings
-} from 'lucide-react';
+import { User, Calendar, Heart, Building2, Store, LayoutDashboard, Users, CheckCircle, Settings } from 'lucide-react';
 
 export interface NavigationItem {
   id: string;
@@ -32,21 +20,21 @@ export const commonNavigation: NavigationItem[] = [
     label: 'Mi perfil',
     route: ROUTES.profile,
     icon: User,
-    hideFor: ['ADMIN'], // No mostrar para ADMIN
+    hideFor: ['ADMIN'],
   },
   {
     id: 'bookings',
     label: 'Mis reservas',
     route: ROUTES.bookings,
     icon: Calendar,
-    hideFor: ['ADMIN'], // No mostrar para ADMIN
+    hideFor: ['ADMIN'],
   },
   {
     id: 'favorites',
     label: 'Mis favoritos',
     route: ROUTES.favoritos,
     icon: Heart,
-    hideFor: ['ADMIN'], // No mostrar para ADMIN
+    hideFor: ['ADMIN'],
   },
 ];
 
@@ -100,20 +88,6 @@ export const adminTabsNavigation: NavigationItem[] = [
     label: 'Verificaciones',
     route: ROUTES.admin.verificaciones,
     icon: CheckCircle,
-    roles: ['ADMIN'],
-  },
-  {
-    id: 'admin-reportes',
-    label: 'Reportes',
-    route: ROUTES.admin.reportes,
-    icon: FileText,
-    roles: ['ADMIN'],
-  },
-  {
-    id: 'admin-analytics',
-    label: 'Analytics',
-    route: ROUTES.admin.analytics,
-    icon: BarChart3,
     roles: ['ADMIN'],
   },
 ];

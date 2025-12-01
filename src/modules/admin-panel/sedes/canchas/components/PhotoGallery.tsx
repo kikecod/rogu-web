@@ -1,10 +1,11 @@
 import { Image } from 'lucide-react';
 import type { FotoCanchaAdmin } from '../types';
+import { generatePlaceholderImage } from '@/core/lib/helpers';
 
 const PhotoGallery = ({ fotos = [] }: { fotos?: FotoCanchaAdmin[] }) => {
   const visibles = fotos.slice(0, 3);
   const tieneFotos = fotos.length > 0;
-  const placeholder = 'https://placehold.co/600x400/1f2937/ffffff?text=Sin+foto';
+  const placeholder = generatePlaceholderImage(600, 400, 'Sin foto');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -24,6 +25,9 @@ const PhotoGallery = ({ fotos = [] }: { fotos?: FotoCanchaAdmin[] }) => {
             src={foto.urlFoto || placeholder}
             alt={`Foto ${index + 1}`}
             loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = placeholder;
+            }}
           />
           {index === visibles.length - 1 && fotos.length > visibles.length && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm font-semibold">

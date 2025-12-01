@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle } from 'lucide-react';
-import { getApiUrl } from '@/core/config/api';
+import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { getApiUrl, getImageUrl } from '@/core/config/api';
 
 interface Foto {
   idFoto: number;
@@ -15,6 +15,8 @@ interface FotoManagementProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const resolveUrl = (urlFoto: string) => (urlFoto?.startsWith('http') ? urlFoto : getImageUrl(urlFoto || ''));
 
 const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose }) => {
   const [fotos, setFotos] = useState<Foto[]>([]);
@@ -38,8 +40,10 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
 
       if (response.ok) {
         const canchaFotos = await response.json();
-        // S3 URLs are already complete public URLs, no normalization needed
-        setFotos(canchaFotos);
+        const normalized = Array.isArray(canchaFotos)
+          ? canchaFotos.map((f: Foto) => ({ ...f, urlFoto: resolveUrl(f.urlFoto) }))
+          : [];
+        setFotos(normalized);
       }
     } catch (error) {
       console.error('Error loading fotos:', error);
@@ -248,7 +252,7 @@ const FotoManagement: React.FC<FotoManagementProps> = ({ cancha, isOpen, onClose
 
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
           ) : fotos.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">

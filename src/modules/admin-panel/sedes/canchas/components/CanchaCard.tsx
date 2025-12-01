@@ -1,6 +1,7 @@
 import { Edit2, Eye, Trash2 } from 'lucide-react';
 import type { CanchaAdmin } from '../types';
 import DisciplinaBadge from './DisciplinaBadge';
+import { generatePlaceholderImage } from '@/core/lib/helpers';
 
 const CanchaCard = ({
   cancha,
@@ -13,7 +14,7 @@ const CanchaCard = ({
   onEdit: () => void;
   onDelete: () => void;
 }) => {
-  const placeholderImage = 'https://placehold.co/600x360/0f172a/ffffff?text=Cancha+sin+foto';
+  const placeholderImage = generatePlaceholderImage(600, 360, 'Sin foto');
   const fotoPrincipal = cancha.fotos?.[0]?.urlFoto;
   const resumenDisciplina = cancha.disciplinas?.slice(0, 3) || [];
 
@@ -24,6 +25,9 @@ const CanchaCard = ({
           src={fotoPrincipal || placeholderImage}
           alt={cancha.nombre}
           className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = placeholderImage;
+          }}
         />
       </div>
 

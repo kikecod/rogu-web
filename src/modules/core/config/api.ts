@@ -21,24 +21,32 @@ export const getApiUrl = (endpoint: string): string => {
 };
 
 // Helper para obtener URL de imagen (las imágenes están en el servidor, no en /api)
-export const getImageUrl = (path: string): string => {
+export const getImageUrl = (path: string | null | undefined): string => {
   if (!path) return '';
+
+  // Normalizar base quitando /api y barra final
+  const rawBase = API_CONFIG.serverURL || API_CONFIG.baseURL || '';
+  const serverBase = rawBase.replace(/\/$/, '').replace(/\/api$/, '');
+  if (!serverBase) return path;
 
   // Si es URL absoluta, normalizar solo si apunta a este servidor
   // y corregir /avatars -> /uploads/avatars cuando sea necesario.
   if (path.startsWith('http')) {
     try {
       const url = new URL(path);
-      const server = new URL(API_CONFIG.serverURL);
+      const server = new URL(serverBase);
 
       // Solo normalizar si el host coincide con el backend
       if (url.host === server.host) {
         const originalPath = url.pathname;
-        const normalizedPath = originalPath.startsWith('/uploads/')
-          ? originalPath
-          : originalPath.startsWith('/avatars/')
-            ? `/uploads${originalPath}`
-            : originalPath;
+        const cleanedPath = originalPath.startsWith('/api/')
+          ? originalPath.replace(/^\/api/, '')
+          : originalPath;
+        const normalizedPath = cleanedPath.startsWith('/uploads/')
+          ? cleanedPath
+          : cleanedPath.startsWith('/avatars/')
+            ? `/uploads${cleanedPath}`
+            : cleanedPath;
 
         return `${server.origin}${normalizedPath}${url.search || ''}${url.hash || ''}`;
       }
@@ -54,13 +62,14 @@ export const getImageUrl = (path: string): string => {
   // El backend sirve el directorio 'uploads' en '/uploads',
   // pero algunos endpoints devuelven paths como '/avatars/...'
   // En ese caso, debemos anteponer '/uploads' para evitar 404.
-  const base = API_CONFIG.serverURL.replace(/\/$/, '');
-  const p = path.startsWith('/') ? path : `/${path}`;
-  const normalized = p.startsWith('/uploads/')
-    ? p
-    : p.startsWith('/avatars/')
-      ? `/uploads${p}`
-      : p;
+  const base = serverBase;
+  const rawPath = path.startsWith('/') ? path : `/${path}`;
+  const withoutApi = rawPath.startsWith('/api/') ? rawPath.replace(/^\/api/, '') : rawPath;
+  const normalized = withoutApi.startsWith('/uploads/')
+    ? withoutApi
+    : withoutApi.startsWith('/avatars/')
+      ? `/uploads${withoutApi}`
+      : withoutApi;
   return `${base}${normalized}`;
 };
 

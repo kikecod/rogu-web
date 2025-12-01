@@ -1,13 +1,5 @@
-import React from 'react';
-import {
-  Calendar,
-  CheckCircle2,
-  Mail,
-  Phone,
-  ShieldCheck,
-  User2,
-  UserCircle2,
-} from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Calendar, Camera, CheckCircle2, MailCheck, ShieldCheck, UserCircle2 } from 'lucide-react';
 import { getImageUrl } from '@/core/config/api';
 import type { UserProfileData } from '../types/profile.types';
 
@@ -18,17 +10,13 @@ interface ProfileBaseLayoutProps {
 
 const formatDate = (value: string | Date | null | undefined): string => {
   if (!value) return 'No registrado';
-  try {
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) return 'No registrado';
-    return new Intl.DateTimeFormat('es-BO', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).format(date);
-  } catch {
-    return 'No registrado';
-  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'No registrado';
+  return new Intl.DateTimeFormat('es-BO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
 };
 
 const getFullName = (persona: UserProfileData['persona'], fallback: string) => {
@@ -48,218 +36,135 @@ const getInitials = (persona: UserProfileData['persona'], usuario: UserProfileDa
   return base.trim().charAt(0).toUpperCase();
 };
 
-const renderRoles = (roles: string[]) => {
-  if (!roles.length) return <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">Rol no asignado</span>;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {roles.map((role) => (
-        <span key={role} className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xxs sm:text-xs font-semibold uppercase tracking-wide">
-          {role}
-        </span>
-      ))}
-    </div>
-  );
-};
-
 const ProfileBaseLayout: React.FC<ProfileBaseLayoutProps> = ({ data, children }) => {
   const { persona, usuario } = data;
 
-  const avatarCandidate =
-    usuario.avatar ??
-    usuario.avatarPath ??
-    persona?.urlFoto ??
-    null;
-
+  const avatarCandidate = usuario.avatar ?? usuario.avatarPath ?? persona?.urlFoto ?? null;
   const avatarUrl = avatarCandidate ? getImageUrl(avatarCandidate) : null;
 
   const fullName = getFullName(persona, usuario.usuario || usuario.correo || 'Usuario sin nombre');
   const initials = getInitials(persona, usuario);
-  const documentoLabel =
-    persona?.documentoTipo && persona?.documentoNumero
-      ? `${persona.documentoTipo} ${persona.documentoNumero}`
-      : 'No registrado';
+  const roles = Array.isArray(usuario.roles) ? usuario.roles : [];
+  const primaryRole = roles[0] ?? 'CLIENTE';
+
+  const statusLabel = usuario.correoVerificado ? 'Cuenta verificada' : 'Verificacion pendiente';
+  const statusTone = usuario.correoVerificado
+    ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+    : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200';
+
+  const metaCards = useMemo(
+    () => [
+      {
+        icon: ShieldCheck,
+        label: 'Rol principal',
+        value: primaryRole,
+      },
+      {
+        icon: Calendar,
+        label: 'Registro',
+        value: formatDate(persona?.creadoEn),
+      },
+      {
+        icon: MailCheck,
+        label: 'Verificacion',
+        value: statusLabel,
+      },
+    ],
+    [persona?.creadoEn, primaryRole, statusLabel],
+  );
+
+  const triggerAvatarUpload = () => {
+    const input = document.getElementById('avatar-uploader-input') as HTMLInputElement | null;
+    input?.click();
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-16">
-      {/* contenedor ancho */}
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
-        <div className="rounded-3xl overflow-hidden bg-white/0">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 px-4 sm:px-8 md:px-10 pt-8 sm:pt-10 pb-12 sm:pb-14 md:pb-16 rounded-3xl">
-            <div className="flex flex-col md:flex-row md:items-center md:gap-8 text-white">
-              <div className="relative inline-flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 rounded-full border-4 border-white/30 bg-white/20 shadow-lg">
+    <div className="relative min-h-screen bg-[#f5f7fb] text-slate-900 pb-12">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-indigo-200/40 blur-[96px]" />
+        <div className="absolute right-[-40px] top-28 h-72 w-72 rounded-full bg-purple-200/35 blur-[120px]" />
+        <div className="absolute left-6 bottom-10 h-56 w-56 rounded-full bg-sky-200/30 blur-[90px]" />
+      </div>
+
+      <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-10 py-10 space-y-8">
+        <section className="relative overflow-hidden rounded-3xl border border-white shadow-lg shadow-indigo-100 bg-gradient-to-br from-[#f8fbff] via-white to-[#eef2ff]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.12),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.10),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.6),transparent)]" />
+          <div className="relative flex flex-col items-center px-6 py-10 sm:px-10 sm:py-12 text-center gap-6">
+            <div className="relative">
+              <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full border border-white shadow-xl bg-white overflow-hidden flex items-center justify-center">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={fullName}
-                    className="h-full w-full rounded-full object-cover"
+                    className="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : initials ? (
-                  <span className="text-2xl sm:text-3xl font-semibold select-none">{initials}</span>
+                  <span className="text-3xl sm:text-4xl font-semibold text-indigo-600 select-none">
+                    {initials}
+                  </span>
                 ) : (
-                  <UserCircle2 className="h-10 w-10 sm:h-12 sm:w-12 text-white/80" />
+                  <UserCircle2 className="h-12 w-12 text-indigo-400" />
                 )}
-                <span className="absolute -bottom-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-500 flex items-center justify-center shadow ring-2 ring-white/40">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+              </div>
+              <button
+                type="button"
+                onClick={triggerAvatarUpload}
+                className="absolute -bottom-1 -right-1 inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg ring-4 ring-white transition hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-300"
+                aria-label="Actualizar foto de perfil"
+              >
+                <Camera className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.32em] text-indigo-900">
+                Perfil de usuario
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 leading-tight">
+                {fullName}
+              </h1>
+              <p className="text-sm sm:text-base text-indigo-700">
+                {usuario.usuario ? `@${usuario.usuario}` : usuario.correo || 'Usuario'}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusTone}`}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {statusLabel}
+              </span>
+              {roles.map((role) => (
+                <span
+                  key={role}
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100"
+                >
+                  {role}
                 </span>
-              </div>
+              ))}
+            </div>
 
-              <div className="mt-5 sm:mt-6 md:mt-0">
-                <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] text-white/80 font-semibold mb-1.5 sm:mb-2">
-                  Perfil de usuario
-                </p>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">{fullName}</h1>
-
-                <div className="mt-2 space-y-1.5">
-                  <p className="text-white/90 flex flex-wrap items-center gap-2">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <span className="break-all">{usuario.correo || 'Correo no registrado'}</span>
-                  </p>
-                  {persona?.telefono ? (
-                    <p className="text-white/90 flex items-center gap-2">
-                      <Phone className="h-4 w-4 shrink-0" />
-                      <span className="break-all">{persona.telefono}</span>
-                    </p>
-                  ) : null}
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+              {metaCards.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm"
+                >
+                  <div className="flex items-center gap-2 text-indigo-700 text-xs uppercase tracking-wide">
+                    <item.icon className="h-4 w-4 text-indigo-500" />
+                    <span>{item.label}</span>
+                  </div>
+                  <p className="mt-1 text-base font-semibold text-slate-900">{item.value}</p>
                 </div>
-
-                <div className="mt-4">{renderRoles(usuario.roles)}</div>
-              </div>
+              ))}
             </div>
           </div>
+        </section>
 
-          {/* Contenido encapsulado tipo "card" (igual al de Avatar) */}
-          <div className="px-0 sm:px-0 md:px-0 mt-6">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
-              {/* Datos personales */}
-              <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition xl:col-span-8">
-                <header className="mb-4 sm:mb-5">
-                  <div className="flex items-center gap-3">
-                    <User2 className="h-5 w-5 text-indigo-600" />
-                    <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Datos personales</h2>
-                  </div>
-                </header>
-
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-4 gap-x-6 text-sm">
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Documento</dt>
-                    <dd className="font-medium break-words">{documentoLabel}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Fecha de nacimiento</dt>
-                    <dd className="font-medium">{formatDate(persona?.fechaNacimiento ?? null)}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Género</dt>
-                    <dd className="font-medium">{persona?.genero ?? 'No registrado'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Teléfono</dt>
-                    <dd className="font-medium break-all">{persona?.telefono || 'No registrado'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Teléfono verificado</dt>
-                    <dd className="font-medium">{persona?.telefonoVerificado ? 'Confirmado' : 'No verificado'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Registrado el</dt>
-                    <dd className="font-medium">{formatDate(persona?.creadoEn ?? null)}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Actualizado el</dt>
-                    <dd className="font-medium">{formatDate(persona?.actualizadoEn ?? null)}</dd>
-                  </div>
-
-                  <div className="min-w-0 xl:col-span-2">
-                    <dt className="text-neutral-500">Biografía</dt>
-                    <dd className="font-medium break-words">
-                      {persona?.bio && persona.bio.trim().length > 0 ? persona.bio : 'No registrada'}
-                    </dd>
-                  </div>
-
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Dirección</dt>
-                    <dd className="font-medium break-words">
-                      {persona?.direccion && persona.direccion.trim().length > 0 ? persona.direccion : 'No registrada'}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Ciudad</dt>
-                    <dd className="font-medium break-words">
-                      {persona?.ciudad && persona.ciudad.trim().length > 0 ? persona.ciudad : 'No registrada'}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">País</dt>
-                    <dd className="font-medium break-words">
-                      {persona?.pais && persona.pais.trim().length > 0 ? persona.pais : 'No registrado'}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Ocupación</dt>
-                    <dd className="font-medium break-words">
-                      {persona?.ocupacion && persona.ocupacion.trim().length > 0 ? persona.ocupacion : 'No registrada'}
-                    </dd>
-                  </div>
-
-                  <div className="min-w-0 xl:col-span-2">
-                    <dt className="text-neutral-500">Deportes favoritos</dt>
-                    <dd className="font-medium break-words">
-                      {Array.isArray(persona?.deportesFavoritos) && persona!.deportesFavoritos!.length > 0
-                        ? persona!.deportesFavoritos!.join(', ')
-                        : 'No registrado'}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-
-              {/* Credenciales y seguridad */}
-              <section className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-md transition xl:col-span-4">
-                <header className="mb-4 sm:mb-5">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                    <h2 className="text-base sm:text-lg font-semibold text-neutral-900">Credenciales y seguridad</h2>
-                  </div>
-                </header>
-
-                <dl className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-y-4 gap-x-6 text-sm">
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Correo verificado</dt>
-                    <dd className="font-medium flex items-center gap-2">
-                      {usuario.correoVerificado ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          <span>Verificado</span>
-                        </>
-                      ) : (
-                        <>
-                          <Calendar className="h-4 w-4 text-amber-500" />
-                          <span>Pendiente</span>
-                        </>
-                      )}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">Usuario</dt>
-                    <dd className="font-medium break-words">{usuario.usuario || 'N/D'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">ID persona</dt>
-                    <dd className="font-medium">#{usuario.idPersona}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-neutral-500">ID usuario</dt>
-                    <dd className="font-medium">#{usuario.idUsuario}</dd>
-                  </div>
-                </dl>
-              </section>
-            </div>
-
-            {children ? <div className="mt-6 sm:mt-8 space-y-6">{children}</div> : null}
-          </div>
-        </div>
+        {children ? <div className="space-y-6">{children}</div> : null}
       </div>
     </div>
   );

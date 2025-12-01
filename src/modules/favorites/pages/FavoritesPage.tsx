@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../hooks/useFavorites';
 import FavoriteCard from '../components/FavoriteCard';
 import EmptyFavorites from '../components/EmptyFavorites';
+import { ROUTES } from '@/config/routes';
 
 const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ const FavoritesPage: React.FC = () => {
               key={`${fav.idCliente}-${fav.idSede}-${fav.creadoEn}`}
               favorite={fav}
               onRemove={removeFavorite}
-              onViewDetails={(idSede) => navigate(`/sedes/${idSede}`)}
+              onViewDetails={(idSede) => navigate(ROUTES.venue(idSede), { state: { fromFavorites: true } })}
             />
           ))}
         </div>

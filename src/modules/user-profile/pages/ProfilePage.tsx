@@ -7,22 +7,21 @@ import { PROFILE_VARIANT_COMPONENTS, type ProfileVariantComponentProps } from '.
 import { useAuth } from '@/auth/hooks/useAuth';
 import { getAuthToken } from '@/core/config/api';
 
-/** UI-only: usa utilidades del kit (card, btn, text-muted-foreground, etc.) */
 const renderError = (message: string, onRetry: () => void, debugInfo?: string | null) => (
-  <div className="min-h-[60vh] flex items-center justify-center bg-bg px-4 py-8 sm:py-12">
+  <div className="min-h-[60vh] flex items-center justify-center bg-[#f5f7fb] px-4 py-8 sm:py-12">
     <div
-      className="card max-w-md w-full text-center"
+      className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-indigo-100"
       role="alert"
       aria-live="assertive"
     >
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-        <AlertTriangle className="h-6 w-6 text-destructive" />
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+        <AlertTriangle className="h-6 w-6 text-red-500" />
       </div>
-      <h2 className="text-lg sm:text-xl font-semibold">No se pudo cargar el perfil</h2>
-      <p className="mt-2 text-sm text-muted-foreground leading-relaxed break-words">{message}</p>
+      <h2 className="text-lg sm:text-xl font-semibold text-slate-900">No se pudo cargar el perfil</h2>
+      <p className="mt-2 text-sm text-slate-600 leading-relaxed break-words">{message}</p>
 
       {debugInfo ? (
-        <pre className="mt-4 max-h-40 overflow-auto rounded-xl border bg-card p-3 text-left text-xs text-muted-foreground whitespace-pre-wrap">
+        <pre className="mt-4 max-h-40 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-xs text-slate-700 whitespace-pre-wrap">
           {debugInfo}
         </pre>
       ) : null}
@@ -30,7 +29,7 @@ const renderError = (message: string, onRetry: () => void, debugInfo?: string | 
       <button
         type="button"
         onClick={onRetry}
-        className="btn btn-primary mt-5 inline-flex items-center justify-center gap-2"
+        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-300 transition hover:bg-indigo-500"
       >
         <RefreshCcw className="h-4 w-4" />
         Reintentar
@@ -57,45 +56,39 @@ const ProfilePage: React.FC = () => {
 
   if (loading && !data) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-bg px-4 py-8 sm:py-12">
-        <div className="card max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <RefreshCcw className="h-6 w-6 animate-spin text-primary" />
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f5f7fb] px-4 py-8 sm:py-12">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-indigo-100">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
+            <RefreshCcw className="h-6 w-6 animate-spin text-indigo-600" />
           </div>
-          <h2 className="text-lg sm:text-xl font-semibold">Cargando tu perfil</h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Estamos obteniendo tu información. Si tarda demasiado, prueba nuevamente con Reintentar.
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Cargando tu perfil</h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            Estamos obteniendo tu informacion. Si tarda demasiado, prueba nuevamente con Reintentar.
           </p>
         </div>
       </div>
     );
   }
 
-  // En vez de esperar silenciosamente, mostrar un error explicativo inmediato si no hay datos
   if (!data) {
     const hasToken = Boolean(getAuthToken());
     const message = authLoading
-      ? 'La autenticación aún se está inicializando (authLoading=true). Si no avanza, recarga la página o vuelve a iniciar sesión.'
+      ? 'La autenticacion aun se esta inicializando. Si no avanza, recarga la pagina o vuelve a iniciar sesion.'
       : (!isLoggedIn && !hasToken)
-        ? 'No has iniciado sesión. Inicia sesión para cargar tu perfil.'
-        : 'No recibimos respuesta del backend para /api/profile todavía. Revisa la pestaña Network y la consola (VITE_DEBUG_PROFILE=true).';
+        ? 'No has iniciado sesion. Inicia sesion para cargar tu perfil.'
+        : 'No recibimos respuesta del backend para /api/profile todavia. Revisa la pestana Network y la consola (VITE_DEBUG_PROFILE=true).';
 
     return renderError(message, () => { void refresh(); }, debugInfo);
   }
 
-  // Si tenemos datos del backend, usarlos directamente
-  if (data) {
-    const effectiveRoles = data.usuario.roles.filter((role): role is AppRole =>
-      ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'].includes(role)
-    );
+  const effectiveRoles = data.usuario.roles.filter((role): role is AppRole =>
+    ['CLIENTE', 'DUENIO', 'CONTROLADOR', 'ADMIN'].includes(role)
+  );
 
-    const variant = resolveRoleVariant(effectiveRoles);
-    const VariantComponent = getVariantComponent(variant);
+  const variant = resolveRoleVariant(effectiveRoles);
+  const VariantComponent = getVariantComponent(variant);
 
-    return <VariantComponent data={data} onRefresh={refresh} />;
-  }
-
-  return null;
+  return <VariantComponent data={data} onRefresh={refresh} />;
 };
 
 export default ProfilePage;

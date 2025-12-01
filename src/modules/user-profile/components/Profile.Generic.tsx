@@ -23,8 +23,6 @@ const ProfileGenericView: React.FC<ProfileVariantProps> = ({ data, onRefresh }) 
     data.persona?.urlFoto ??
     null;
 
-  const avatarUrl = avatarCandidate ? getImageUrl(avatarCandidate) : null;
-
   const fallbackInitial =
     data.persona?.nombres?.charAt(0)?.toUpperCase() ??
     data.usuario.usuario?.charAt(0)?.toUpperCase() ??
@@ -37,7 +35,7 @@ const ProfileGenericView: React.FC<ProfileVariantProps> = ({ data, onRefresh }) 
   return (
     <ProfileBaseLayout data={data}>
       <AvatarUploader
-        avatarUrl={avatarUrl}
+        avatarUrl={avatarCandidate ? getImageUrl(avatarCandidate) : null}
         fallbackInitials={fallbackInitial}
         onAvatarUpdated={() => {
           void onRefresh();
@@ -52,17 +50,14 @@ const ProfileGenericView: React.FC<ProfileVariantProps> = ({ data, onRefresh }) 
           void onRefresh();
         }}
       />
-      <ProfileAccountSettings usuario={data.usuario} />
-      {/* Secciones por rol en vista genérica/unificada */}
       {hasRole('ADMIN') ? <ProfileAdminSection data={data} /> : null}
       <ProfileClienteSection cliente={data.cliente} canView={hasRole('CLIENTE')} />
       <ProfileDuenioSection duenio={data.duenio} canView={hasRole('DUENIO')} />
       <ProfileControladorSection controlador={data.controlador} canView={hasRole('CONTROLADOR')} />
+      <ProfileAccountSettings usuario={data.usuario} />
       <ProfileDangerZone />
     </ProfileBaseLayout>
   );
 };
 
 export default ProfileGenericView;
-
-

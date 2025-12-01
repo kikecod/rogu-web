@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Building2, CheckCircle, CalendarClock } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import {
   LayoutDashboard,
