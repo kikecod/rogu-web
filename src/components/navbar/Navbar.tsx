@@ -1,11 +1,12 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Globe, RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { useMode } from '../../core/hooks/useMode';
 import { ROUTES } from '@/config/routes';
 import Logo from './Logo';
 import UserMenu from './UserMenu';
+import { AdminTabBar } from '../../modules/core/navigation/AdminTabBar';
 
 interface NavbarProps {
   onLoginClick: () => void;
@@ -18,6 +19,8 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
   const { mode, toggleMode } = useMode();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Verificar si el usuario puede cambiar a modo dueño (solo DUENIO, no ADMIN)
   const canSwitchToOwnerMode = isDuenio() && !isAdmin();

@@ -4,7 +4,7 @@ import {
     ArrowLeft, Edit2, Trash2, Camera, Tag,
     Clock, Users, MapPin, Zap, Shield, DollarSign,
     Loader2, AlertCircle, Calendar, Image as ImageIcon,
-    ChevronLeft, ChevronRight, Save, X, Check
+    ChevronLeft, ChevronRight, Save, X
 } from 'lucide-react';
 import PhotoManagement from '../components/PhotoManagement';
 import CalendarioReservasPage from '../../analytics/pages/CalendarioReservasPage';
@@ -37,7 +37,7 @@ interface Disciplina {
 }
 
 const FieldManagementPage: React.FC = () => {
-    const { id, idCancha } = useParams<{ id: string; idCancha: string }>();
+    const { idCancha } = useParams<{ id: string; idCancha: string }>();
     const navigate = useNavigate();
 
     const [cancha, setCancha] = useState<Cancha | null>(null);

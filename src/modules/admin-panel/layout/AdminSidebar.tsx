@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,12 +14,7 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 
-type MenuItem = {
-  name: string;
-  icon: typeof LayoutDashboard;
-  path: string;
-  badge?: number;
-};
+
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -109,9 +104,8 @@ const AdminSidebar = () => {
               title={isCollapsed ? item.name : undefined}
             >
               <span
-                className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/80 ${
-                  active ? 'shadow-soft' : ''
-                }`}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/80 ${active ? 'shadow-soft' : ''
+                  }`}
               >
                 <Icon size={18} />
               </span>

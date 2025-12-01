@@ -28,9 +28,10 @@ interface Sede extends Partial<ApiSede> {
 
 interface SedeManagementProps {
   idPersonaD: number;
+  onSedeSelect?: (sede: Sede) => void;
 }
 
-const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD }) => {
+const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelect }) => {
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -139,7 +140,13 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD }) => {
             <VenueManagementCard
               key={sede.idSede}
               sede={sede}
-              onClick={() => navigate(ROUTES.owner.venueDetail(sede.idSede))}
+              onClick={() => {
+                if (onSedeSelect) {
+                  onSedeSelect(sede);
+                } else {
+                  navigate(ROUTES.owner.venueDetail(sede.idSede));
+                }
+              }}
             />
           ))}
         </div>

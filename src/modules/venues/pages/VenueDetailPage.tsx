@@ -23,6 +23,9 @@ const VenueDetailPage: React.FC = () => {
   const [reviews, setReviews] = useState<CalificacionSede[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+
+  const fromFavorites = location.state?.fromFavorites;
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -63,17 +66,9 @@ const VenueDetailPage: React.FC = () => {
     navigate(`/venues/${idSede}/fields/${field.idCancha}`);
   };
 
-  const handleFieldImageError = (idCancha: number) => {
-    setFieldImageErrors((prev) => ({ ...prev, [idCancha]: true }));
-  };
 
-  const handleBack = () => {
-    if (fromFavorites) {
-      navigate(ROUTES.favoritos);
-    } else {
-      navigate(ROUTES.home);
-    }
-  };
+
+
 
   if (loading) {
     return (
@@ -114,7 +109,7 @@ const VenueDetailPage: React.FC = () => {
         <div className="absolute top-4 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <button
-              onClick={() => navigate(ROUTES.home)}
+              onClick={() => navigate(fromFavorites ? ROUTES.favoritos : ROUTES.home)}
               className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm transition-colors"
             >
               <ChevronLeft className="h-6 w-6" />

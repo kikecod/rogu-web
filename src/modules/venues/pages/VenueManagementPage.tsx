@@ -16,8 +16,7 @@ import {
   getDepartments,
   getCitiesByDepartment,
   getDistrictsByCity,
-  getFullAddress,
-  getDepartments as getAllDepartments // Alias to avoid conflict if needed, though getDepartments is unique here
+  getFullAddress
 } from '../lib/boliviaData';
 
 const VenueDetailPage: React.FC = () => {

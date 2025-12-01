@@ -101,7 +101,7 @@ export default function MapPicker({
     }
   }, []);
 
-  const [position, setPosition] = useState<[number, number] | null>(getValidPosition(latitude, longitude));
+  const hasRequestedLocation = useRef(false);
 
   useEffect(() => {
     const validPos = getValidPosition(latitude, longitude);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, LayoutGrid, Users, DollarSign, Clock, Zap, Shield, ChevronRight, Ruler, CloudRain, AlertTriangle, Cigarette, Dog, Ban, Upload, Image, Trash2, Loader2 } from 'lucide-react';
+import { Check, LayoutGrid, Users, DollarSign, Clock, Zap, Shield, ChevronRight, Ruler, CloudRain, AlertTriangle, Cigarette, Dog, Ban, Upload, Image, Loader2 } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { ROUTES } from '@/config/routes';
 
