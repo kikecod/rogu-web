@@ -1,7 +1,7 @@
 import { apiClient } from '../../lib/apiClient';
-import type { 
-  SedeDetalle, 
-  FiltrosSedes, 
+import type {
+  SedeDetalle,
+  FiltrosSedes,
   RespuestaListaSedes,
   CrearSedeDto,
   EditarSedeDto,
@@ -22,7 +22,7 @@ export const sedesService = {
    */
   getAll: async (filtros?: FiltrosSedes): Promise<RespuestaListaSedes> => {
     const queryParams = new URLSearchParams();
-    
+
     if (filtros?.buscar) queryParams.append('buscar', filtros.buscar);
     if (filtros?.ciudad) queryParams.append('ciudad', filtros.ciudad);
     if (filtros?.estado) queryParams.append('estado', filtros.estado);
@@ -37,10 +37,10 @@ export const sedesService = {
 
     const query = queryParams.toString();
     const response = await apiClient.get<any>(`/sede${query ? `?${query}` : ''}`);
-    
+
     // Normalizar respuesta - acceder a response.data
     const data = response.data;
-    
+
     if (Array.isArray(data)) {
       return {
         sedes: data,
@@ -50,7 +50,7 @@ export const sedesService = {
         totalPaginas: Math.ceil(data.length / (filtros?.limit || 20)),
       };
     }
-    
+
     return {
       sedes: data.sedes || [],
       total: data.total || 0,
@@ -88,7 +88,7 @@ export const sedesService = {
    * Verifica una sede (admin)
    */
   verificar: async (id: number): Promise<{ mensaje: string }> => {
-    const response = await apiClient.patch(`/sede/${id}/verificar`);
+    const response = await apiClient.patch(`/sede/${id}/verificar`, { verificada: true });
     return response.data;
   },
 
@@ -128,8 +128,8 @@ export const sedesService = {
    * Elimina una sede (soft delete)
    */
   eliminar: async (id: number, motivo: string): Promise<RespuestaEliminarSede> => {
-    const response = await apiClient.delete<RespuestaEliminarSede>(`/sede/${id}`, { 
-      data: { motivo, confirmacion: true } 
+    const response = await apiClient.delete<RespuestaEliminarSede>(`/sede/${id}`, {
+      data: { motivo, confirmacion: true }
     });
     return response.data;
   },

@@ -36,13 +36,13 @@ export const ROUTES = {
   // ==========================================
   // Funciones para generar rutas dinámicas
   venue: (idSede: number | string) => `/venues/${idSede}`,
-  venueField: (idSede: number | string, idCancha: number | string) => 
+  venueField: (idSede: number | string, idCancha: number | string) =>
     `/venues/${idSede}/fields/${idCancha}`,
-  
+
   // Patrones para Route definitions (con parámetros)
   venuePattern: '/venues/:idSede',
   venueFieldPattern: '/venues/:idSede/fields/:idCancha',
-  
+
   // Legacy routes (mantener compatibilidad)
   field: (id: number | string) => `/field/${id}`,
   sede: (id: number | string) => `/sede/${id}`,
@@ -54,7 +54,7 @@ export const ROUTES = {
   // ==========================================
   checkout: '/checkout',
   bookings: '/bookings',
-  bookingConfirmation: (id?: number | string) => 
+  bookingConfirmation: (id?: number | string) =>
     id ? `/booking-confirmation/${id}` : '/booking-confirmation',
   bookingConfirmationPattern: '/booking-confirmation/:id',
   bookingConfirmationBase: '/booking-confirmation',
@@ -66,7 +66,7 @@ export const ROUTES = {
   profile: '/profile',
   favoritos: '/favoritos',
 
-  
+
   // ==========================================
   // ADMIN - Panel de Administración
   // ==========================================
@@ -122,6 +122,14 @@ export const ROUTES = {
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
     analytics: (idSede: number | string) => `/owner/spaces/${idSede}/analytics`,
     reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
+    venueDetail: (idSede: number | string) => `/owner/spaces/${idSede}/detail`,
+    venueDetailPattern: '/owner/spaces/:id/detail',
+    venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
+      `/owner/spaces/${idSede}/fields/${idCancha}`,
+    venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
+    createField: (idSede: number | string) => `/owner/spaces/${idSede}/fields/new`,
+    createFieldPattern: '/owner/spaces/:id/fields/new',
+    createVenue: '/owner/create-venue',
   },
 
   // ==========================================

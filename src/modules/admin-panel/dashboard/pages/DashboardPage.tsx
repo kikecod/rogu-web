@@ -159,11 +159,7 @@ const DashboardPage = () => {
               Acciones Rápidas
             </h2>
             <div className="grid grid-cols-1 gap-3">
-              <ActionButton
-                text="Ver Verificaciones"
-                href={ROUTES.admin.verificaciones}
-                icon="✅"
-              />
+
               <ActionButton
                 text="Revisar Reportes"
                 href={ROUTES.admin.reportes}

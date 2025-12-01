@@ -4,14 +4,13 @@ import {
   LayoutDashboard,
   Users,
   Building2,
-  CheckCircle,
-  // Flag,
-  // BarChart3,
-  // Settings,
-  // FileText,
+  Flag,
+  BarChart3,
+  Settings,
+  FileText,
   Menu,
   X,
-  // CalendarClock,
+  ShieldCheck,
 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 
@@ -26,29 +25,58 @@ const AdminSidebar = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const menuItems = useMemo<MenuItem[]>(
-    () => [
-      { name: 'Dashboard', icon: LayoutDashboard, path: ROUTES.admin.dashboard },
-      { name: 'Usuarios', icon: Users, path: ROUTES.admin.usuarios },
-      { name: 'Sedes', icon: Building2, path: ROUTES.admin.sedes },
-      // { name: 'Calendario', icon: CalendarClock, path: ROUTES.admin.reservas },
-      { name: 'Verificaciones', icon: CheckCircle, path: ROUTES.admin.verificaciones },
-      // { name: 'Reportes', icon: Flag, path: ROUTES.admin.reportes, badge: 5 },
-      // { name: 'Analytics', icon: BarChart3, path: ROUTES.admin.analytics },
-      // { name: 'Moderacion', icon: FileText, path: ROUTES.admin.moderacion },
-      // { name: 'Configuracion', icon: Settings, path: ROUTES.admin.configuracion },
-    ],
-    []
-  );
+  const menuItems = [
+    {
+      name: 'Dashboard',
+      icon: LayoutDashboard,
+      path: ROUTES.admin.dashboard,
+    },
+    {
+      name: 'Usuarios',
+      icon: Users,
+      path: ROUTES.admin.usuarios,
+    },
+
+    {
+      name: 'Sedes',
+      icon: Building2,
+      path: ROUTES.admin.sedes,
+    },
+    {
+      name: 'Verificaciones',
+      icon: ShieldCheck,
+      path: ROUTES.admin.verificaciones,
+    },
+    {
+      name: 'Reportes',
+      icon: Flag,
+      path: ROUTES.admin.reportes,
+      badge: 5, // Número de reportes pendientes
+    },
+    {
+      name: 'Analytics',
+      icon: BarChart3,
+      path: ROUTES.admin.analytics,
+    },
+    {
+      name: 'Moderación',
+      icon: FileText,
+      path: ROUTES.admin.moderacion,
+    },
+    {
+      name: 'Configuración',
+      icon: Settings,
+      path: ROUTES.admin.configuracion,
+    },
+  ];
 
   const isActive = (path: string) =>
     location.pathname === path || (path !== ROUTES.admin.dashboard && location.pathname.startsWith(path));
 
   return (
     <aside
-      className={`hidden md:flex flex-col transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-20' : 'w-72'
-      } sticky top-0 h-screen p-3 z-20 bg-surface/90 backdrop-blur-xl border border-border shadow-soft`}
+      className={`bg-gray-900 text-white transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+        } flex flex-col`}
     >
       <div className="flex items-center justify-between px-2 py-3">
         {!isCollapsed && (
@@ -74,11 +102,10 @@ const AdminSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                active
-                  ? 'bg-gradient-to-r from-primary/15 to-secondary/10 text-text-main shadow-soft'
-                  : 'text-muted hover:bg-white/70'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-gray-800'
+                }`}
               title={isCollapsed ? item.name : undefined}
             >
               <span
