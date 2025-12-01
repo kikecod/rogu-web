@@ -58,7 +58,7 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
@@ -104,18 +104,18 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
     setSubmitting(true);
     try {
       const url = isEditing && initialData?.idCancha
-        ? `http://localhost:3000/api/cancha/${initialData.idCancha}`
-        : 'http://localhost:3000/api/cancha';
-      
+        ? `${import.meta.env.VITE_API_BASE_URL}/cancha/${initialData.idCancha}`
+        : `${import.meta.env.VITE_API_BASE_URL}/cancha`;
+
       const method = isEditing ? 'PATCH' : 'POST';
-      
+
       // Asegurar que los números se envíen como números
       const cleanedData = {
         ...formData,
         aforoMax: Number(formData.aforoMax),
         precio: Number(formData.precio)
       };
-      
+
       const payload = isEditing ? cleanedData : {
         ...cleanedData,
         idSede: idSede
@@ -167,14 +167,14 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Progress Steps */}
           <div className="flex items-center justify-between mb-8">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.number;
               const isCompleted = currentStep > step.number;
-              
+
               return (
                 <React.Fragment key={step.number}>
                   <div className="flex flex-col items-center flex-1">
@@ -194,9 +194,8 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
                     </span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`h-1 flex-1 mx-2 rounded ${
-                      currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div className={`h-1 flex-1 mx-2 rounded ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-300'
+                      }`} />
                   )}
                 </React.Fragment>
               );
@@ -210,7 +209,7 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
           {currentStep === 1 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -317,7 +316,7 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
           {currentStep === 2 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Características de la Cancha</h3>
-              
+
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -360,7 +359,7 @@ const FieldFormWizard: React.FC<FieldFormWizardProps> = ({
           {currentStep === 3 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Horarios y Precio</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

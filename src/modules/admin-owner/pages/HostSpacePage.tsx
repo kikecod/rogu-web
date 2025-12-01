@@ -42,7 +42,7 @@ const HostSpacePage: React.FC = () => {
 
     const interval = setInterval(async () => {
       try {
-        const estadoResponse = await fetch(`http://localhost:3000/api/duenio/${user?.idPersona}/verificacion/estado`, {
+        const estadoResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/duenio/${user?.idPersona}/verificacion/estado`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
@@ -67,7 +67,7 @@ const HostSpacePage: React.FC = () => {
   const checkVerificationStatus = async () => {
     try {
       // Verificar si ya es dueño usando el idPersona como PK
-      const duenioResponse = await fetch(`http://localhost:3000/api/duenio/${user?.idPersona}`, {
+      const duenioResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/duenio/${user?.idPersona}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -96,7 +96,7 @@ const HostSpacePage: React.FC = () => {
     try {
 
       // Usar el endpoint de dueño para iniciar verificación
-      const response = await fetch(`http://localhost:3000/api/duenio/${user?.idPersona}/verificacion/iniciar`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/duenio/${user?.idPersona}/verificacion/iniciar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -129,7 +129,7 @@ const HostSpacePage: React.FC = () => {
       imagenFacial: 'pending_verification',
     };
 
-    const response = await fetch('http://localhost:3000/api/duenio', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/duenio`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -426,7 +426,7 @@ const HostSpacePage: React.FC = () => {
                           onClick={async () => {
                             try {
                               const response = await fetch(
-                                `http://localhost:3000/api/duenio/${user?.idPersona}/verificacion/iniciar`,
+                                `${import.meta.env.VITE_API_BASE_URL}/duenio/${user?.idPersona}/verificacion/iniciar`,
                                 {
                                   method: 'POST',
                                   headers: {

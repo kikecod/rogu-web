@@ -189,7 +189,7 @@ const CreateSedePage: React.FC = () => {
 
       console.log('📤 Enviando datos de sede:', sedeData);
 
-      const response = await fetch('http://localhost:3000/api/sede', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,13 +287,12 @@ const CreateSedePage: React.FC = () => {
                 <React.Fragment key={step.id}>
                   <div className="flex flex-1 flex-col items-center">
                     <div
-                      className={`relative flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm transition-all duration-300 ${
-                        isActive
+                      className={`relative flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm transition-all duration-300 ${isActive
                           ? 'border-blue-500 bg-blue-600 text-white shadow-lg scale-110'
                           : isCompleted
-                          ? 'border-green-500 bg-green-500 text-white shadow-md'
-                          : 'border-gray-200 bg-gray-100 text-gray-500'
-                      }`}
+                            ? 'border-green-500 bg-green-500 text-white shadow-md'
+                            : 'border-gray-200 bg-gray-100 text-gray-500'
+                        }`}
                     >
                       {isCompleted ? (
                         <CheckCircle className="h-6 w-6" />
@@ -305,13 +304,12 @@ const CreateSedePage: React.FC = () => {
                       </span>
                     </div>
                     <p
-                      className={`mt-7 text-xs sm:text-sm font-semibold text-center ${
-                        isActive
+                      className={`mt-7 text-xs sm:text-sm font-semibold text-center ${isActive
                           ? 'text-blue-700'
                           : isCompleted
-                          ? 'text-green-700'
-                          : 'text-gray-500'
-                      }`}
+                            ? 'text-green-700'
+                            : 'text-gray-500'
+                        }`}
                     >
                       {step.name}
                     </p>
@@ -320,11 +318,10 @@ const CreateSedePage: React.FC = () => {
                   {index < STEPS.length - 1 && (
                     <div className="flex flex-1 items-center">
                       <div
-                        className={`h-1 w-full rounded-full transition-all duration-300 ${
-                          currentStep > step.id
+                        className={`h-1 w-full rounded-full transition-all duration-300 ${currentStep > step.id
                             ? 'bg-gradient-to-r from-green-500 to-blue-500'
                             : 'bg-gray-200'
-                        }`}
+                          }`}
                       />
                     </div>
                   )}
@@ -656,11 +653,10 @@ const CreateSedePage: React.FC = () => {
             <button
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                currentStep === 1
+              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${currentStep === 1
                   ? 'cursor-not-allowed bg-gray-100 text-gray-400'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-sm'
-              }`}
+                }`}
             >
               <ChevronLeft className="h-4 w-4" />
               Anterior

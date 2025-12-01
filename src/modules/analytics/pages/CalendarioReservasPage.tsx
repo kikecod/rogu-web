@@ -56,20 +56,20 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
     try {
       setLoading(true);
       setError(null);
-      
+
       // Formato YYYY-MM para el mes actual
       const mesString = moment(currentDate).format('YYYY-MM');
-      
+
       const data = await getCalendario(mesString, { idCancha: cancha.idCancha });
       setCalendarioData(data);
-      
+
       // Para cada reserva, cargar los datos completos del usuario
       const reservasConUsuario = await Promise.all(
         data.reservas.map(async (reserva: ReservaCalendario) => {
           try {
             // Intentar obtener datos del usuario/cliente
             const usuarioResponse = await fetch(
-              `http://localhost:3000/api/usuarios/persona/${reserva.cliente.idCliente}`,
+              `${import.meta.env.VITE_API_BASE_URL}/usuarios/persona/${reserva.cliente.idCliente}`,
               {
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -79,7 +79,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
 
             if (usuarioResponse.ok) {
               const usuarioData = await usuarioResponse.json();
-              
+
               // Enriquecer los datos del cliente con la información del usuario
               return {
                 ...reserva,
@@ -91,7 +91,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
                 }
               };
             }
-            
+
             return reserva;
           } catch (error) {
             console.error('Error loading user data for reservation:', reserva.idReserva, error);
@@ -99,7 +99,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
           }
         })
       );
-      
+
       // Convertir reservas a eventos del calendario
       const calendarEvents: CalendarEvent[] = reservasConUsuario.map((reserva: ReservaCalendario) => ({
         id: reserva.idReserva,
@@ -108,7 +108,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
         end: new Date(reserva.terminaEn),
         resource: reserva
       }));
-      
+
       setEvents(calendarEvents);
     } catch (err) {
       setError('Error al cargar el calendario de reservas');
@@ -136,7 +136,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
   const eventStyleGetter = (event: CalendarEvent) => {
     const estado = event.resource.estado;
     let backgroundColor = '#3174ad';
-    
+
     switch (estado) {
       case 'Confirmada':
         backgroundColor = '#10B981'; // Verde
@@ -189,7 +189,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
     const diffMs = finDate.getTime() - inicioDate.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (diffHours > 0) {
       return `${diffHours}h ${diffMinutes > 0 ? diffMinutes + 'm' : ''}`;
     }
@@ -290,7 +290,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
             </p>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end">
           <button
             onClick={() => handleNavigate(moment(currentDate).subtract(1, 'week').toDate())}
@@ -347,11 +347,10 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
                     handleNavigate(monthDate.toDate());
                     setShowMonthPicker(false);
                   }}
-                  className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                    isActive
+                  className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${isActive
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {monthDate.format('MMM')}
                 </button>
@@ -411,7 +410,7 @@ const CalendarioReservasPage: React.FC<CalendarioReservasPageProps> = ({ cancha,
             {moment(currentDate).format('MMMM YYYY')}
           </h2>
         </div>
-        
+
         {/* Calendario */}
         <div className="p-4 sm:p-6" style={{ height: '700px' }}>
           <Calendar

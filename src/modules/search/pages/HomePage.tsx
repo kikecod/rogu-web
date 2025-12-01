@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, AlertCircle } from 'lucide-react';
+import { ArrowRight, AlertCircle, Search, X } from 'lucide-react';
 import SportsSearchBar, { type SportSearchParams } from '../components/SearchBar';
 import SedeCard from '../../venues/components/SedeCard';
 import Filters from '../components/Filters';
@@ -21,6 +21,7 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSearchBarSticky, setIsSearchBarSticky] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showMobileSearchModal, setShowMobileSearchModal] = useState(false);
 
   // Estado compartido del SearchBar
   const [searchValues, setSearchValues] = useState<SportSearchParams>({
@@ -183,8 +184,8 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Search Bar - Normal position (below hero) */}
-        <div className="relative -mt-8 mb-6 z-20">
+        {/* Search Bar - Normal position (below hero) - Hidden on mobile */}
+        <div className="relative -mt-8 mb-6 z-20 hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SportsSearchBar
               idPrefix="main-"
@@ -200,8 +201,57 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Search Bar - Sticky version (appears on scroll) */}
-        <div className={`fixed top-16 sm:top-20 left-0 right-0 z-40 transition-all duration-300 ${isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+        {/* Mobile Search Button - Only visible on mobile */}
+        <div className="relative -mt-8 mb-6 z-20 md:hidden">
+          <div className="max-w-7xl mx-auto px-4">
+            <button
+              onClick={() => setShowMobileSearchModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white shadow-lg rounded-xl border border-primary-200 hover:border-primary-400 hover:shadow-xl transition-all"
+            >
+              <Search className="h-5 w-5 text-primary-500" />
+              <span className="text-gray-600 font-medium">Buscar canchas deportivas...</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Search Modal */}
+        {showMobileSearchModal && (
+          <div className="fixed inset-0 bg-white z-[100] md:hidden overflow-y-auto">
+            <div className="min-h-screen flex flex-col">
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900">Buscar canchas</h2>
+                <button
+                  onClick={() => setShowMobileSearchModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="h-6 w-6 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Search Form */}
+              <div className="flex-1 p-4">
+                <SportsSearchBar
+                  idPrefix="modal-"
+                  onSearch={(params) => {
+                    handleSportSearch(params);
+                    setShowMobileSearchModal(false);
+                  }}
+                  initialVenue={searchValues.venue}
+                  initialVenueId={searchValues.venueId}
+                  initialDate={searchValues.date}
+                  initialStartTime={searchValues.startTime}
+                  initialEndTime={searchValues.endTime}
+                  initialDiscipline={searchValues.discipline}
+                  initialDisciplineId={searchValues.disciplineId}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar - Sticky version (appears on scroll) - Hidden on mobile */}
+        <div className={`fixed top-16 sm:top-20 left-0 right-0 z-40 transition-all duration-300 hidden md:block ${isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
           }`}>
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 shadow-xl border-b-2 border-primary-500">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
@@ -217,6 +267,20 @@ const HomePage: React.FC = () => {
                 initialDisciplineId={searchValues.disciplineId}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Sticky Search Button (appears on scroll) */}
+        <div className={`fixed top-14 left-0 right-0 z-40 transition-all duration-300 md:hidden ${isSearchBarSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+          }`}>
+          <div className="bg-white shadow-lg border-b border-gray-200 px-4 py-3">
+            <button
+              onClick={() => setShowMobileSearchModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg shadow-md hover:from-primary-600 hover:to-secondary-600 transition-all"
+            >
+              <Search className="h-4 w-4" />
+              <span className="font-medium">Buscar</span>
+            </button>
           </div>
         </div>
 

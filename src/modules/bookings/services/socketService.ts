@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 // CONFIGURACIÓN DE SOCKET.IO
 // ==========================================
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_SERVER_URL;
 
 let socket: Socket | null = null;
 
@@ -64,7 +64,7 @@ export const onPagoCompletado = (
   callback: (data: { reservaId: number; mensaje: string }) => void
 ): (() => void) => {
   const socketInstance = getSocket();
-  
+
   console.log('👂 [Socket] Escuchando evento "pago-completado"');
   socketInstance.on('pago-completado', callback);
 

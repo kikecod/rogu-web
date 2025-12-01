@@ -17,7 +17,7 @@ import type {
 // CONFIGURACIÓN BASE
 // ====================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -33,7 +33,7 @@ apiClient.interceptors.response.use(
   (error: any) => {
     // Crear estado de error normalizado
     const errorState = createErrorState(error);
-    
+
     // Convertir a formato API Error para compatibilidad
     const apiError: ApiError = {
       status: error.response?.status || 500,
@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
         field: detail.field
       })) || []
     };
-    
+
     return Promise.reject(apiError);
   }
 );
@@ -58,13 +58,13 @@ apiClient.interceptors.response.use(
  */
 const buildQueryString = (params: Record<string, any>): string => {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, String(value));
     }
   });
-  
+
   return searchParams.toString();
 };
 
@@ -83,7 +83,7 @@ const handleApiResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
 // ====================
 
 class SearchApiService {
-  
+
   /**
    * 🔍 BÚSQUEDA PRINCIPAL
    * GET /api/search/main
@@ -93,14 +93,14 @@ class SearchApiService {
     try {
       const queryString = buildQueryString(params);
       const url = `/search/main${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await apiClient.get(url);
       // El endpoint devuelve directamente un array, lo convertimos a SearchResponse
       const results = Array.isArray(response.data) ? response.data : [];
       const page = params.page || 1;
       const limit = params.limit || 10;
       const totalPages = Math.ceil(results.length / limit);
-      
+
       return {
         results,
         pagination: {
@@ -132,7 +132,7 @@ class SearchApiService {
     try {
       const queryString = buildQueryString(params);
       const url = `/search/filters${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await apiClient.get<ApiResponse<SearchResponse>>(url);
       return handleApiResponse(response);
     } catch (error) {
@@ -184,7 +184,7 @@ class SearchApiService {
 
       const queryString = buildQueryString({ q: query.trim() });
       const url = `/search/cities?${queryString}`;
-      
+
       const response = await apiClient.get<ApiResponse<AutocompleteResponse>>(url);
       return handleApiResponse(response);
     } catch (error) {
@@ -203,12 +203,12 @@ class SearchApiService {
         return { suggestions: [] };
       }
 
-      const queryString = buildQueryString({ 
-        city: city.trim(), 
-        q: query.trim() 
+      const queryString = buildQueryString({
+        city: city.trim(),
+        q: query.trim()
       });
       const url = `/search/districts?${queryString}`;
-      
+
       const response = await apiClient.get<ApiResponse<AutocompleteResponse>>(url);
       return handleApiResponse(response);
     } catch (error) {
@@ -222,10 +222,10 @@ class SearchApiService {
    * Decide automáticamente si usar búsqueda simple o con filtros
    */
   async smartSearch(params: SearchMainParams | SearchFiltersParams): Promise<SearchResponse> {
-    const hasAdvancedFilters = 'precioMin' in params || 'precioMax' in params || 
-                              'ratingMin' in params || 'cubierta' in params ||
-                              'superficie' in params || 'iluminacion' in params ||
-                              'aforoMin' in params || 'aforoMax' in params;
+    const hasAdvancedFilters = 'precioMin' in params || 'precioMax' in params ||
+      'ratingMin' in params || 'cubierta' in params ||
+      'superficie' in params || 'iluminacion' in params ||
+      'aforoMin' in params || 'aforoMax' in params;
 
     if (hasAdvancedFilters) {
       return this.searchWithFilters(params as SearchFiltersParams);
@@ -243,7 +243,7 @@ class SearchApiService {
       if (!query || query.length < 1) {
         return [];
       }
-      
+
       console.log('Buscando disciplinas con query:', query);
       const response = await apiClient.get(`/disciplina/search?q=${encodeURIComponent(query)}`);
       console.log('Respuesta del servidor:', response.data);
@@ -263,7 +263,7 @@ class SearchApiService {
       if (!query || query.length < 1) {
         return [];
       }
-      
+
       const response = await apiClient.get(`/search/sedes?q=${encodeURIComponent(query)}`);
       return response.data;
     } catch (error) {
@@ -286,7 +286,7 @@ class SearchApiService {
       // Realizamos una búsqueda vacía para obtener totales
       const response = await this.searchMain({ page: 1, limit: 1 });
       const locations = await this.getLocations();
-      
+
       return {
         totalCanchas: response.pagination.total,
         totalSedes: 0, // Se podría agregar este dato al backend

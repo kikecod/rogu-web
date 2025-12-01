@@ -5,7 +5,7 @@ import type { CrearDeudaRequest, CrearDeudaResponse } from '../types/libelula.ty
 // CONFIGURACIÓN BASE
 // ==========================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -36,7 +36,7 @@ export const crearDeudaLibelula = async (
 ): Promise<CrearDeudaResponse> => {
   try {
     console.log('📤 [LibelulaService] Enviando solicitud de creación de deuda:', request);
-    
+
     const response = await apiClient.post<CrearDeudaResponse>(
       '/libelula/crear-deuda',
       request
@@ -46,11 +46,11 @@ export const crearDeudaLibelula = async (
     return response.data;
   } catch (error: any) {
     console.error('❌ [LibelulaService] Error al crear deuda:', error);
-    
+
     // Manejo de errores
     if (error.response) {
       throw new Error(
-        error.response.data?.message || 
+        error.response.data?.message ||
         'Error al procesar el pago. Por favor intenta de nuevo.'
       );
     } else if (error.request) {
