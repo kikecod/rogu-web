@@ -140,7 +140,7 @@ const OwnerDashboardPage: React.FC = () => {
                 </div>
                 <button
                     onClick={() => navigate(ROUTES.owner.createVenue)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 hover:shadow-primary-300 hover:-translate-y-0.5 font-medium"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-black rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 hover:shadow-primary-300 hover:-translate-y-0.5 font-medium"
                 >
                     <Plus className="w-5 h-5" />
                     Nueva Sede
@@ -239,24 +239,24 @@ const OwnerDashboardPage: React.FC = () => {
                         <div className="space-y-3">
                             <button
                                 onClick={() => navigate(ROUTES.owner.spaces)}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/10"
+                                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-900 hover:bg-gray-800 transition-colors shadow-md border border-gray-700"
                             >
-                                <span className="font-medium">Gestionar Sedes</span>
-                                <Building2 className="w-5 h-5 opacity-80" />
+                                <span className="font-medium text-white">Gestionar Sedes</span>
+                                <Building2 className="w-5 h-5 text-white" />
                             </button>
                             <button
                                 onClick={() => navigate('/owner/bookings')}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/10"
+                                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-900 hover:bg-gray-800 transition-colors shadow-md border border-gray-700"
                             >
-                                <span className="font-medium">Ver Calendario</span>
-                                <Calendar className="w-5 h-5 opacity-80" />
+                                <span className="font-medium text-white">Ver Calendario</span>
+                                <Calendar className="w-5 h-5 text-white" />
                             </button>
                             <button
                                 onClick={() => navigate('/owner/assignments')}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/10"
+                                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-900 hover:bg-gray-800 transition-colors shadow-md border border-gray-700"
                             >
-                                <span className="font-medium">Controladores</span>
-                                <Users className="w-5 h-5 opacity-80" />
+                                <span className="font-medium text-white">Controladores</span>
+                                <Users className="w-5 h-5 text-white" />
                             </button>
                         </div>
                     </div>
@@ -265,7 +265,7 @@ const OwnerDashboardPage: React.FC = () => {
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-gray-900">Actividad Reciente</h3>
-                            <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                            <button className="text-sm text-gray-900 hover:text-primary-600 font-medium">
                                 Ver todo
                             </button>
                         </div>

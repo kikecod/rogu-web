@@ -161,36 +161,33 @@ const OwnerAnalyticsPage: React.FC = () => {
                     <div className="flex bg-gray-100 rounded-lg p-1">
                         <button
                             onClick={() => setTimeRange('week')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                                timeRange === 'week'
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timeRange === 'week'
                                     ? 'bg-white text-gray-900 shadow-sm'
                                     : 'text-gray-600'
-                            }`}
+                                }`}
                         >
                             Semana
                         </button>
                         <button
                             onClick={() => setTimeRange('month')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                                timeRange === 'month'
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timeRange === 'month'
                                     ? 'bg-white text-gray-900 shadow-sm'
                                     : 'text-gray-600'
-                            }`}
+                                }`}
                         >
                             Mes
                         </button>
                         <button
                             onClick={() => setTimeRange('year')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                                timeRange === 'year'
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timeRange === 'year'
                                     ? 'bg-white text-gray-900 shadow-sm'
                                     : 'text-gray-600'
-                            }`}
+                                }`}
                         >
                             Año
                         </button>
                     </div>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-sm">
+                    <button className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all shadow-sm font-medium">
                         <Download className="w-4 h-4" />
                         Exportar
                     </button>
@@ -206,11 +203,10 @@ const OwnerAnalyticsPage: React.FC = () => {
                             <DollarSign className="w-6 h-6 text-green-600" />
                         </div>
                         <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                analyticsData.stats.revenueChange >= 0
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${analyticsData.stats.revenueChange >= 0
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-red-100 text-red-700'
-                            }`}
+                                }`}
                         >
                             {analyticsData.stats.revenueChange >= 0 ? (
                                 <ArrowUp className="w-3 h-3" />
@@ -235,11 +231,10 @@ const OwnerAnalyticsPage: React.FC = () => {
                             <Calendar className="w-6 h-6 text-blue-600" />
                         </div>
                         <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                analyticsData.stats.bookingsChange >= 0
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${analyticsData.stats.bookingsChange >= 0
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-red-100 text-red-700'
-                            }`}
+                                }`}
                         >
                             {analyticsData.stats.bookingsChange >= 0 ? (
                                 <ArrowUp className="w-3 h-3" />
@@ -286,7 +281,7 @@ const OwnerAnalyticsPage: React.FC = () => {
                         Bs.{' '}
                         {Math.floor(
                             analyticsData.stats.totalRevenue /
-                                analyticsData.stats.totalBookings
+                            analyticsData.stats.totalBookings
                         ).toLocaleString()}
                     </p>
                 </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
 
@@ -63,6 +63,12 @@ const AppContent = () => {
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Check if current route is owner or admin panel
+    const isOwnerRoute = location.pathname.startsWith('/owner');
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const isSpecialLayout = isOwnerRoute || isAdminRoute;
 
     const handleLogout = () => {
         logout();
@@ -95,7 +101,7 @@ const AppContent = () => {
         // 2. DUENIO -> Panel Owner (prioridad sobre CLIENTE)
         // 3. CLIENTE -> Permanece en página actual
         console.log('🔄 Redirigiendo usuario con roles:', userData.roles);
-        
+
         if (userData.roles?.includes('ADMIN')) {
             console.log('➡️ Redirigiendo a Admin Dashboard');
             navigate(ROUTES.admin.dashboard, { replace: true });
@@ -111,11 +117,14 @@ const AppContent = () => {
 
     return (
         <div className="App flex flex-col min-h-screen">
-            <Navbar
-                onLoginClick={handleLoginClick}
-                onSignupClick={handleSignupClick}
-                onLogout={handleLogout}
-            />
+            {/* Only show global Navbar for public routes, not for owner/admin panels */}
+            {!isSpecialLayout && (
+                <Navbar
+                    onLoginClick={handleLoginClick}
+                    onSignupClick={handleSignupClick}
+                    onLogout={handleLogout}
+                />
+            )}
 
             <AuthModal
                 isOpen={isAuthModalOpen}
@@ -125,8 +134,8 @@ const AppContent = () => {
                 onLoginSuccess={handleLoginSuccess}
             />
 
-            {/* Fusión: Usamos el contenedor main de 'dev' para el padding, pero las rutas de 'Mejoras-duenio' */}
-            <main className="flex-grow pt-20">
+            {/* Apply padding only for public routes with navbar */}
+            <main className={`flex-grow ${!isSpecialLayout ? 'pt-20' : ''}`}>
                 <Routes>
                     <Route path={ROUTES.home} element={<HomeRouter />} />
 
