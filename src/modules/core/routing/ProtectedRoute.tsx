@@ -7,6 +7,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: string[]; // Roles requeridos (debe tener al menos uno)
   requireAllRoles?: string[]; // Roles requeridos (debe tener todos)
+  excludedRoles?: string[]; // Roles que NO pueden acceder (validación exclusiva)
   redirectTo?: string; // Ruta de redirección personalizada
   showUnauthorized?: boolean; // Mostrar mensaje de no autorizado en lugar de redirigir
 }
@@ -15,6 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRoles = [],
   requireAllRoles = [],
+  excludedRoles = [],
   redirectTo = '/',
   showUnauthorized = false,
 }) => {
@@ -43,20 +45,29 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Verificar roles requeridos
   console.log('🔐 ProtectedRoute:', location.pathname);
+  
+  // Verificar si tiene algún rol excluido (no puede acceder)
+  const hasExcludedRole = excludedRoles.length > 0 && hasAnyRole(excludedRoles);
+  
   const hasRequiredRoles = requiredRoles.length === 0 || hasAnyRole(requiredRoles);
   const hasAllRequiredRoles = requireAllRoles.length === 0 || hasAllRoles(requireAllRoles);
 
-  const isAuthorized = hasRequiredRoles && hasAllRequiredRoles;
+  const isAuthorized = hasRequiredRoles && hasAllRequiredRoles && !hasExcludedRole;
 
   console.log(`✅ Autorizado: ${isAuthorized}`);
+  if (hasExcludedRole) {
+    console.log(`🚫 Acceso denegado - Rol excluido detectado`);
+  }
 
-  // Si no tiene los roles requeridos
+  // Si no tiene los roles requeridos o tiene un rol excluido
   if (!isAuthorized) {
     console.error('❌ ACCESO DENEGADO:', {
       usuario: user?.correo,
       rolesUsuario: user?.roles,
       rolesRequeridos: requiredRoles,
-      todosRequeridos: requireAllRoles
+      todosRequeridos: requireAllRoles,
+      rolesExcluidos: excludedRoles,
+      tieneRolExcluido: hasExcludedRole
     });
     if (showUnauthorized) {
       return (
@@ -80,8 +91,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                   </p>
                 )}
                 {requireAllRoles.length > 0 && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mb-2">
                     <strong>Roles requeridos (todos):</strong> {requireAllRoles.join(', ')}
+                  </p>
+                )}
+                {excludedRoles.length > 0 && (
+                  <p className="text-sm text-red-600">
+                    <strong>Roles excluidos:</strong> {excludedRoles.join(', ')}
                   </p>
                 )}
               </div>

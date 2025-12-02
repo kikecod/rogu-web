@@ -12,8 +12,9 @@ const HomeRouter: React.FC = () => {
   const { isDuenio, isAdmin } = useAuth();
   const { mode } = useMode();
 
-  // Si está en modo dueño Y tiene permisos de dueño/admin, redirigir al dashboard
-  if (mode === 'duenio' && (isDuenio() || isAdmin())) {
+  // IMPORTANTE: Solo DUENIO puede ir a owner dashboard
+  // ADMIN nunca debe ser redirigido a owner, tiene su propio panel
+  if (mode === 'duenio' && isDuenio() && !isAdmin()) {
     return <Navigate to={ROUTES.owner.dashboard} replace />;
   }
 

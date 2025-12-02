@@ -90,11 +90,23 @@ const AppContent = () => {
     const handleLoginSuccess = (userData: User) => {
         setIsAuthModalOpen(false);
 
-        // Redirigir según el rol del usuario
+        // Redirigir según el rol del usuario con prioridad:
+        // 1. ADMIN -> Panel Admin
+        // 2. DUENIO -> Panel Owner (prioridad sobre CLIENTE)
+        // 3. CLIENTE -> Permanece en página actual
+        console.log('🔄 Redirigiendo usuario con roles:', userData.roles);
+        
         if (userData.roles?.includes('ADMIN')) {
-            navigate(ROUTES.admin.dashboard);
-            // Los clientes permanecen en la página actual
-        };
+            console.log('➡️ Redirigiendo a Admin Dashboard');
+            navigate(ROUTES.admin.dashboard, { replace: true });
+        } else if (userData.roles?.includes('DUENIO')) {
+            // Prioridad DUENIO sobre CLIENTE
+            console.log('➡️ Redirigiendo a Owner Dashboard');
+            navigate(ROUTES.owner.dashboard, { replace: true });
+        } else {
+            console.log('✓ Cliente permanece en página actual');
+        }
+        // Los clientes permanecen en la página actual
     };
 
     return (
@@ -305,11 +317,11 @@ const AppContent = () => {
                         }
                     />
 
-                    {/* Rutas Dueños (owner) - PROTEGIDO ADMIN o DUENIO */}
+                    {/* Rutas Dueños (owner) - PROTEGIDO SOLO DUENIO */}
                     <Route
                         path="/owner"
                         element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                            <ProtectedRoute requiredRoles={['DUENIO']} excludedRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <OwnerLayout />
                             </ProtectedRoute>
                         }
@@ -332,27 +344,27 @@ const AppContent = () => {
                     <Route
                         path={ROUTES.owner.createVenue}
                         element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                            <ProtectedRoute requiredRoles={['DUENIO']} excludedRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <VenueCreationPage />
                             </ProtectedRoute>
                         }
                     />
 
-                    {/* Ruta para Host Space (verificación inicial) */}
+                    {/* Ruta para Host Space (verificación inicial) - CLIENTE sin rol DUENIO */}
                     <Route
                         path={ROUTES.owner.hostSpace}
                         element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'CLIENTE']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                            <ProtectedRoute requiredRoles={['CLIENTE']} excludedRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <HostSpaceOwnerPage />
                             </ProtectedRoute>
                         }
                     />
 
-                    {/* Rutas legacy - PROTEGIDAS ADMIN o DUENIO */}
+                    {/* Rutas legacy - PROTEGIDAS SOLO DUENIO */}
                     <Route
                         path="/host"
                         element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                            <ProtectedRoute requiredRoles={['DUENIO']} excludedRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <HostSpaceOwnerPage />
                             </ProtectedRoute>
                         }

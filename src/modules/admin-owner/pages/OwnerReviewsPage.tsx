@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Filter, Search, ThumbsUp, MessageSquare, User, Calendar, MapPin } from 'lucide-react';
+import { Star, Search, ThumbsUp, MessageSquare, User, Calendar, MapPin } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
-import { getResumenResenas } from '@/modules/analytics/services/analyticsService';
-import type { ResumenResenasData } from '@/modules/analytics/types/analytics.types';
+import { getResumenResenas } from '@/analytics/services/analyticsService';
+import type { ResumenResenasData } from '@/analytics/types/analytics.types';
 
 const OwnerReviewsPage: React.FC = () => {
     const { user } = useAuth();
@@ -48,13 +48,13 @@ const OwnerReviewsPage: React.FC = () => {
         );
     };
 
-    const filteredReviews = resenasData?.resenas.filter((review) => {
+    const filteredReviews = resenasData?.ultimasResenas.filter((review) => {
         const matchesSearch =
             !searchTerm ||
             review.comentario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            review.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase());
+            review.cliente.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRating =
-            filterRating === 'all' || review.calificacion === Number(filterRating);
+            filterRating === 'all' || review.puntaje === Number(filterRating);
         return matchesSearch && matchesRating;
     }) || [];
 
@@ -128,28 +128,26 @@ const OwnerReviewsPage: React.FC = () => {
                         </h3>
                     </div>
                     <p className="text-4xl font-bold text-gray-900">
-                        {resenasData?.resumen.distribucion
-                            ? Object.entries(resenasData.resumen.distribucion)
-                                .filter(([rating]) => Number(rating) >= 4)
-                                .reduce((sum, [, count]) => sum + count, 0)
+                        {resenasData?.distribucion
+                            ? resenasData.distribucion
+                                .filter((d) => d.estrellas >= 4)
+                                .reduce((sum, d) => sum + d.cantidad, 0)
                             : 0}
                     </p>
                 </div>
             </div>
 
             {/* Rating Distribution */}
-            {resenasData?.resumen.distribucion && (
+            {resenasData?.distribucion && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">
                         Distribución de Calificaciones
                     </h3>
                     <div className="space-y-3">
                         {[5, 4, 3, 2, 1].map((rating) => {
-                            const count = resenasData.resumen.distribucion[rating] || 0;
-                            const percentage =
-                                resenasData.resumen.totalResenas > 0
-                                    ? (count / resenasData.resumen.totalResenas) * 100
-                                    : 0;
+                            const distItem = resenasData.distribucion.find(d => d.estrellas === rating);
+                            const count = distItem?.cantidad || 0;
+                            const percentage = distItem?.porcentaje || 0;
 
                             return (
                                 <div key={rating} className="flex items-center gap-3">
@@ -166,7 +164,7 @@ const OwnerReviewsPage: React.FC = () => {
                                         />
                                     </div>
                                     <span className="text-sm font-medium text-gray-600 w-16 text-right">
-                                        {count} ({percentage.toFixed(0)}%)
+                                        {count} ({Math.round(percentage)}%)
                                     </span>
                                 </div>
                             );
@@ -217,9 +215,9 @@ const OwnerReviewsPage: React.FC = () => {
                         </p>
                     </div>
                 ) : (
-                    filteredReviews.map((review) => (
+                    filteredReviews.map((review, index) => (
                         <div
-                            key={review.idResena}
+                            key={index}
                             className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow"
                         >
                             <div className="flex items-start justify-between gap-4 mb-4">
@@ -230,14 +228,14 @@ const OwnerReviewsPage: React.FC = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
                                             <h4 className="font-semibold text-gray-900">
-                                                {review.nombreCliente || 'Cliente Anónimo'}
+                                                {review.cliente.nombre} {review.cliente.apellido}
                                             </h4>
-                                            {renderStars(review.calificacion)}
+                                            {renderStars(review.puntaje)}
                                         </div>
                                         <div className="flex items-center gap-4 text-sm text-gray-500">
                                             <div className="flex items-center gap-1">
                                                 <MapPin className="w-4 h-4" />
-                                                <span>{review.nombreCancha}</span>
+                                                <span>{review.cancha.nombre}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="w-4 h-4" />

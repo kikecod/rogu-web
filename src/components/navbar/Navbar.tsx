@@ -32,13 +32,31 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
     navigate(ROUTES.home);
   };
 
+  // Manejar click en logo según rol y modo
+  const handleLogoClick = () => {
+    // 1. ADMIN siempre va a su dashboard
+    if (isAdmin()) {
+      navigate(ROUTES.admin.dashboard);
+      return;
+    }
+    
+    // 2. DUENIO en modo dueño va a owner dashboard
+    if (isDuenio() && mode === 'duenio') {
+      navigate(ROUTES.owner.dashboard);
+      return;
+    }
+    
+    // 3. En cualquier otro caso (CLIENTE o modo cliente) va a home
+    navigate(ROUTES.home);
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-gray-100 supports-[backdrop-filter]:bg-white/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Logo />
+            <Logo onClick={handleLogoClick} />
           </div>
 
           {/* Right side */}

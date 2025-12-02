@@ -150,13 +150,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
 
         // alert(`¡Bienvenido ${loginResult.usuario.correo}!`);
 
-        // Cerrar modal inmediatamente después del login exitoso
-        onClose();
-
-        // Actualizar estado en App si hay callback
+        // IMPORTANTE: Ejecutar callback ANTES de cerrar modal
+        // para que la navegación ocurra correctamente
         if (onLoginSuccess) {
           onLoginSuccess(loginResult.usuario);
         }
+
+        // Cerrar modal después del callback de navegación
+        onClose();
       }
     } catch (error) {
       console.error('Error completo:', error);

@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import {
     UserPlus,
-    Mail,
     Shield,
     Search,
-    MoreVertical,
     Edit,
     Trash2,
     X,
-    Check,
     Clock,
     CheckCircle,
     XCircle,
