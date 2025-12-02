@@ -113,23 +113,34 @@ export const ROUTES = {
   // DUEÑO - Gestión de Espacios
   // ==========================================
   owner: {
-    mode: '/owner-mode', // Nueva ruta principal para Modo Dueño
     dashboard: '/owner/dashboard',
     spaces: '/owner/spaces',
-    adminSpaces: '/admin-spaces', // Deprecado - usar mode
-    hostSpace: '/host-space',
-    resenas: '/owner/resenas',
+    fields: '/owner/fields',
+    bookings: '/owner/bookings',
+    reviews: '/owner/reviews',
+    analytics: '/owner/analytics',
+    assignments: '/owner/assignments',
+    settings: '/owner/settings',
+
+    // Rutas dinámicas
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
-    analytics: (idSede: number | string) => `/owner/spaces/${idSede}/analytics`,
-    reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
-    venueDetail: (idSede: number | string) => `/owner/spaces/${idSede}/detail`,
-    venueDetailPattern: '/owner/spaces/:id/detail',
-    venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
-      `/owner/spaces/${idSede}/fields/${idCancha}`,
-    venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
+    spaceDetailPattern: '/owner/spaces/:id',
+    editVenue: (id: number | string) => `/owner/spaces/${id}/edit`,
+    editVenuePattern: '/owner/spaces/:id/edit',
+    fieldDetail: (id: number | string) => `/owner/fields/${id}`,
+    fieldDetailPattern: '/owner/fields/:id',
     createField: (idSede: number | string) => `/owner/spaces/${idSede}/fields/new`,
-    createFieldPattern: '/owner/spaces/:id/fields/new',
+
+    // Legacy / Compatibilidad
+    hostSpace: '/host-space',
     createVenue: '/owner/create-venue',
+
+    // Deprecated but kept for safety during migration
+    mode: '/owner-mode',
+    adminSpaces: '/admin-spaces',
+    venueDetailPattern: '/owner/spaces/:id/detail',
+    venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
+    createFieldPattern: '/owner/spaces/:id/fields/new',
   },
 
   // ==========================================

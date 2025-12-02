@@ -1,8 +1,8 @@
-import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { useMode } from '../hooks/useMode';
 import HomePage from '@/search/pages/HomePage';
-import OwnerModePage from '../../modules/admin-owner/pages/OwnerModePage';
+import { ROUTES } from '@/config/routes';
 
 /**
  * Componente que decide qué página mostrar en la ruta raíz "/"
@@ -12,9 +12,9 @@ const HomeRouter: React.FC = () => {
   const { isDuenio, isAdmin } = useAuth();
   const { mode } = useMode();
 
-  // Si está en modo dueño Y tiene permisos de dueño/admin, mostrar OwnerModePage
+  // Si está en modo dueño Y tiene permisos de dueño/admin, redirigir al dashboard
   if (mode === 'duenio' && (isDuenio() || isAdmin())) {
-    return <OwnerModePage />;
+    return <Navigate to={ROUTES.owner.dashboard} replace />;
   }
 
   // En cualquier otro caso, mostrar la página de cliente

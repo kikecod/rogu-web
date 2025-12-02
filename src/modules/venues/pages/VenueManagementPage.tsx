@@ -390,7 +390,7 @@ const VenueDetailPage: React.FC = () => {
       });
 
       if (response.ok) {
-        navigate(ROUTES.owner.mode);
+        navigate(ROUTES.owner.spaces);
       } else {
         alert('Error al eliminar la sede');
       }
@@ -453,7 +453,7 @@ const VenueDetailPage: React.FC = () => {
 
         <div className="absolute top-4 left-4">
           <button
-            onClick={() => navigate(ROUTES.owner.mode)}
+            onClick={() => navigate(ROUTES.owner.spaces)}
             className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white p-2 rounded-full transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />

@@ -4,10 +4,21 @@ import Navbar from './components/navbar/Navbar';
 import AuthModal from '@/auth/components/AuthModal';
 
 // Páginas de dueños
+// Páginas de dueños
+import OwnerLayout from './modules/admin-owner/layout/OwnerLayout';
+import OwnerDashboardPage from './modules/admin-owner/pages/OwnerDashboardPage';
+import OwnerSpacesPage from './modules/admin-owner/pages/OwnerSpacesPage';
+import OwnerSpaceDetailPage from './modules/admin-owner/pages/OwnerSpaceDetailPage';
+import OwnerEditSedePage from './modules/admin-owner/pages/OwnerEditSedePage';
+import OwnerReviewsPage from './modules/admin-owner/pages/OwnerReviewsPage';
+import OwnerFieldsPage from './modules/admin-owner/pages/OwnerFieldsPage';
+import OwnerBookingsPage from './modules/admin-owner/pages/OwnerBookingsPage';
+import OwnerAnalyticsPage from './modules/admin-owner/pages/OwnerAnalyticsPage';
+import OwnerAssignmentsPage from './modules/admin-owner/pages/OwnerAssignmentsPage';
+import OwnerSettingsPage from './modules/admin-owner/pages/OwnerSettingsPage';
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
-import AdminSpacesOwnerPage from './modules/admin-owner/pages/AdminSpacesPage';
-import OwnerModePage from './modules/admin-owner/pages/OwnerModePage';
-import ResenasPage from './modules/analytics/pages/ResenasPage';
+import FieldCreationPage from './modules/fields/pages/FieldCreationPage';
+import FieldManagementPage from './modules/admin-owner/pages/FieldManagementPage';
 
 // import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
 import ProfilePage from '@/user-profile/pages/ProfilePage';
@@ -20,10 +31,7 @@ import FAQPage from '@/core/pages/FAQPage';
 import TermsPage from '@/core/pages/TermsPage';
 import FieldDetailPage from '@/fields/pages/FieldDetailPage';
 import VenueDetailPage from '@/venues/pages/VenueDetailPage';
-import VenueManagementPage from '@/venues/pages/VenueManagementPage';
 import VenueCreationPage from '@/venues/pages/VenueCreationPage';
-import FieldManagementPage from '@/fields/pages/FieldManagementPage';
-import FieldCreationPage from '@/fields/pages/FieldCreationPage';
 import CheckoutPage from '@/bookings/pages/CheckoutPage';
 import BookingConfirmationPage from '@/bookings/pages/BookingConfirmationPage';
 import EsperandoPagoPage from '@/bookings/pages/EsperandoPagoPage';
@@ -298,57 +306,44 @@ const AppContent = () => {
                     />
 
                     {/* Rutas Dueños (owner) - PROTEGIDO ADMIN o DUENIO */}
-                    {/* Fusionado: Incluye las rutas de gestión que faltaban en dev */}
+                    <Route
+                        path="/owner"
+                        element={
+                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                <OwnerLayout />
+                            </ProtectedRoute>
+                        }
+                    >
+                        <Route path="dashboard" element={<OwnerDashboardPage />} />
+                        <Route path="spaces" element={<OwnerSpacesPage />} />
+                        <Route path="spaces/:id" element={<OwnerSpaceDetailPage />} />
+                        <Route path="spaces/:id/edit" element={<OwnerEditSedePage />} />
+                        <Route path="spaces/:id/fields/new" element={<FieldCreationPage />} />
+                        <Route path="spaces/:id/fields/:idCancha" element={<FieldManagementPage />} />
+                        <Route path="fields" element={<OwnerFieldsPage />} />
+                        <Route path="bookings" element={<OwnerBookingsPage />} />
+                        <Route path="reviews" element={<OwnerReviewsPage />} />
+                        <Route path="analytics" element={<OwnerAnalyticsPage />} />
+                        <Route path="assignments" element={<OwnerAssignmentsPage />} />
+                        <Route path="settings" element={<OwnerSettingsPage />} />
+                    </Route>
+
+                    {/* Ruta independiente para crear sede (fuera del layout si es necesario o mantener como estaba) */}
+                    <Route
+                        path={ROUTES.owner.createVenue}
+                        element={
+                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                <VenueCreationPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Ruta para Host Space (verificación inicial) */}
                     <Route
                         path={ROUTES.owner.hostSpace}
                         element={
                             <ProtectedRoute requiredRoles={['ADMIN', 'CLIENTE']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <HostSpaceOwnerPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path={ROUTES.owner.mode}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <OwnerModePage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path={ROUTES.owner.venueDetailPattern}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <VenueManagementPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path={ROUTES.owner.createFieldPattern}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <FieldCreationPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path={ROUTES.owner.venueFieldManagementPattern}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <FieldManagementPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path={ROUTES.owner.resenas}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <ResenasPage />
                             </ProtectedRoute>
                         }
                     />
@@ -359,22 +354,6 @@ const AppContent = () => {
                         element={
                             <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
                                 <HostSpaceOwnerPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin-spaces"
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <AdminSpacesOwnerPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path={ROUTES.owner.createVenue}
-                        element={
-                            <ProtectedRoute requiredRoles={['ADMIN', 'DUENIO']} redirectTo={ROUTES.home} showUnauthorized={true}>
-                                <VenueCreationPage />
                             </ProtectedRoute>
                         }
                     />

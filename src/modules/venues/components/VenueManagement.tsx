@@ -144,7 +144,7 @@ const SedeManagement: React.FC<SedeManagementProps> = ({ idPersonaD, onSedeSelec
                 if (onSedeSelect) {
                   onSedeSelect(sede);
                 } else {
-                  navigate(ROUTES.owner.venueDetail(sede.idSede));
+                  navigate(ROUTES.owner.spaceDetail(sede.idSede));
                 }
               }}
             />

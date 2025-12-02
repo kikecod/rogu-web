@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Check, LayoutGrid, Users, DollarSign, Clock, Zap, Shield, ChevronRight, Ruler, CloudRain, AlertTriangle, Cigarette, Dog, Ban, Upload, Image, Loader2 } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
-import { ROUTES } from '@/config/routes';
+import roguLogo from '@/assets/rogu_logo.png';
 
 // Tipos para el estado del formulario
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0: Intro, 1: Basics, 2: Details, 3: Schedule, 4: Disciplines, 5: Photos, 6: Success
@@ -267,9 +267,9 @@ const FieldCreationPage: React.FC = () => {
             case 0: // Intro
                 return (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-fade-in relative z-10">
-                        <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-white -z-10" />
-                        <div className="w-32 h-32 bg-gradient-to-tr from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                            <LayoutGrid className="w-16 h-16 text-green-600" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-white -z-10" />
+                        <div className="w-32 h-32 bg-gradient-to-tr from-orange-100 to-red-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                            <LayoutGrid className="w-16 h-16 text-orange-600" />
                         </div>
                         <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
                             Agrega una nueva cancha
@@ -279,7 +279,7 @@ const FieldCreationPage: React.FC = () => {
                         </p>
                         <button
                             onClick={() => setCurrentStep(1)}
-                            className="mt-8 px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full text-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+                            className="mt-8 px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-full text-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
                         >
                             Comenzar
                         </button>
@@ -298,7 +298,7 @@ const FieldCreationPage: React.FC = () => {
                             {/* Nombre */}
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                    <LayoutGrid className="w-4 h-4 text-green-500" />
+                                    <LayoutGrid className="w-4 h-4 text-orange-500" />
                                     Nombre de la Cancha <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(Debe tener 5 o mas caracteres)</span>
                                 </label>
                                 <input
@@ -316,14 +316,14 @@ const FieldCreationPage: React.FC = () => {
                                 {/* Superficie */}
                                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                     <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                        <LayoutGrid className="w-4 h-4 text-green-500" />
+                                        <LayoutGrid className="w-4 h-4 text-orange-500" />
                                         Superficie
                                     </label>
                                     <select
                                         name="superficie"
                                         value={formData.superficie}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none bg-white"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none bg-white"
                                     >
                                         <option value="Sintética">Sintética</option>
                                         <option value="Pasto Natural">Pasto Natural</option>
@@ -343,7 +343,7 @@ const FieldCreationPage: React.FC = () => {
                                         name="iluminacion"
                                         value={formData.iluminacion}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none bg-white"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none bg-white"
                                     >
                                         <option value="LED">LED</option>
                                         <option value="Halógena">Halógena</option>
@@ -363,7 +363,7 @@ const FieldCreationPage: React.FC = () => {
                                         <p className="text-sm text-gray-500">¿La cancha cuenta con techo o cubierta?</p>
                                     </div>
                                 </div>
-                                <div className={`w-14 h-8 rounded-full p-1 transition-colors ${formData.cubierta ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                <div className={`w-14 h-8 rounded-full p-1 transition-colors ${formData.cubierta ? 'bg-orange-500' : 'bg-gray-300'}`}>
                                     <div className={`w-6 h-6 bg-white rounded-full shadow-sm transform transition-transform ${formData.cubierta ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </div>
                             </div>
@@ -393,7 +393,7 @@ const FieldCreationPage: React.FC = () => {
                                         value={formData.precio}
                                         onChange={handleInputChange}
                                         min="0"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
                                         placeholder="0.00"
                                     />
                                 </div>
@@ -410,7 +410,7 @@ const FieldCreationPage: React.FC = () => {
                                         value={formData.aforoMax}
                                         onChange={handleInputChange}
                                         min="1"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
                                         placeholder="12"
                                     />
                                 </div>
@@ -427,7 +427,7 @@ const FieldCreationPage: React.FC = () => {
                                     name="dimensiones"
                                     value={formData.dimensiones}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
                                     placeholder="Ej: 20x40 metros"
                                 />
                             </div>
@@ -441,7 +441,7 @@ const FieldCreationPage: React.FC = () => {
                                     </label>
                                     <button
                                         onClick={() => setCustomRuleMode(!customRuleMode)}
-                                        className="text-sm text-green-600 font-medium hover:text-green-700 transition-colors"
+                                        className="text-sm text-orange-600 font-medium hover:text-orange-700 transition-colors"
                                     >
                                         {customRuleMode ? 'Usar predefinidas' : 'Escribir personalizada'}
                                     </button>
@@ -453,7 +453,7 @@ const FieldCreationPage: React.FC = () => {
                                         value={formData.reglasUso}
                                         onChange={handleInputChange}
                                         rows={3}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg resize-none"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg resize-none"
                                         placeholder="Ej: Uso obligatorio de zapatillas de futsal..."
                                         autoFocus
                                     />
@@ -468,19 +468,19 @@ const FieldCreationPage: React.FC = () => {
                                                     className={`
                                                         p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3
                                                         ${isSelected
-                                                            ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
-                                                            : 'border-gray-200 hover:border-green-200 hover:bg-gray-50 text-gray-600'
+                                                            ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm'
+                                                            : 'border-gray-200 hover:border-orange-200 hover:bg-gray-50 text-gray-600'
                                                         }
                                                     `}
                                                 >
                                                     <div className={`
                                                         p-2 rounded-full
-                                                        ${isSelected ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-400'}
+                                                        ${isSelected ? 'bg-orange-200 text-orange-700' : 'bg-gray-100 text-gray-400'}
                                                     `}>
                                                         <rule.icon className="w-4 h-4" />
                                                     </div>
                                                     <span className="font-medium text-sm">{rule.text}</span>
-                                                    {isSelected && <Check className="w-4 h-4 ml-auto text-green-600" />}
+                                                    {isSelected && <Check className="w-4 h-4 ml-auto text-orange-600" />}
                                                 </div>
                                             );
                                         })}
@@ -516,7 +516,7 @@ const FieldCreationPage: React.FC = () => {
                                         name="horaApertura"
                                         value={formData.horaApertura}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-2xl font-bold text-center"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-2xl font-bold text-center"
                                     />
                                 </div>
                                 <div>
@@ -552,14 +552,14 @@ const FieldCreationPage: React.FC = () => {
                                         className={`
                                             p-4 rounded-2xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-center h-32
                                             ${isSelected
-                                                ? 'border-green-500 bg-green-50 text-green-700 shadow-md transform scale-105'
-                                                : 'border-gray-200 hover:border-green-200 hover:bg-gray-50 text-gray-600'
+                                                ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md transform scale-105'
+                                                : 'border-gray-200 hover:border-orange-200 hover:bg-gray-50 text-gray-600'
                                             }
                                         `}
                                     >
                                         <div className={`
                                             p-3 rounded-full
-                                            ${isSelected ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-400'}
+                                            ${isSelected ? 'bg-orange-200 text-orange-700' : 'bg-gray-100 text-gray-400'}
                                         `}>
                                             <Zap className="w-6 h-6" />
                                         </div>
@@ -579,7 +579,7 @@ const FieldCreationPage: React.FC = () => {
                             <p className="text-gray-500">Sube algunas fotos para que los usuarios conozcan tu espacio.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 hover:border-green-500 transition-colors text-center">
+                        <div className="bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 transition-colors text-center">
                             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Upload className="w-10 h-10 text-gray-400" />
                             </div>
@@ -604,7 +604,7 @@ const FieldCreationPage: React.FC = () => {
                         {selectedFiles && selectedFiles.length > 0 && (
                             <div className="mt-8">
                                 <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                                    <Check className="w-4 h-4 text-green-500" />
+                                    <Check className="w-4 h-4 text-orange-500" />
                                     {selectedFiles.length} archivos seleccionados
                                 </h4>
                                 <div className="grid grid-cols-2 gap-4">
@@ -632,16 +632,16 @@ const FieldCreationPage: React.FC = () => {
             case 6: // Success
                 return (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-fade-in relative z-10">
-                        <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-white -z-10" />
-                        <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce-slow shadow-lg ring-8 ring-green-50">
-                            <Check className="w-16 h-16 text-green-600" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-white -z-10" />
+                        <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center mb-4 animate-bounce-slow shadow-lg ring-8 ring-orange-50">
+                            <Check className="w-16 h-16 text-orange-600" />
                         </div>
                         <h1 className="text-5xl font-bold text-gray-900 tracking-tight">¡Cancha creada con éxito!</h1>
                         <p className="text-xl text-gray-500 max-w-lg">
                             La cancha ha sido añadida a tu sede y está lista para ser gestionada.
                         </p>
                         <button
-                            onClick={() => navigate(ROUTES.owner.venueDetail(id!))}
+                            onClick={() => navigate(`/owner/spaces/${id}`)}
                             className="mt-8 px-10 py-4 bg-gray-900 text-white rounded-full text-xl font-semibold shadow-xl hover:bg-gray-800 hover:scale-105 transition-all"
                         >
                             Volver a la Sede
@@ -657,8 +657,8 @@ const FieldCreationPage: React.FC = () => {
             {showConfirmation && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100 relative z-[10000]">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <AlertTriangle className="w-8 h-8 text-green-600" />
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                            <AlertTriangle className="w-8 h-8 text-orange-600" />
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">
                             ¿Confirmas la creación de la cancha?
@@ -686,11 +686,8 @@ const FieldCreationPage: React.FC = () => {
 
             {/* Header */}
             <header className="h-20 border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-                <div className="flex items-center cursor-pointer" onClick={() => navigate(ROUTES.owner.venueDetail(id!))}>
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md mr-3 hover:shadow-lg transition-shadow">
-                        <LayoutGrid className="text-white w-6 h-6" />
-                    </div>
-                    <span className="font-bold text-xl tracking-tight text-gray-900">Rogu</span>
+                <div className="flex items-center cursor-pointer" onClick={() => navigate(`/owner/spaces/${id}`)}>
+                    <img src={roguLogo} alt="ROGU" className="h-12 w-auto mr-2" />
                 </div>
             </header>
 
@@ -698,7 +695,7 @@ const FieldCreationPage: React.FC = () => {
             {currentStep > 0 && currentStep < 6 && (
                 <div className="w-full h-1 bg-gray-100">
                     <div
-                        className="h-full bg-gradient-to-r from-green-600 to-emerald-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                        className="h-full bg-gradient-to-r from-orange-600 to-red-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(249,115,22,0.5)]"
                         style={{ width: `${(currentStep / 5) * 100}%` }}
                     />
                 </div>
