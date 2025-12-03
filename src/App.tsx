@@ -339,7 +339,6 @@ const AppContent = () => {
                         <Route path="spaces" element={<OwnerSpacesPage />} />
                         <Route path="spaces/:id" element={<OwnerSpaceDetailPage />} />
                         <Route path="spaces/:id/edit" element={<OwnerEditSedePage />} />
-                        <Route path="spaces/:id/fields/new" element={<FieldCreationPage />} />
                         <Route path="spaces/:id/fields/:idCancha" element={<FieldManagementPage />} />
                         <Route path="fields" element={<OwnerFieldsPage />} />
                         <Route path="bookings" element={<OwnerBookingsPage />} />
@@ -348,6 +347,16 @@ const AppContent = () => {
                         <Route path="assignments" element={<OwnerAssignmentsPage />} />
                         <Route path="settings" element={<OwnerSettingsPage />} />
                     </Route>
+
+                    {/* Ruta independiente para crear cancha (Full Screen) */}
+                    <Route
+                        path="/owner/spaces/:id/fields/new"
+                        element={
+                            <ProtectedRoute requiredRoles={['DUENIO']} excludedRoles={['ADMIN']} redirectTo={ROUTES.home} showUnauthorized={true}>
+                                <FieldCreationPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     {/* Ruta independiente para crear sede (fuera del layout si es necesario o mantener como estaba) */}
                     <Route
