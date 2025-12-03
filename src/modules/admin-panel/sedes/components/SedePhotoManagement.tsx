@@ -3,7 +3,7 @@ import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle, Loader2 } from 'l
 import { getApiUrl, getImageUrl } from '@/core/config/api';
 
 interface Foto {
-    idFoto: number;
+    idFoto?: number;
     urlFoto: string;
 }
 
@@ -31,14 +31,17 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
 
     const normalizedFallback = useMemo(() => {
         return Array.isArray(fallbackFotos)
-            ? fallbackFotos.map((f) => ({ ...f, urlFoto: resolveUrl(f.urlFoto) }))
+            ? fallbackFotos.map((f, idx) => ({
+                idFoto: f.idFoto ?? idx,
+                urlFoto: resolveUrl(f.urlFoto),
+            }))
             : [];
     }, [fallbackFotos]);
 
     // Cargar fotos de la sede
     const loadFotos = async () => {
         // Si ya tenemos fotos en fallback, úsalas y evita llamar al endpoint 404
-        if (normalizedFallback.length > 0) {
+        if (fallbackFotos !== undefined) {
             setFotos(normalizedFallback);
             return;
         }
@@ -284,8 +287,8 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {fotos.map((foto) => (
-                                <div key={foto.idFoto} className="relative group">
+                            {fotos.map((foto, idx) => (
+                                <div key={foto.idFoto ?? idx} className="relative group">
                                     <img
                                         src={foto.urlFoto}
                                         alt="Foto de la sede"
@@ -295,14 +298,16 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
                                             target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIGFsIGNhcmdhcjwvdGV4dD48L3N2Zz4=';
                                         }}
                                     />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
-                                        <button
-                                            onClick={() => showDeleteConfirm(foto.idFoto)}
-                                            className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
+                                    {foto.idFoto !== undefined && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                            <button
+                                                onClick={() => showDeleteConfirm(foto.idFoto!)}
+                                                className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

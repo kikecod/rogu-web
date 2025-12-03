@@ -47,7 +47,7 @@ const VenueManagementCard: React.FC<VenueCardProps> = ({ sede, onClick }) => {
 
 
     const imagenPrincipal = imagenPath
-        ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
+        ? getImageUrl(imagenPath)
         : '/placeholder-venue.jpg';
 
 

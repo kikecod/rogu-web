@@ -25,7 +25,7 @@ interface Sede {
     estado: string;
     verificada: boolean;
     fotoPrincipal?: string;
-    fotos?: { urlFoto: string }[];
+    fotos?: { idFoto?: number; urlFoto: string }[];
     canchas?: any[];
 }
 
@@ -57,9 +57,41 @@ const OwnerSpacesPage: React.FC = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Filter to ensure we only get this user's sedes (API should do this but double check)
                 const mySedes = data.filter((s: any) => s.idPersonaD === user.idPersona);
-                setSedes(mySedes);
+
+                // Traer detalle para obtener fotoPrincipal/fotos (S3)
+                const sedesWithPhotos = await Promise.all(
+                    mySedes.map(async (sede: any) => {
+                        try {
+                            const detailResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sede/${sede.idSede}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                }
+                            });
+
+                            if (detailResponse.ok) {
+                                const detailData = await detailResponse.json();
+                                const detailFotos = Array.isArray(detailData.sede?.fotos)
+                                    ? detailData.sede.fotos.map((f: any) => ({
+                                        urlFoto: f.urlFoto || f.url || f.imageUrl || f.path || '',
+                                        idFoto: f.idFoto ?? f.id ?? undefined,
+                                    }))
+                                    : [];
+
+                                return {
+                                    ...sede,
+                                    fotoPrincipal: detailData.sede?.fotoPrincipal ?? sede.fotoPrincipal,
+                                    fotos: detailFotos.length > 0 ? detailFotos : (sede.fotos || []),
+                                };
+                            }
+                        } catch (detailError) {
+                            console.error(`Error loading detail for sede ${sede.idSede}:`, detailError);
+                        }
+                        return sede;
+                    })
+                );
+
+                setSedes(sedesWithPhotos);
             }
         } catch (error) {
             console.error('Error loading sedes:', error);
@@ -104,9 +136,14 @@ const OwnerSpacesPage: React.FC = () => {
     );
 
     const getSedeImage = (sede: Sede) => {
-        if (sede.fotoPrincipal) return getImageUrl(sede.fotoPrincipal);
-        if (sede.fotos && sede.fotos.length > 0) return getImageUrl(sede.fotos[0].urlFoto);
-        return '/placeholder-venue.jpg';
+        const firstFoto = sede.fotos?.[0];
+        const imagenPath =
+            sede.fotoPrincipal ||
+            firstFoto?.urlFoto ||
+            (firstFoto as any)?.url ||
+            (firstFoto as any)?.imageUrl ||
+            (firstFoto as any)?.path;
+        return imagenPath ? getImageUrl(imagenPath) : '/placeholder-venue.jpg';
     };
 
     return (
@@ -302,6 +339,7 @@ const OwnerSpacesPage: React.FC = () => {
             {selectedSedeForPhotos && (
                 <SedePhotoManagement
                     sede={{ idSede: selectedSedeForPhotos.idSede, nombre: selectedSedeForPhotos.nombre }}
+                    fallbackFotos={selectedSedeForPhotos.fotos}
                     isOpen={photoModalOpen}
                     onClose={() => {
                         setPhotoModalOpen(false);

@@ -84,14 +84,7 @@ const UsuarioFormPage = () => {
   const resolveAvatarUrl = (src: string | null): string | null => {
     if (!src) return null;
     if (src.startsWith('data:')) return src;
-    if (src.startsWith('http')) {
-      try {
-        const url = new URL(src);
-        return getImageUrl(url.pathname);
-      } catch {
-        return src;
-      }
-    }
+    if (src.startsWith('http')) return getImageUrl(src);
     return getImageUrl(src);
   };
 
