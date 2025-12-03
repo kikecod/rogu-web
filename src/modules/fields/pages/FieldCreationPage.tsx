@@ -1,11 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, LayoutGrid, Users, DollarSign, Clock, Zap, Shield, ChevronRight, Ruler, CloudRain, AlertTriangle, Cigarette, Dog, Ban, Upload, Image, Loader2 } from 'lucide-react';
-import { useAuth } from '@/auth/hooks/useAuth';
-import roguLogo from '@/assets/rogu_logo.png';
+import {
+    ArrowLeft,
+    Loader2,
+    LayoutGrid,
+    Settings,
+    Clock,
+    Check,
+    ChevronRight,
+    Upload,
+    Image as ImageIcon,
+    AlertCircle,
+    Trophy,
+    Sun,
+    Lightbulb,
+    Umbrella,
+    DollarSign,
+    Users,
+    Ruler,
+    FileText,
+    Edit3
+} from 'lucide-react';
+import { fieldsService } from '../services/fields.service';
+import type { CrearCanchaDto } from '../types/field.types';
 
 // Tipos para el estado del formulario
-type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0: Intro, 1: Basics, 2: Details, 3: Schedule, 4: Disciplines, 5: Photos, 6: Success
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0: Intro, 1: Info Básica, 2: Características, 3: Horarios, 4: Disciplinas, 5: Fotos, 6: Success
 
 interface Disciplina {
     idDisciplina: number;
@@ -13,47 +33,53 @@ interface Disciplina {
     categoria: string;
 }
 
-interface FieldFormData {
-    nombre: string;
-    superficie: string;
-    cubierta: boolean;
-    aforoMax: number;
-    dimensiones: string;
-    reglasUso: string;
-    iluminacion: string;
-    estado: string;
-    precio: number;
-    horaApertura: string;
-    horaCierre: string;
-}
-
-
-const EXAMPLE_RULES = [
-    { id: 'shoes', text: 'Uso obligatorio de zapatillas', icon: Check },
-    { id: 'smoke', text: 'Prohibido fumar', icon: Cigarette },
-    { id: 'pets', text: 'No se permiten mascotas', icon: Dog },
-    { id: 'alcohol', text: 'Prohibido bebidas alcohólicas', icon: Ban },
-    { id: 'time', text: 'Respetar horarios', icon: Clock },
-];
-
 const FieldCreationPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>(); // idSede
-    const { user } = useAuth();
     const [currentStep, setCurrentStep] = useState<Step>(0);
-    const [submitting, setSubmitting] = useState(false);
-    const [showConfirmation, setShowConfirmation] = useState(false);
-    const [customRuleMode, setCustomRuleMode] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Nuevos estados para disciplinas y fotos
+    // Estado para datos creados
+    const [createdCanchaId, setCreatedCanchaId] = useState<number | null>(null);
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
     const [selectedDisciplinas, setSelectedDisciplinas] = useState<number[]>([]);
-    const [createdCanchaId, setCreatedCanchaId] = useState<number | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-    const [uploadingPhotos, setUploadingPhotos] = useState(false);
+    const [customRulesMode, setCustomRulesMode] = useState(false);
 
-    // Cargar disciplinas al montar
-    React.useEffect(() => {
+    const [formData, setFormData] = useState<Omit<CrearCanchaDto, 'idSede'>>({
+        nombre: '',
+        superficie: 'Sintética',
+        cubierta: false,
+        aforoMax: 12,
+        dimensiones: '',
+        reglasUso: '',
+        iluminacion: 'LED',
+        estado: 'Disponible',
+        precio: 0,
+        horaApertura: '08:00',
+        horaCierre: '22:00',
+    });
+
+    const SURFACE_OPTIONS = [
+        { id: 'Sintética', label: 'Pasto Sintético', icon: LayoutGrid, color: 'bg-green-50 text-green-600' },
+        { id: 'Pasto Natural', label: 'Pasto Natural', icon: Sun, color: 'bg-emerald-50 text-emerald-600' },
+        { id: 'Parquet', label: 'Parquet / Madera', icon: LayoutGrid, color: 'bg-orange-50 text-orange-600' },
+        { id: 'Cemento', label: 'Cemento / Concreto', icon: LayoutGrid, color: 'bg-gray-50 text-gray-600' },
+        { id: 'Tierra', label: 'Tierra / Arcilla', icon: LayoutGrid, color: 'bg-amber-50 text-amber-600' },
+    ];
+
+    const EXAMPLE_RULES = [
+        "Uso obligatorio de zapatillas adecuadas",
+        "Prohibido fumar en la cancha",
+        "Respetar el horario reservado",
+        "No ingresar con alimentos",
+        "Cuidar las instalaciones"
+    ];
+
+    // Cargar disciplinas
+    useEffect(() => {
         const loadDisciplinas = async () => {
             try {
                 const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/disciplina`, {
@@ -72,22 +98,6 @@ const FieldCreationPage: React.FC = () => {
         loadDisciplinas();
     }, []);
 
-    // Estado del formulario
-    const [formData, setFormData] = useState<FieldFormData>({
-        nombre: '',
-        superficie: 'Sintética',
-        cubierta: false,
-        aforoMax: 12,
-        dimensiones: '',
-        reglasUso: '',
-        iluminacion: 'LED',
-        estado: 'Disponible',
-        precio: 0,
-        horaApertura: '08:00',
-        horaCierre: '22:00',
-    });
-
-    // Manejadores de cambios
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({
@@ -96,45 +106,38 @@ const FieldCreationPage: React.FC = () => {
         }));
     };
 
-    const toggleRule = (ruleText: string) => {
-        setFormData(prev => {
-            const currentRules = prev.reglasUso ? prev.reglasUso.split(', ').filter(Boolean) : [];
-            const exists = currentRules.includes(ruleText);
-
-            let newRules;
-            if (exists) {
-                newRules = currentRules.filter(r => r !== ruleText);
-            } else {
-                newRules = [...currentRules, ruleText];
-            }
-
-            return {
-                ...prev,
-                reglasUso: newRules.join(', ')
-            };
-        });
+    const toggleRule = (rule: string) => {
+        const currentRules = formData.reglasUso ? formData.reglasUso.split(',').map(r => r.trim()).filter(r => r !== '') : [];
+        if (currentRules.includes(rule)) {
+            setFormData(prev => ({ ...prev, reglasUso: currentRules.filter(r => r !== rule).join(', ') }));
+        } else {
+            setFormData(prev => ({ ...prev, reglasUso: [...currentRules, rule].join(', ') }));
+        }
     };
 
-    // Validación
     const validateStep = (step: Step): boolean => {
         switch (step) {
-            case 1: // Basics
-                return !!formData.nombre && !!formData.superficie;
-            case 2: // Details
-                return formData.precio > 0 && formData.aforoMax > 0 && !!formData.dimensiones;
-            case 3: // Schedule
-                return !!formData.horaApertura && !!formData.horaCierre;
+            case 1:
+                return !!formData.nombre && !!formData.superficie && !!formData.dimensiones;
+            case 2:
+                return true;
+            case 3:
+                return !!formData.horaApertura && !!formData.horaCierre && Number(formData.precio) > 0;
+            case 4:
+                return selectedDisciplinas.length > 0;
             default:
                 return true;
         }
     };
 
-    // Acciones
     const handleNext = async () => {
         if (!validateStep(currentStep)) return;
 
-        if (currentStep === 3) {
-            setShowConfirmation(true);
+        if (currentStep === 4) {
+            // Crear cancha y asignar disciplinas
+            await createCanchaAndDisciplines();
+        } else if (currentStep === 5) {
+            await uploadPhotos();
         } else {
             setCurrentStep(prev => (prev + 1) as Step);
         }
@@ -142,509 +145,471 @@ const FieldCreationPage: React.FC = () => {
 
     const handleBack = () => {
         if (currentStep > 0) {
+            if (currentStep === 5) return; // No volver atrás si ya se creó la cancha
             setCurrentStep(prev => (prev - 1) as Step);
         } else {
             navigate(-1);
         }
     };
 
-    const confirmAndCreate = async () => {
-        setShowConfirmation(false);
-        await createCancha();
-    };
-
-    const createCancha = async () => {
+    const createCanchaAndDisciplines = async () => {
         if (!id) return;
-        setSubmitting(true);
+        setLoading(true);
+        setError(null);
         try {
-            const payload = {
+            // 1. Crear Cancha
+            const payload: CrearCanchaDto = {
                 ...formData,
                 idSede: Number(id),
-                // Asegurar tipos numéricos
                 aforoMax: Number(formData.aforoMax),
                 precio: Number(formData.precio),
             };
 
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cancha`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(payload)
-            });
+            const response = await fieldsService.crear(payload);
+            const newId = response.idCancha;
+            setCreatedCanchaId(newId);
 
-            if (response.ok) {
-                const data = await response.json();
-                setCreatedCanchaId(data.idCancha || data.id); // Ajustar según respuesta del backend
-                setCurrentStep(4); // Ir a Disciplinas
-            } else {
-                const error = await response.json();
-                alert('Error: ' + (error.message || 'Error al crear la cancha'));
+            // 2. Asignar Disciplinas
+            if (selectedDisciplinas.length > 0) {
+                await fieldsService.asignarDisciplinas(newId, selectedDisciplinas);
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al crear la cancha');
+
+            setCurrentStep(5); // Ir a fotos
+        } catch (err: any) {
+            console.error('Error creating field:', err);
+            setError(err.message || 'Error al crear la cancha');
         } finally {
-            setSubmitting(false);
+            setLoading(false);
         }
     };
 
-    const handleSaveDisciplinas = async () => {
-        if (!createdCanchaId || selectedDisciplinas.length === 0) {
-            setCurrentStep(5); // Saltar si no hay selección (o forzar selección según regla de negocio)
-            return;
-        }
-
-        setSubmitting(true);
-        try {
-            // Guardar cada disciplina seleccionada
-            for (const idDisciplina of selectedDisciplinas) {
-                await fetch(`${import.meta.env.VITE_API_BASE_URL}/parte`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        idCancha: createdCanchaId,
-                        idDisciplina: idDisciplina
-                    })
-                });
-            }
-            setCurrentStep(5); // Ir a Fotos
-        } catch (error) {
-            console.error('Error saving disciplines:', error);
-            alert('Error al guardar disciplinas');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleUploadPhotos = async () => {
+    const uploadPhotos = async () => {
         if (!createdCanchaId) return;
-
-        if (!selectedFiles || selectedFiles.length === 0) {
-            setCurrentStep(6); // Ir a Success si no hay fotos
-            return;
-        }
-
-        setUploadingPhotos(true);
+        setLoading(true);
         try {
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const file = selectedFiles[i];
-                const formData = new FormData();
-                formData.append('image', file);
-
-                await fetch(`${import.meta.env.VITE_API_BASE_URL}/fotos/upload/cancha/${createdCanchaId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: formData
-                });
+            if (selectedFiles && selectedFiles.length > 0) {
+                await fieldsService.subirFotos(createdCanchaId, selectedFiles);
             }
-            setCurrentStep(6); // Ir a Success
-        } catch (error) {
-            console.error('Error uploading photos:', error);
-            alert('Error al subir fotos');
+            setCurrentStep(6); // Success
+        } catch (err: any) {
+            console.error('Error uploading photos:', err);
+            setError('Error al subir fotos');
         } finally {
-            setUploadingPhotos(false);
+            setLoading(false);
         }
     };
 
-    const toggleDisciplina = (id: number) => {
+    const toggleDisciplina = (idDisciplina: number) => {
         setSelectedDisciplinas(prev =>
-            prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
+            prev.includes(idDisciplina)
+                ? prev.filter(d => d !== idDisciplina)
+                : [...prev, idDisciplina]
         );
     };
 
-    if (!user?.idPersona) return null;
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
+    };
 
-    // Renderizado de pasos
     const renderStepContent = () => {
         switch (currentStep) {
             case 0: // Intro
                 return (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-fade-in relative z-10">
-                        <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-white -z-10" />
-                        <div className="w-32 h-32 bg-gradient-to-tr from-orange-100 to-red-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                            <LayoutGrid className="w-16 h-16 text-orange-600" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-white -z-10" />
+                        <div className="w-32 h-32 bg-gradient-to-tr from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                            <Trophy className="w-16 h-16 text-blue-600" />
                         </div>
                         <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
                             Agrega una nueva cancha
                         </h1>
                         <p className="text-xl text-gray-500 max-w-lg">
-                            Configura los detalles de tu espacio deportivo para empezar a recibir reservas.
+                            Configura los detalles, horarios y deportes para empezar a recibir reservas.
                         </p>
                         <button
                             onClick={() => setCurrentStep(1)}
-                            className="mt-8 px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-full text-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+                            className="mt-8 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
                         >
                             Comenzar
                         </button>
                     </div>
                 );
 
-            case 1: // Basics
+            case 1: // Info Básica
                 return (
-                    <div className="max-w-2xl mx-auto animate-fade-in">
-                        <div className="mb-8">
+                    <div className="max-w-3xl mx-auto animate-fade-in">
+                        <div className="mb-8 text-center">
                             <h2 className="text-3xl font-bold text-gray-900 mb-2">Información Básica</h2>
-                            <p className="text-gray-500">Define las características principales de la cancha.</p>
+                            <p className="text-gray-500">Detalles principales de tu espacio deportivo.</p>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             {/* Nombre */}
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                    <LayoutGrid className="w-4 h-4 text-orange-500" />
-                                    Nombre de la Cancha <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(Debe tener 5 o mas caracteres)</span>
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Nombre de la Cancha <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     name="nombre"
                                     value={formData.nombre}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-lg"
-                                    placeholder="Ej: Cancha 1 - Fútbol 5"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none text-lg"
+                                    placeholder="Ej: Cancha Principal"
                                     autoFocus
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Superficie */}
-                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                        <LayoutGrid className="w-4 h-4 text-orange-500" />
-                                        Superficie
-                                    </label>
-                                    <select
-                                        name="superficie"
-                                        value={formData.superficie}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none bg-white"
-                                    >
-                                        <option value="Sintética">Sintética</option>
-                                        <option value="Pasto Natural">Pasto Natural</option>
-                                        <option value="Parquet">Parquet</option>
-                                        <option value="Cemento">Cemento</option>
-                                        <option value="Tierra">Tierra</option>
-                                    </select>
-                                </div>
-
-                                {/* Iluminación */}
-                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                        <Zap className="w-4 h-4 text-yellow-500" />
-                                        Iluminación
-                                    </label>
-                                    <select
-                                        name="iluminacion"
-                                        value={formData.iluminacion}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none bg-white"
-                                    >
-                                        <option value="LED">LED</option>
-                                        <option value="Halógena">Halógena</option>
-                                        <option value="Natural">Natural (Solo día)</option>
-                                    </select>
+                            {/* Superficie */}
+                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                <label className="block text-sm font-medium text-gray-700 mb-4">Tipo de Superficie <span className="text-red-500">*</span></label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {SURFACE_OPTIONS.map((option) => {
+                                        const isSelected = formData.superficie === option.id;
+                                        const Icon = option.icon;
+                                        return (
+                                            <button
+                                                key={option.id}
+                                                onClick={() => setFormData(prev => ({ ...prev, superficie: option.id }))}
+                                                className={`
+                                                    p-4 rounded-xl border-2 text-left transition-all flex flex-col gap-3
+                                                    ${isSelected
+                                                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                                        : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50'
+                                                    }
+                                                `}
+                                            >
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${option.color}`}>
+                                                    <Icon size={20} />
+                                                </div>
+                                                <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                    {option.label}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {/* Cubierta Toggle */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, cubierta: !prev.cubierta }))}>
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-3 rounded-full ${formData.cubierta ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                                        <CloudRain className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium text-gray-900">Cancha Techada</h3>
-                                        <p className="text-sm text-gray-500">¿La cancha cuenta con techo o cubierta?</p>
-                                    </div>
-                                </div>
-                                <div className={`w-14 h-8 rounded-full p-1 transition-colors ${formData.cubierta ? 'bg-orange-500' : 'bg-gray-300'}`}>
-                                    <div className={`w-6 h-6 bg-white rounded-full shadow-sm transform transition-transform ${formData.cubierta ? 'translate-x-6' : 'translate-x-0'}`} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-
-            case 2: // Details
-                return (
-                    <div className="max-w-2xl mx-auto animate-fade-in">
-                        <div className="mb-8">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Detalles y Precios</h2>
-                            <p className="text-gray-500">Especifica la capacidad y el costo de alquiler.</p>
-                        </div>
-
-                        <div className="space-y-6">
+                            {/* Dimensiones y Aforo */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Precio */}
                                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                     <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                        <DollarSign className="w-4 h-4 text-green-500" />
-                                        Precio por Hora (Bs.) <span className="text-red-500">*</span>
+                                        <Ruler className="w-4 h-4 text-blue-500" />
+                                        Dimensiones <span className="text-red-500">*</span>
                                     </label>
                                     <input
-                                        type="number"
-                                        name="precio"
-                                        value={formData.precio}
+                                        type="text"
+                                        name="dimensiones"
+                                        value={formData.dimensiones}
                                         onChange={handleInputChange}
-                                        min="0"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
-                                        placeholder="0.00"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
+                                        placeholder="Ej: 20x40m"
                                     />
                                 </div>
-
-                                {/* Aforo */}
                                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                     <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                                         <Users className="w-4 h-4 text-blue-500" />
-                                        Capacidad Máxima <span className="text-red-500">*</span>
+                                        Capacidad (Personas)
                                     </label>
                                     <input
                                         type="number"
                                         name="aforoMax"
                                         value={formData.aforoMax}
                                         onChange={handleInputChange}
-                                        min="1"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
-                                        placeholder="12"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                );
 
-                            {/* Dimensiones */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                    <Ruler className="w-4 h-4 text-gray-500" />
-                                    Dimensiones <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="dimensiones"
-                                    value={formData.dimensiones}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg"
-                                    placeholder="Ej: 20x40 metros"
-                                />
+            case 2: // Características
+                return (
+                    <div className="max-w-3xl mx-auto animate-fade-in">
+                        <div className="mb-8 text-center">
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Características y Reglas</h2>
+                            <p className="text-gray-500">Define las condiciones de uso de la cancha.</p>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Iluminación */}
+                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                        <Lightbulb className="w-4 h-4 text-yellow-500" />
+                                        Iluminación
+                                    </label>
+                                    <select
+                                        name="iluminacion"
+                                        value={formData.iluminacion}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none bg-white"
+                                    >
+                                        <option value="LED">LED (Alta calidad)</option>
+                                        <option value="Halógena">Halógena (Estándar)</option>
+                                        <option value="Natural">Natural (Solo día)</option>
+                                    </select>
+                                </div>
+
+                                {/* Cubierta */}
+                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <Umbrella className="w-4 h-4 text-blue-500" />
+                                            Cancha Techada
+                                        </label>
+                                        <p className="text-xs text-gray-500">¿Protegida de la lluvia/sol?</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            name="cubierta"
+                                            checked={formData.cubierta}
+                                            onChange={handleInputChange}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
                             </div>
 
                             {/* Reglas */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex items-center justify-between mb-4">
-                                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <Shield className="w-4 h-4 text-blue-500" />
-                                        Reglas de Uso <span className="text-gray-400 font-normal">(Opcional)</span>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-blue-500" />
+                                        Reglas de Uso
                                     </label>
                                     <button
-                                        onClick={() => setCustomRuleMode(!customRuleMode)}
-                                        className="text-sm text-orange-600 font-medium hover:text-orange-700 transition-colors"
+                                        onClick={() => setCustomRulesMode(!customRulesMode)}
+                                        className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
                                     >
-                                        {customRuleMode ? 'Usar predefinidas' : 'Escribir personalizada'}
+                                        {customRulesMode ? <><Check className="w-3 h-3" /> Usar ejemplos</> : <><Edit3 className="w-3 h-3" /> Personalizado</>}
                                     </button>
                                 </div>
 
-                                {customRuleMode ? (
+                                {customRulesMode ? (
                                     <textarea
                                         name="reglasUso"
                                         value={formData.reglasUso}
                                         onChange={handleInputChange}
-                                        rows={3}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-lg resize-none"
-                                        placeholder="Ej: Uso obligatorio de zapatillas de futsal..."
-                                        autoFocus
+                                        rows={5}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none"
+                                        placeholder="Escribe las reglas aquí..."
                                     />
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {EXAMPLE_RULES.map((rule) => {
-                                            const isSelected = formData.reglasUso.includes(rule.text);
+                                    <div className="space-y-2">
+                                        {EXAMPLE_RULES.map((rule, idx) => {
+                                            const isSelected = formData.reglasUso.includes(rule);
                                             return (
-                                                <div
-                                                    key={rule.id}
-                                                    onClick={() => toggleRule(rule.text)}
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => toggleRule(rule)}
                                                     className={`
-                                                        p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3
+                                                        w-full p-3 rounded-xl border text-left flex items-center gap-3 transition-all
                                                         ${isSelected
-                                                            ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm'
-                                                            : 'border-gray-200 hover:border-orange-200 hover:bg-gray-50 text-gray-600'
+                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                            : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50 text-gray-600'
                                                         }
                                                     `}
                                                 >
-                                                    <div className={`
-                                                        p-2 rounded-full
-                                                        ${isSelected ? 'bg-orange-200 text-orange-700' : 'bg-gray-100 text-gray-400'}
-                                                    `}>
-                                                        <rule.icon className="w-4 h-4" />
+                                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300'}`}>
+                                                        {isSelected && <Check size={12} />}
                                                     </div>
-                                                    <span className="font-medium text-sm">{rule.text}</span>
-                                                    {isSelected && <Check className="w-4 h-4 ml-auto text-orange-600" />}
-                                                </div>
+                                                    <span className="text-sm">{rule}</span>
+                                                </button>
                                             );
                                         })}
                                     </div>
                                 )}
-                                <p className="text-xs text-gray-500 mt-2">Separa las reglas con comas (ej: No fumar, Traer toalla)</p>
                             </div>
                         </div>
                     </div>
                 );
 
-            case 3: // Schedule
+            case 3: // Horarios y Precio
                 return (
                     <div className="max-w-2xl mx-auto animate-fade-in">
-                        <div className="mb-8">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Horario de Atención</h2>
-                            <p className="text-gray-500">Define el horario en el que esta cancha estará disponible.</p>
+                        <div className="mb-8 text-center">
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Horarios y Precio</h2>
+                            <p className="text-gray-500">Define el valor y disponibilidad de la cancha.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="p-3 bg-orange-100 rounded-full text-orange-600">
-                                    <Clock className="w-6 h-6" />
+                        <div className="space-y-6">
+                            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                <label className="block text-sm font-medium text-gray-700 mb-4 text-center">Precio por Hora</label>
+                                <div className="relative max-w-xs mx-auto">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                                        <span className="text-green-600 font-bold text-lg">Bs</span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        name="precio"
+                                        value={formData.precio}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-16 pr-4 py-4 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-3xl font-bold text-center text-gray-900"
+                                        placeholder="0"
+                                    />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Horario Estándar</h3>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-3">Hora de Apertura</label>
-                                    <input
-                                        type="time"
-                                        name="horaApertura"
-                                        value={formData.horaApertura}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all outline-none text-2xl font-bold text-center"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-3">Hora de Cierre</label>
-                                    <input
-                                        type="time"
-                                        name="horaCierre"
-                                        value={formData.horaCierre}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all outline-none text-2xl font-bold text-center"
-                                    />
+                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                                    <Clock className="w-5 h-5 text-blue-500" />
+                                    Horario de Atención
+                                </h3>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Apertura</label>
+                                        <input
+                                            type="time"
+                                            name="horaApertura"
+                                            value={formData.horaApertura}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-lg text-center"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Cierre</label>
+                                        <input
+                                            type="time"
+                                            name="horaCierre"
+                                            value={formData.horaCierre}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-lg text-center"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 );
 
-            case 4: // Disciplines
+            case 4: // Disciplinas
                 return (
-                    <div className="max-w-3xl mx-auto animate-fade-in">
+                    <div className="max-w-4xl mx-auto animate-fade-in">
                         <div className="mb-8 text-center">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Deportes y Disciplinas</h2>
-                            <p className="text-gray-500">Selecciona los deportes que se pueden practicar en esta cancha.</p>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Deportes</h2>
+                            <p className="text-gray-500">Selecciona todos los deportes que se pueden practicar.</p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {disciplinas.map((disciplina) => {
                                 const isSelected = selectedDisciplinas.includes(disciplina.idDisciplina);
                                 return (
-                                    <div
+                                    <button
                                         key={disciplina.idDisciplina}
                                         onClick={() => toggleDisciplina(disciplina.idDisciplina)}
                                         className={`
-                                            p-4 rounded-2xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-3 text-center h-32
+                                            p-6 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-3 text-center h-40 group
                                             ${isSelected
-                                                ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md transform scale-105'
-                                                : 'border-gray-200 hover:border-orange-200 hover:bg-gray-50 text-gray-600'
+                                                ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md transform scale-105'
+                                                : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50 text-gray-600 hover:shadow-sm'
                                             }
                                         `}
                                     >
                                         <div className={`
-                                            p-3 rounded-full
-                                            ${isSelected ? 'bg-orange-200 text-orange-700' : 'bg-gray-100 text-gray-400'}
+                                            w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold
+                                            ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500'}
                                         `}>
-                                            <Zap className="w-6 h-6" />
+                                            {disciplina.nombre.charAt(0)}
                                         </div>
-                                        <span className="font-medium">{disciplina.nombre}</span>
-                                    </div>
+                                        <div>
+                                            <span className="font-bold block">{disciplina.nombre}</span>
+                                            <span className="text-xs opacity-75">{disciplina.categoria}</span>
+                                        </div>
+                                        {isSelected && (
+                                            <div className="absolute top-3 right-3 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-sm">
+                                                <Check size={14} />
+                                            </div>
+                                        )}
+                                    </button>
                                 );
                             })}
                         </div>
                     </div>
                 );
 
-            case 5: // Photos
+            case 5: // Fotos
                 return (
-                    <div className="max-w-2xl mx-auto animate-fade-in">
-                        <div className="mb-8 text-center">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Fotos de la Cancha</h2>
-                            <p className="text-gray-500">Sube algunas fotos para que los usuarios conozcan tu espacio.</p>
+                    <div className="max-w-3xl mx-auto animate-fade-in text-center">
+                        <div className="mb-8">
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Galería de Fotos</h2>
+                            <p className="text-gray-500">Muestra lo mejor de tu cancha a los usuarios.</p>
                         </div>
 
-                        <div className="bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 hover:border-orange-500 transition-colors text-center">
-                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Upload className="w-10 h-10 text-gray-400" />
-                            </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">Sube tus fotos aquí</h3>
-                            <p className="text-gray-500 mb-6 text-sm">
-                                Soporta JPG, PNG. Máximo 10MB por imagen.
-                            </p>
+                        <div
+                            className={`
+                                border-3 border-dashed rounded-3xl p-12 transition-all cursor-pointer group
+                                ${selectedFiles && selectedFiles.length > 0
+                                    ? 'border-green-400 bg-green-50/30'
+                                    : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/30'
+                                }
+                            `}
+                            onClick={triggerFileInput}
+                        >
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => setSelectedFiles(e.target.files)}
+                                className="hidden"
+                                ref={fileInputRef}
+                            />
 
-                            <label className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
-                                <Image className="w-5 h-5 mr-2" />
-                                Seleccionar Archivos
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => setSelectedFiles(e.target.files)}
-                                />
-                            </label>
-                        </div>
-
-                        {selectedFiles && selectedFiles.length > 0 && (
-                            <div className="mt-8">
-                                <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                                    <Check className="w-4 h-4 text-orange-500" />
-                                    {selectedFiles.length} archivos seleccionados
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {Array.from(selectedFiles).map((file, index) => (
-                                        <div key={index} className="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-                                                <img
-                                                    src={URL.createObjectURL(file)}
-                                                    alt="preview"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                                                <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                            <div className="flex flex-col items-center">
+                                <div className={`
+                                    w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-transform group-hover:scale-110
+                                    ${selectedFiles && selectedFiles.length > 0 ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-blue-500'}
+                                `}>
+                                    {selectedFiles && selectedFiles.length > 0 ? <Check size={40} /> : <Upload size={40} />}
                                 </div>
+
+                                {selectedFiles && selectedFiles.length > 0 ? (
+                                    <>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedFiles.length} fotos seleccionadas</h3>
+                                        <p className="text-gray-500 mb-6">Haz clic para cambiar la selección</p>
+                                        <div className="grid grid-cols-3 gap-4 w-full max-w-lg mx-auto">
+                                            {Array.from(selectedFiles).slice(0, 3).map((file, i) => (
+                                                <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative">
+                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                </div>
+                                            ))}
+                                            {selectedFiles.length > 3 && (
+                                                <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 font-medium">
+                                                    +{selectedFiles.length - 3}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">Arrastra tus fotos aquí</h3>
+                                        <p className="text-gray-500">o haz clic para explorar tus archivos</p>
+                                        <p className="text-xs text-gray-400 mt-4">JPG, PNG hasta 10MB</p>
+                                    </>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </div>
                 );
 
             case 6: // Success
                 return (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-8 animate-fade-in relative z-10">
-                        <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-white -z-10" />
-                        <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center mb-4 animate-bounce-slow shadow-lg ring-8 ring-orange-50">
-                            <Check className="w-16 h-16 text-orange-600" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-white -z-10" />
+                        <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce-slow shadow-lg ring-8 ring-green-50">
+                            <Check className="w-16 h-16 text-green-600" />
                         </div>
-                        <h1 className="text-5xl font-bold text-gray-900 tracking-tight">¡Cancha creada con éxito!</h1>
+                        <h1 className="text-5xl font-bold text-gray-900 tracking-tight">¡Cancha Creada!</h1>
                         <p className="text-xl text-gray-500 max-w-lg">
-                            La cancha ha sido añadida a tu sede y está lista para ser gestionada.
+                            Tu cancha ha sido configurada correctamente y ya está lista en el sistema.
                         </p>
                         <button
-                            onClick={() => navigate(`/owner/spaces/${id}`)}
+                            onClick={() => navigate('/owner/fields')}
                             className="mt-8 px-10 py-4 bg-gray-900 text-white rounded-full text-xl font-semibold shadow-xl hover:bg-gray-800 hover:scale-105 transition-all"
                         >
-                            Volver a la Sede
+                            Ir a Mis Canchas
                         </button>
                     </div>
                 );
@@ -653,41 +618,13 @@ const FieldCreationPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans relative">
-            {/* Confirmation Modal */}
-            {showConfirmation && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100 relative z-[10000]">
-                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <AlertTriangle className="w-8 h-8 text-orange-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">
-                            ¿Confirmas la creación de la cancha?
-                        </h3>
-                        <p className="text-gray-600 text-center mb-8">
-                            Revisa que los datos sean correctos. Podrás editarlos más tarde si es necesario.
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setShowConfirmation(false)}
-                                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
-                            >
-                                Revisar
-                            </button>
-                            <button
-                                onClick={confirmAndCreate}
-                                className="flex-1 px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-lg"
-                            >
-                                Confirmar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Header */}
             <header className="h-20 border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-                <div className="flex items-center cursor-pointer" onClick={() => navigate(`/owner/spaces/${id}`)}>
-                    <img src={roguLogo} alt="ROGU" className="h-12 w-auto mr-2" />
+                <div className="flex items-center cursor-pointer" onClick={() => navigate(-1)}>
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md mr-3 hover:shadow-lg transition-shadow">
+                        <Trophy className="text-white w-6 h-6" />
+                    </div>
+                    <span className="font-bold text-xl tracking-tight text-gray-900">Rogu</span>
                 </div>
             </header>
 
@@ -695,7 +632,7 @@ const FieldCreationPage: React.FC = () => {
             {currentStep > 0 && currentStep < 6 && (
                 <div className="w-full h-1 bg-gray-100">
                     <div
-                        className="h-full bg-gradient-to-r from-orange-600 to-red-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+                        className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(37,99,235,0.5)]"
                         style={{ width: `${(currentStep / 5) * 100}%` }}
                     />
                 </div>
@@ -717,29 +654,24 @@ const FieldCreationPage: React.FC = () => {
                             Atrás
                         </button>
 
-                        <div className="flex items-center gap-4 ml-auto">
+                        <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-400 font-medium hidden sm:block">
-                                {currentStep === 4 ? 'Paso 4 de 5' : currentStep === 5 ? 'Paso 5 de 5' : `Paso ${currentStep} de 5`}
+                                Paso {currentStep} de 5
                             </span>
                             <button
-                                onClick={() => {
-                                    if (currentStep === 3) handleNext();
-                                    else if (currentStep === 4) handleSaveDisciplinas();
-                                    else if (currentStep === 5) handleUploadPhotos();
-                                    else handleNext();
-                                }}
-                                disabled={!validateStep(currentStep) || submitting || uploadingPhotos}
+                                onClick={handleNext}
+                                disabled={loading || !validateStep(currentStep)}
                                 className={`
                                     px-8 py-3 rounded-xl font-semibold text-white shadow-lg transition-all flex items-center gap-2
-                                    ${!validateStep(currentStep) || submitting || uploadingPhotos
+                                    ${loading || !validateStep(currentStep)
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-gray-900 hover:bg-gray-800 hover:scale-105 active:scale-95 shadow-gray-900/20'
                                     }
                                 `}
                             >
-                                {submitting || uploadingPhotos ? (
+                                {loading ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="animate-spin w-4 h-4" />
                                         Procesando...
                                     </>
                                 ) : (

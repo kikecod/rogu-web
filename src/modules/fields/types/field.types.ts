@@ -172,3 +172,20 @@ export interface Review {
   date: string;
   comment: string;
 }
+
+export interface CrearCanchaDto {
+  idSede: number;
+  nombre: string;
+  superficie: string;
+  cubierta: boolean;
+  aforoMax: number;
+  dimensiones: string;
+  reglasUso: string;
+  iluminacion: string;
+  estado: string;
+  precio: number;
+  horaApertura: string;
+  horaCierre: string;
+}
+
+export interface EditarCanchaDto extends Partial<CrearCanchaDto> { }

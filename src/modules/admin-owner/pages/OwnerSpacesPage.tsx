@@ -238,10 +238,10 @@ const OwnerSpacesPage: React.FC = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(ROUTES.owner.editVenue(sede.idSede));
+                                            navigate(ROUTES.owner.spaceDetail(sede.idSede));
                                         }}
                                         className="p-2 bg-white/90 backdrop-blur-sm rounded-lg text-gray-700 hover:text-blue-600 hover:bg-white transition-colors shadow-sm"
-                                        title="Editar Información"
+                                        title="Gestionar Sede"
                                     >
                                         <Edit className="w-4 h-4" />
                                     </button>
