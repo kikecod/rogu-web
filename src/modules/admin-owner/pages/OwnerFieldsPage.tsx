@@ -147,7 +147,7 @@ const OwnerFieldsPage: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowVenueSelector(true)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 hover:shadow-primary-300 hover:-translate-y-0.5 font-medium"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-black rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 hover:shadow-primary-300 hover:-translate-y-0.5 font-medium"
                 >
                     <Plus className="w-5 h-5" />
                     Nueva Cancha

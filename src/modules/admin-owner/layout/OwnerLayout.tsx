@@ -15,16 +15,28 @@ import {
     Bell
 } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
+import { useMode } from '../../../core/hooks/useMode';
+import { getImageUrl } from '@/core/config/api';
 import { ROUTES } from '@/config/routes';
 
 const OwnerLayout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { user, logout } = useAuth();
+    const { toggleMode } = useMode();
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleLogout = () => {
         logout();
+        navigate(ROUTES.home);
+    };
+
+    const handleGoToProfile = () => {
+        navigate('/profile');
+    };
+
+    const handleModeToggle = () => {
+        toggleMode();
         navigate(ROUTES.home);
     };
 
@@ -162,13 +174,38 @@ const OwnerLayout: React.FC = () => {
                         })}
                     </nav>
 
+                    {/* Modo Cliente Button */}
+                    <div className="px-4 py-3 border-t border-gray-100">
+                        <button
+                            onClick={handleModeToggle}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 w-full text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all shadow-md hover:shadow-lg"
+                        >
+                            <Home className="w-4 h-4" />
+                            <span>Modo Cliente</span>
+                        </button>
+                    </div>
+
                     {/* User Profile & Logout */}
                     <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-                        <div className="flex items-center gap-3 mb-3 px-2">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white font-bold shadow-md">
+                        <button
+                            onClick={handleGoToProfile}
+                            className="flex items-center gap-3 mb-3 px-2 w-full hover:bg-gray-100 rounded-lg p-2 transition-colors"
+                        >
+                            {user?.avatar ? (
+                                <img
+                                    src={getImageUrl(user.avatar)}
+                                    alt={user?.usuario || 'Usuario'}
+                                    className="w-10 h-10 rounded-full object-cover shadow-md"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white font-bold shadow-md ${user?.avatar ? 'hidden' : ''}`}>
                                 {user?.usuario?.charAt(0).toUpperCase() || 'U'}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 text-left">
                                 <p className="text-sm font-bold text-gray-900 truncate">
                                     {user?.usuario}
                                 </p>
@@ -176,7 +213,7 @@ const OwnerLayout: React.FC = () => {
                                     {user?.correo}
                                 </p>
                             </div>
-                        </div>
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="flex items-center justify-center gap-2 px-4 py-2 w-full text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
