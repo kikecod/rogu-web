@@ -18,7 +18,7 @@ import OwnerAssignmentsPage from './modules/admin-owner/pages/OwnerAssignmentsPa
 import OwnerSettingsPage from './modules/admin-owner/pages/OwnerSettingsPage';
 import HostSpaceOwnerPage from './modules/admin-owner/pages/HostSpacePage';
 import FieldCreationPage from './modules/fields/pages/FieldCreationPage';
-import FieldManagementPage from './modules/admin-owner/pages/FieldManagementPage';
+import FieldManagementPage from './modules/fields/pages/FieldManagementPage';
 
 // import TestRolesPage from '@/core/pages/TestRolesPage'; // Página de desarrollo
 import ProfilePage from '@/user-profile/pages/ProfilePage';
