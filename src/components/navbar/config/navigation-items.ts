@@ -113,7 +113,7 @@ export const ownerTabsNavigation: NavigationItem[] = [
   {
     id: 'owner-resenas',
     label: 'Reseñas',
-    route: ROUTES.owner.resenas,
+    route: ROUTES.owner.reviews,
     icon: Heart,
     roles: ['DUENIO'],
   },

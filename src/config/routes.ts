@@ -130,6 +130,8 @@ export const ROUTES = {
     fieldDetail: (id: number | string) => `/owner/fields/${id}`,
     fieldDetailPattern: '/owner/fields/:id',
     createField: (idSede: number | string) => `/owner/spaces/${idSede}/fields/new`,
+    venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
+      `/owner/spaces/${idSede}/fields/${idCancha}`,
 
     // Legacy / Compatibilidad
     hostSpace: '/host-space',

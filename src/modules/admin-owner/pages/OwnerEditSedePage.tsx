@@ -72,24 +72,28 @@ const OwnerEditSedePage: React.FC = () => {
                 });
                 if (!response.ok) throw new Error('No se pudo cargar la información de la sede');
 
-                const data = await response.json();
+                const responseData = await response.json();
+                // The API returns { sede: {...} }
+                const data = responseData.sede || responseData;
 
-                // Verify ownership
-                if (user?.idPersona && data.idPersonaD !== user.idPersona) {
+                // Verify ownership - the owner ID might be in different properties
+                // Check both idPersonaD (dueño) and idPersona
+                const ownerId = data.idPersonaD || data.duenio?.idPersona;
+                if (user?.idPersona && ownerId && ownerId !== user.idPersona) {
                     throw new Error('No tienes permisos para editar esta sede');
                 }
 
                 setFormData({
                     nombre: data.nombre || '',
-                    direccion: data.direccion || '',
-                    ciudad: data.ciudad || '',
+                    direccion: data.direccion || data.addressLine || '',
+                    ciudad: data.ciudad || data.city || '',
                     telefono: data.telefono || '',
                     email: data.email || '',
                     horarioApertura: data.horarioApertura || '06:00',
                     horarioCierre: data.horarioCierre || '23:00',
                     descripcion: data.descripcion || '',
-                    latitud: data.latitud ? Number(data.latitud) : null,
-                    longitud: data.longitud ? Number(data.longitud) : null,
+                    latitud: data.latitud || data.latitude ? Number(data.latitud || data.latitude) : null,
+                    longitud: data.longitud || data.longitude ? Number(data.longitud || data.longitude) : null,
                 });
             } catch (err) {
                 console.error(err);
@@ -271,10 +275,10 @@ const OwnerEditSedePage: React.FC = () => {
                                 <div key={step.id} className="flex flex-col items-center bg-gray-50 px-2">
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isActive
-                                                ? 'bg-primary-600 text-white shadow-lg scale-110 ring-4 ring-primary-100'
-                                                : isCompleted
-                                                    ? 'bg-green-500 text-white'
-                                                    : 'bg-white border-2 border-gray-200 text-gray-400'
+                                            ? 'bg-primary-600 text-white shadow-lg scale-110 ring-4 ring-primary-100'
+                                            : isCompleted
+                                                ? 'bg-green-500 text-white'
+                                                : 'bg-white border-2 border-gray-200 text-gray-400'
                                             }`}
                                     >
                                         {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
@@ -510,8 +514,8 @@ const OwnerEditSedePage: React.FC = () => {
                             onClick={handlePrevious}
                             disabled={currentStep === 1}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${currentStep === 1
-                                    ? 'text-gray-400 cursor-not-allowed'
-                                    : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                                 }`}
                         >
                             <ChevronLeft className="w-4 h-4" />
