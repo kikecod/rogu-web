@@ -20,14 +20,7 @@ const UsuarioDetallePage = () => {
   const resolveAvatarUrl = (src: string): string => {
     if (!src) return '';
     if (src.startsWith('data:')) return src;
-    if (src.startsWith('http')) {
-      try {
-        const url = new URL(src);
-        return getImageUrl(url.pathname);
-      } catch {
-        return src;
-      }
-    }
+    if (src.startsWith('http')) return getImageUrl(src);
     return getImageUrl(src);
   };
 

@@ -4,10 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Building2,
-  Flag,
-  BarChart3,
-  Settings,
-  FileText,
   Menu,
   X,
   ShieldCheck,
@@ -15,6 +11,7 @@ import {
   User as UserIcon,
   ChevronRight,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { getImageUrl } from '@/core/config/api';
@@ -34,7 +31,14 @@ const AdminSidebar = () => {
     navigate('/profile');
   };
 
-  const menuItems = [
+  type MenuItem = {
+    name: string;
+    icon: LucideIcon;
+    path: string;
+    badge?: string;
+  };
+
+  const menuItems: MenuItem[] = [
     {
       name: 'Dashboard',
       icon: LayoutDashboard,
@@ -54,27 +58,6 @@ const AdminSidebar = () => {
       name: 'Verificaciones',
       icon: ShieldCheck,
       path: ROUTES.admin.verificaciones,
-    },
-    {
-      name: 'Reportes',
-      icon: Flag,
-      path: ROUTES.admin.reportes,
-      badge: 5,
-    },
-    {
-      name: 'Analytics',
-      icon: BarChart3,
-      path: ROUTES.admin.analytics,
-    },
-    {
-      name: 'Moderación',
-      icon: FileText,
-      path: ROUTES.admin.moderacion,
-    },
-    {
-      name: 'Configuración',
-      icon: Settings,
-      path: ROUTES.admin.configuracion,
     },
   ];
 
