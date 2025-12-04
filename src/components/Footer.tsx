@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li>
                 <Link to={ROUTES.home} className="text-neutral-300 hover:text-blue-400 transition-colors text-sm sm:text-base">
-                  Buscar canchas
+                  Buscar Sedes
                 </Link>
               </li>
               <li>

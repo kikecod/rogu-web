@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle } from 'lucide-react';
-import { getApiUrl } from '@/core/config/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Upload, X, Trash2, Image, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { getApiUrl, getImageUrl } from '@/core/config/api';
 
 interface Foto {
-    idFoto: number;
+    idFoto?: number;
     urlFoto: string;
 }
 
@@ -14,9 +14,12 @@ interface SedePhotoManagementProps {
     };
     isOpen: boolean;
     onClose: () => void;
+    fallbackFotos?: Foto[]; // opcional: fotos ya conocidas del detalle de la sede
 }
 
-const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen, onClose }) => {
+const resolveUrl = (urlFoto: string) => (urlFoto?.startsWith('http') ? urlFoto : getImageUrl(urlFoto || ''));
+
+const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen, onClose, fallbackFotos }) => {
     const [fotos, setFotos] = useState<Foto[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -26,8 +29,23 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
         fotoId: null
     });
 
+    const normalizedFallback = useMemo(() => {
+        return Array.isArray(fallbackFotos)
+            ? fallbackFotos.map((f, idx) => ({
+                idFoto: f.idFoto ?? idx,
+                urlFoto: resolveUrl(f.urlFoto),
+            }))
+            : [];
+    }, [fallbackFotos]);
+
     // Cargar fotos de la sede
     const loadFotos = async () => {
+        // Si ya tenemos fotos en fallback, úsalas y evita llamar al endpoint 404
+        if (fallbackFotos !== undefined) {
+            setFotos(normalizedFallback);
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await fetch(getApiUrl(`/fotos/sede/${sede.idSede}`), {
@@ -38,8 +56,17 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
 
             if (response.ok) {
                 const sedeFotos = await response.json();
-                // S3 URLs are already complete public URLs, no normalization needed
-                setFotos(sedeFotos);
+                const normalized = Array.isArray(sedeFotos)
+                  ? sedeFotos.map((f: Foto) => ({ ...f, urlFoto: resolveUrl(f.urlFoto) }))
+                  : [];
+                setFotos(normalized);
+            } else {
+                if (response.status === 404) {
+                    console.warn(`[SedePhotoManagement] No se encontraron fotos para la sede ${sede.idSede} (404).`);
+                    setFotos([]);
+                } else {
+                    console.error('[SedePhotoManagement] Error al obtener fotos:', response.status, response.statusText);
+                }
             }
         } catch (error) {
             console.error('Error loading fotos:', error);
@@ -52,7 +79,7 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
         if (isOpen) {
             loadFotos();
         }
-    }, [isOpen, sede.idSede]);
+    }, [isOpen, sede.idSede, normalizedFallback]);
 
     // Función para validar imagen
     const validateImage = (file: File): boolean => {
@@ -248,7 +275,7 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
 
                     {loading ? (
                         <div className="flex justify-center items-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                         </div>
                     ) : fotos.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -260,8 +287,8 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {fotos.map((foto) => (
-                                <div key={foto.idFoto} className="relative group">
+                            {fotos.map((foto, idx) => (
+                                <div key={foto.idFoto ?? idx} className="relative group">
                                     <img
                                         src={foto.urlFoto}
                                         alt="Foto de la sede"
@@ -271,14 +298,16 @@ const SedePhotoManagement: React.FC<SedePhotoManagementProps> = ({ sede, isOpen,
                                             target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIGFsIGNhcmdhcjwvdGV4dD48L3N2Zz4=';
                                         }}
                                     />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
-                                        <button
-                                            onClick={() => showDeleteConfirm(foto.idFoto)}
-                                            className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
+                                    {foto.idFoto !== undefined && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                            <button
+                                                onClick={() => showDeleteConfirm(foto.idFoto!)}
+                                                className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

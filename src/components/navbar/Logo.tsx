@@ -1,10 +1,15 @@
-import { Link } from 'react-router-dom';
-import { ROUTES } from '@/config/routes';
 import roguLogo from '@/assets/rogu_logo.png';
 
-const Logo = () => {
+interface LogoProps {
+  onClick?: () => void;
+}
+
+const Logo = ({ onClick }: LogoProps) => {
   return (
-    <Link to={ROUTES.home} className="flex items-center min-w-0">
+    <div 
+      onClick={onClick}
+      className="flex items-center min-w-0 cursor-pointer"
+    >
       <img 
         src={roguLogo} 
         alt="ROGU" 
@@ -13,7 +18,7 @@ const Logo = () => {
       <span className="hidden sm:block ml-2 text-xs sm:text-sm text-neutral-600 truncate">
         ROGÜ
       </span>
-    </Link>
+    </div>
   );
 };
 

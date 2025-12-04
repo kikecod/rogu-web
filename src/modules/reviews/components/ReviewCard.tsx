@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2, MoreVertical } from 'lucide-react';
 import StarRating from './StarRating';
 import { getImageUrl } from '@/core/config/api';
@@ -17,8 +18,13 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const navigate = useNavigate();
   const [showActions, setShowActions] = useState(false);
   const [showFullComment, setShowFullComment] = useState(false);
+
+  const handleViewProfile = () => {
+    navigate(`/profile/${review.idCliente}`);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -53,12 +59,15 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3 flex-1">
+        <button
+          onClick={handleViewProfile}
+          className="flex items-center gap-3 flex-1 text-left hover:bg-gray-50 rounded-lg p-1 -ml-1 transition-colors group"
+        >
           {/* Avatar */}
           <img
             src={avatarUrl}
             alt={review.cliente.nombre}
-            className="w-12 h-12 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover group-hover:ring-2 group-hover:ring-blue-500 transition-all"
             onError={(e) => {
               e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(review.cliente.nombre)}&background=3B82F6&color=fff&size=128`;
             }}
@@ -66,7 +75,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 
           {/* User Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-gray-900 truncate">
+            <h4 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
               {review.cliente.nombre}
             </h4>
             <div className="flex items-center gap-2 flex-wrap">
@@ -81,7 +90,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
               )}
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Actions Menu */}
         {isOwner && (onEdit || onDelete) && (
@@ -96,11 +105,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             {showActions && (
               <>
                 {/* Backdrop */}
-                <div 
-                  className="fixed inset-0 z-10" 
+                <div
+                  className="fixed inset-0 z-10"
                   onClick={() => setShowActions(false)}
                 />
-                
+
                 {/* Dropdown */}
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-20">
                   {onEdit && (

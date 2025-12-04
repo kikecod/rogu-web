@@ -1,5 +1,3 @@
-// src/modules/admin-panel/usuarios/components/TablaUsuarios.tsx
-
 import { Eye, Edit, Trash2, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { RolBadge } from './RolBadge';
@@ -20,123 +18,101 @@ export const TablaUsuarios = ({ usuarios, onEliminar, loading }: TablaUsuariosPr
   const resolveAvatarUrl = (src: string): string => {
     if (!src) return '';
     if (src.startsWith('data:')) return src;
-    if (src.startsWith('http')) {
-      try {
-        const url = new URL(src);
-        return getImageUrl(url.pathname);
-      } catch {
-        return src;
-      }
-    }
+    if (src.startsWith('http')) return getImageUrl(src);
     return getImageUrl(src);
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="text-center text-gray-600">Cargando usuarios...</div>
+      <div className="bg-surface border border-border rounded-card shadow-soft p-6 space-y-3">
+        {[...Array(4)].map((_, idx) => (
+          <div key={idx} className="h-10 rounded-input bg-slate-200/60 animate-pulse" />
+        ))}
       </div>
     );
   }
 
   if (usuarios.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="text-center">
-          <UserPlus className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-600 mb-4">No se encontraron usuarios</p>
-          <button
-            onClick={() => navigate(ROUTES.admin.usuariosNuevo)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            Crear primer usuario
-          </button>
-        </div>
+      <div className="bg-surface border border-border rounded-card shadow-soft p-8 text-center space-y-4">
+        <UserPlus className="mx-auto text-muted" size={48} />
+        <p className="text-muted">No se encontraron usuarios</p>
+        <button
+          onClick={() => navigate(ROUTES.admin.usuariosNuevo)}
+          className="px-4 py-2 rounded-input bg-gradient-to-r from-primary to-secondary text-white shadow-soft"
+        >
+          Crear usuario
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-surface border border-border rounded-card shadow-soft overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-white/90 backdrop-blur sticky top-0 z-10">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Usuario
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Correo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Roles
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Última actividad
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
+              {['Usuario', 'Correo', 'Roles', 'Estado', 'Ultima actividad', 'Acciones'].map((header) => (
+                <th
+                  key={header}
+                  className="px-6 py-3 text-left text-[10px] font-semibold text-muted uppercase tracking-[0.12em]"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-border bg-white/70">
             {usuarios.map((usuario) => (
-              <tr key={usuario.idUsuario} className="hover:bg-gray-50 transition">
+              <tr key={usuario.idUsuario} className="hover:bg-white transition">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-3">
                     <div className="h-10 w-10 flex-shrink-0">
                       {usuario.avatarPath ? (
                         <img
                           src={resolveAvatarUrl(usuario.avatarPath)}
                           alt={`${usuario.persona?.nombre || usuario.usuario}`}
-                          className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
+                          className="h-10 w-10 rounded-full object-cover border-2 border-border"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `<div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">${(usuario.persona?.nombre?.[0] || usuario.usuario[0]).toUpperCase()}${(usuario.persona?.apellidoPaterno?.[0] || '').toUpperCase()}</div>`;
-                            }
                           }}
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
-                          {(usuario.persona?.nombre?.[0] || usuario.usuario[0]).toUpperCase()}{(usuario.persona?.apellidoPaterno?.[0] || '').toUpperCase()}
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-sm">
+                          {(usuario.persona?.nombre?.[0] || usuario.usuario[0]).toUpperCase()}
+                          {(usuario.persona?.apellidoPaterno?.[0] || '').toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {usuario.nombreCompleto || `${usuario.persona?.nombre || ''} ${usuario.persona?.apellidoPaterno || ''}`.trim() || usuario.usuario}
+                    <div>
+                      <div className="text-sm font-semibold text-text-main">
+                        {usuario.nombreCompleto ||
+                          `${usuario.persona?.nombre || ''} ${usuario.persona?.apellidoPaterno || ''}`.trim() ||
+                          usuario.usuario}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {usuario.persona?.ci || 'Sin CI'}
-                      </div>
+                      <div className="text-xs text-muted">{usuario.persona?.ci || 'Sin CI'}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{usuario.correo}</div>
-                  <div className="text-sm text-gray-500">@{usuario.usuario}</div>
+                  <div className="text-sm text-text-main">{usuario.correo}</div>
+                  <div className="text-xs text-muted">@{usuario.usuario}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {(usuario.roles && Array.isArray(usuario.roles) && usuario.roles.length > 0) ? (
-                      usuario.roles.map((rol, index) => (
-                        <RolBadge key={index} rol={rol} size="sm" />
-                      ))
+                  <div className="flex flex-wrap gap-1.5">
+                    {usuario.roles && Array.isArray(usuario.roles) && usuario.roles.length > 0 ? (
+                      usuario.roles.map((rol, index) => <RolBadge key={index} rol={rol} size="sm" />)
                     ) : (
-                      <span className="text-xs text-gray-500">Sin roles</span>
+                      <span className="text-xs text-muted">Sin roles</span>
                     )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <EstadoBadge estado={usuario.estado} size="sm" />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                   {usuario.ultimoAccesoEn
                     ? new Date(usuario.ultimoAccesoEn).toLocaleDateString('es-ES', {
                         day: '2-digit',
@@ -149,14 +125,14 @@ export const TablaUsuarios = ({ usuarios, onEliminar, loading }: TablaUsuariosPr
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => navigate(ROUTES.admin.usuarioDetalle(usuario.idUsuario))}
-                      className="text-blue-600 hover:text-blue-900 transition"
+                      className="p-2 rounded-input border border-border bg-white hover:bg-primary/10 text-primary"
                       title="Ver detalle"
                     >
                       <Eye size={18} />
                     </button>
                     <button
                       onClick={() => navigate(ROUTES.admin.usuarioEditar(usuario.idUsuario))}
-                      className="text-green-600 hover:text-green-900 transition"
+                      className="p-2 rounded-input border border-border bg-white hover:bg-success/10 text-success"
                       title="Editar"
                     >
                       <Edit size={18} />
@@ -164,7 +140,7 @@ export const TablaUsuarios = ({ usuarios, onEliminar, loading }: TablaUsuariosPr
                     {onEliminar && usuario.estado !== 'ELIMINADO' && (
                       <button
                         onClick={() => onEliminar(usuario)}
-                        className="text-red-600 hover:text-red-900 transition"
+                        className="p-2 rounded-input border border-border bg-white hover:bg-danger/10 text-danger"
                         title="Dar de baja"
                       >
                         <Trash2 size={18} />

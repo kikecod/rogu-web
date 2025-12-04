@@ -36,13 +36,13 @@ export const ROUTES = {
   // ==========================================
   // Funciones para generar rutas dinámicas
   venue: (idSede: number | string) => `/venues/${idSede}`,
-  venueField: (idSede: number | string, idCancha: number | string) => 
+  venueField: (idSede: number | string, idCancha: number | string) =>
     `/venues/${idSede}/fields/${idCancha}`,
-  
+
   // Patrones para Route definitions (con parámetros)
   venuePattern: '/venues/:idSede',
   venueFieldPattern: '/venues/:idSede/fields/:idCancha',
-  
+
   // Legacy routes (mantener compatibilidad)
   field: (id: number | string) => `/field/${id}`,
   sede: (id: number | string) => `/sede/${id}`,
@@ -54,7 +54,7 @@ export const ROUTES = {
   // ==========================================
   checkout: '/checkout',
   bookings: '/bookings',
-  bookingConfirmation: (id?: number | string) => 
+  bookingConfirmation: (id?: number | string) =>
     id ? `/booking-confirmation/${id}` : '/booking-confirmation',
   bookingConfirmationPattern: '/booking-confirmation/:id',
   bookingConfirmationBase: '/booking-confirmation',
@@ -66,7 +66,7 @@ export const ROUTES = {
   profile: '/profile',
   favoritos: '/favoritos',
 
-  
+
   // ==========================================
   // ADMIN - Panel de Administración
   // ==========================================
@@ -113,15 +113,36 @@ export const ROUTES = {
   // DUEÑO - Gestión de Espacios
   // ==========================================
   owner: {
-    mode: '/owner-mode', // Nueva ruta principal para Modo Dueño
     dashboard: '/owner/dashboard',
     spaces: '/owner/spaces',
-    adminSpaces: '/admin-spaces', // Deprecado - usar mode
-    hostSpace: '/host-space',
-    resenas: '/owner/resenas',
+    fields: '/owner/fields',
+    bookings: '/owner/bookings',
+    reviews: '/owner/reviews',
+    analytics: '/owner/analytics',
+    assignments: '/owner/assignments',
+    settings: '/owner/settings',
+
+    // Rutas dinámicas
     spaceDetail: (id: number | string) => `/owner/spaces/${id}`,
-    analytics: (idSede: number | string) => `/owner/spaces/${idSede}/analytics`,
-    reservations: (idSede: number | string) => `/owner/spaces/${idSede}/reservations`,
+    spaceDetailPattern: '/owner/spaces/:id',
+    editVenue: (id: number | string) => `/owner/spaces/${id}/edit`,
+    editVenuePattern: '/owner/spaces/:id/edit',
+    fieldDetail: (id: number | string) => `/owner/fields/${id}`,
+    fieldDetailPattern: '/owner/fields/:id',
+    createField: (idSede: number | string) => `/owner/spaces/${idSede}/fields/new`,
+    venueFieldManagement: (idSede: number | string, idCancha: number | string) =>
+      `/owner/spaces/${idSede}/fields/${idCancha}`,
+
+    // Legacy / Compatibilidad
+    hostSpace: '/host-space',
+    createVenue: '/owner/create-venue',
+
+    // Deprecated but kept for safety during migration
+    mode: '/owner-mode',
+    adminSpaces: '/admin-spaces',
+    venueDetailPattern: '/owner/spaces/:id/detail',
+    venueFieldManagementPattern: '/owner/spaces/:id/fields/:idCancha',
+    createFieldPattern: '/owner/spaces/:id/fields/new',
   },
 
   // ==========================================

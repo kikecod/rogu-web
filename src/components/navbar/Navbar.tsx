@@ -1,12 +1,12 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Globe, RefreshCw } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { useMode } from '../../core/hooks/useMode';
 import { ROUTES } from '@/config/routes';
-import { AdminTabBar } from '@/core/navigation/AdminTabBar';
 import Logo from './Logo';
 import UserMenu from './UserMenu';
+import { AdminTabBar } from '../../modules/core/navigation/AdminTabBar';
 
 interface NavbarProps {
   onLoginClick: () => void;
@@ -17,10 +17,9 @@ interface NavbarProps {
 const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
   const { isDuenio, isAdmin, user } = useAuth();
   const { mode, toggleMode } = useMode();
-  const location = useLocation();
-  const navigate = useNavigate();
 
-  // Detectar si estamos en rutas admin
+  const navigate = useNavigate();
+  const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Verificar si el usuario puede cambiar a modo dueño (solo DUENIO, no ADMIN)
@@ -33,20 +32,40 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
     navigate(ROUTES.home);
   };
 
+  // Manejar click en logo según rol y modo
+  const handleLogoClick = () => {
+    // 1. ADMIN siempre va a su dashboard
+    if (isAdmin()) {
+      navigate(ROUTES.admin.dashboard);
+      return;
+    }
+    
+    // 2. DUENIO en modo dueño va a owner dashboard
+    if (isDuenio() && mode === 'duenio') {
+      navigate(ROUTES.owner.dashboard);
+      return;
+    }
+    
+    // 3. En cualquier otro caso (CLIENTE o modo cliente) va a home
+    navigate(ROUTES.home);
+  };
+
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-        <div className="flex justify-between items-center h-14 sm:h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-gray-100 supports-[backdrop-filter]:bg-white/60">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Logo />
+          <div className="flex-shrink-0">
+            <Logo onClick={handleLogoClick} />
+          </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {/* Botón de cambio de modo para DUENIO/ADMIN */}
             {canSwitchToOwnerMode && (
               <button
                 onClick={handleModeToggle}
-                className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 rounded-lg transition-all shadow-sm"
+                className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 rounded-full transition-all shadow-lg shadow-gray-200 hover:shadow-xl hover:-translate-y-0.5"
               >
                 <RefreshCw className="h-4 w-4" />
                 {mode === 'duenio' ? 'Modo Cliente' : 'Modo Dueño'}
@@ -57,43 +76,42 @@ const Navbar = ({ onLoginClick, onSignupClick, onLogout }: NavbarProps) => {
             {!canSwitchToOwnerMode && (
               <Link
                 to={ROUTES.owner.hostSpace}
-                className="hidden lg:block text-sm font-medium text-neutral-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+                className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-100 rounded-full transition-all"
               >
+                <Plus className="h-4 w-4" />
                 Ofrece tu espacio
               </Link>
             )}
-
-            {/* Language selector - hidden on small screens */}
-            <button className="hidden sm:block p-2 text-neutral-500 hover:text-neutral-700 transition-colors">
-              <Globe className="h-4 w-4" />
-            </button>
 
             {/* Login button for guests */}
             {!user && (
               <button
                 onClick={onLoginClick}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                className="hidden sm:block px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-0.5"
               >
                 Iniciar Sesión
               </button>
             )}
 
             {/* User menu */}
-            <UserMenu
-              onLoginClick={onLoginClick}
-              onSignupClick={onSignupClick}
-              onLogout={onLogout}
-            />
+            <div className="pl-2 border-l border-gray-200 ml-2">
+              <UserMenu
+                onLoginClick={onLoginClick}
+                onSignupClick={onSignupClick}
+                onLogout={onLogout}
+              />
+            </div>
           </div>
         </div>
-
-
       </div>
 
       {/* Admin Tab Bar - Solo visible en rutas admin */}
       {isAdminRoute && user?.roles && user.roles.includes('ADMIN') && (
-        <AdminTabBar />
+        <div className="border-t border-gray-100 bg-white/50 backdrop-blur-sm">
+          <AdminTabBar />
+        </div>
       )}
+
     </header>
   );
 };

@@ -27,12 +27,12 @@ interface MapPickerProps {
 }
 
 // Componente para manejar clicks en el mapa
-function LocationMarker({ 
-  position, 
-  setPosition, 
-  readonly 
-}: { 
-  position: [number, number] | null; 
+function LocationMarker({
+  position,
+  setPosition,
+  readonly
+}: {
+  position: [number, number] | null;
   setPosition: (pos: [number, number]) => void;
   readonly: boolean;
 }) {
@@ -58,6 +58,38 @@ const MapPicker: React.FC<MapPickerProps> = ({
   const [position, setPosition] = useState<[number, number] | null>(
     initialLat && initialLng ? [initialLat, initialLng] : null
   );
+  const [centerMap, setCenterMap] = useState<[number, number]>([initialLat, initialLng]);
+
+  // Intentar obtener la ubicación actual del dispositivo
+  useEffect(() => {
+    // Solo intentar obtener ubicación si no hay una posición inicial específica
+    if (!initialLat || (initialLat === -16.4897 && initialLng === -68.1193)) {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const userLocation: [number, number] = [
+              pos.coords.latitude,
+              pos.coords.longitude
+            ];
+            setCenterMap(userLocation);
+            // Si no hay posición seleccionada, usar la ubicación del usuario
+            if (!position) {
+              setPosition(userLocation);
+            }
+          },
+          (error) => {
+            console.log('No se pudo obtener la ubicación:', error.message);
+            // Mantener La Paz, Bolivia como predeterminado
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (position) {
@@ -68,7 +100,7 @@ const MapPicker: React.FC<MapPickerProps> = ({
   return (
     <div className="relative rounded-lg overflow-hidden border-2 border-gray-300" style={{ height }}>
       <MapContainer
-        center={position || [initialLat, initialLng]}
+        center={centerMap}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
@@ -79,7 +111,7 @@ const MapPicker: React.FC<MapPickerProps> = ({
         />
         <LocationMarker position={position} setPosition={setPosition} readonly={readonly} />
       </MapContainer>
-      
+
       {!readonly && (
         <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded-lg shadow-lg z-[1000]">
           <p className="text-sm text-gray-700 font-medium">

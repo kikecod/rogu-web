@@ -156,7 +156,7 @@ const HostSpacePage: React.FC = () => {
     if (isDuenio() && verificationStatus?.verificado === true) {
       setErrorMessage('Ya eres dueño verificado de espacios deportivos');
       setTimeout(() => {
-        navigate('/admin-spaces');
+        navigate(ROUTES.owner.dashboard);
       }, 2000);
       return;
     }
@@ -249,7 +249,7 @@ const HostSpacePage: React.FC = () => {
               Tu identidad ha sido verificada y ya tienes permisos completos. Te llevaremos a tu panel de administración.
             </p>
             <button
-              onClick={() => navigate(ROUTES.owner.mode)}
+              onClick={() => navigate(ROUTES.owner.dashboard)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir al Modo Dueño
