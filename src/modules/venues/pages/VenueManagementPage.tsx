@@ -429,9 +429,19 @@ const VenueDetailPage: React.FC = () => {
     ? (imagenPath.startsWith('http') ? imagenPath : getImageUrl(imagenPath))
     : '/placeholder-venue.jpg';
 
-  const location = sede.city && sede.stateProvince
-    ? `${sede.city}, ${sede.stateProvince}`
-    : (sede.addressLine || sede.direccion || 'Sin ubicación');
+  // Location logic: Filter out empty/whitespace strings for city and state
+  const cleanCity = sede.city?.trim();
+  const cleanState = sede.stateProvince?.trim();
+
+  let location = sede.addressLine || sede.direccion || 'Ubicación no disponible';
+
+  if (cleanCity && cleanState) {
+    location = `${cleanCity}, ${cleanState}`;
+  } else if (cleanCity) {
+    location = cleanCity;
+  } else if (cleanState) {
+    location = cleanState;
+  }
 
 
 

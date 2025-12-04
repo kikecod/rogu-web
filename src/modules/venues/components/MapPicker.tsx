@@ -44,6 +44,15 @@ function LocationMarker({
   return position ? <Marker position={position} /> : null;
 }
 
+// Componente para actualizar el centro del mapa cuando cambia la prop center
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  return null;
+}
+
 export default function MapPicker({
   latitude,
   longitude,
@@ -67,7 +76,10 @@ export default function MapPicker({
   const [position, setPosition] = useState<[number, number] | null>(
     getValidPosition(latitude, longitude)
   );
-  const [centerMap, setCenterMap] = useState<[number, number]>(defaultCenter);
+  const [centerMap, setCenterMap] = useState<[number, number]>(() => {
+    const validPos = getValidPosition(latitude, longitude);
+    return validPos || defaultCenter;
+  });
 
   // Intentar obtener la ubicación actual del dispositivo
   useEffect(() => {
@@ -139,7 +151,7 @@ export default function MapPicker({
   const mapCenter = centerMap;
 
   // Clave única para forzar re-render cuando cambia la posición inicial
-  const mapKey = position ? `${position[0]}-${position[1]}` : 'default';
+  // const mapKey = position ? `${position[0]}-${position[1]}` : 'default';
 
   return (
     <div className="space-y-2">
@@ -157,12 +169,12 @@ export default function MapPicker({
         style={{ height: className ? undefined : height }}
       >
         <MapContainer
-          key={mapKey}
           center={mapCenter}
           zoom={position ? 15 : 12}
           className="h-full w-full"
           scrollWheelZoom
         >
+          <MapUpdater center={mapCenter} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
